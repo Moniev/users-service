@@ -39,6 +39,26 @@ on:
         required: true
         type: string
         description: "GitHub Actions run ID"
+      image_tag:
+        required: false 
+        type: string
+        default: "N/A"
+        description: "Docker image tag"
+      image_url:
+        required: false 
+        type: string
+        default: "" 
+        description: "URL to the Docker image on GHCR"
+      commit_msg:
+        required: false
+        type: string
+        default: "No commit message provided"
+        description: "Commit message"
+      gitops_repo_url:
+        required: false
+        type: string
+        default: "https://github.com/s8lls-backend-gitops" 
+        description: "URL to the GitOps repository"
     secrets:
       discord_webhook_url:
         required: true
@@ -50,6 +70,27 @@ jobs:
     steps:
       - name: Install jq (if not already present)
         run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Get Commit Message (if not provided as input)
+        if: inputs.commit_msg == 'No commit message provided'
+        id: get_commit_msg
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commitSha = process.env.COMMIT_SHA;
+            const repoOwner = context.repo.owner;
+            const repoName = context.repo.repo;
+            const response = await github.rest.repos.getCommit({
+              owner: repoOwner,
+              repo: repoName,
+              ref: commitSha,
+            });
+            const commitMessage = response.data.commit.message.split('\n')[0]; // Get first line of commit message
+            console.log(`Commit message: ${commitMessage}`);
+            core.setOutput('commit_message', commitMessage);
+        env:
+          COMMIT_SHA: ${{ inputs.sha }}
+
 
       - name: Send Discord Notification
         env:
@@ -63,6 +104,10 @@ jobs:
           REPO_NAME: ${{ inputs.repo }}
           COMMIT_SHA: ${{ inputs.sha }}
           RUN_ID: ${{ inputs.run_id }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_URL: ${{ inputs.image_url }}
+          COMMIT_MESSAGE: ${{ steps.get_commit_msg.outputs.commit_message || inputs.commit_msg }} 
+          GITOPS_REPO_URL: ${{ inputs.gitops_repo_url }}
         run: |
           if [ -z "$DISCORD_WEBHOOK" ]; then
             echo "Error: DISCORD_WEBHOOK is empty or undefined. Please check workflow secrets."
@@ -71,7 +116,8 @@ jobs:
           echo "Webhook URL is set (length: ${#DISCORD_WEBHOOK})"
 
           OVERALL_STATUS_ICON="✅"
-          OVERALL_STATUS_TEXT="SUCCESS"
+          OVERALL_STATUS_TITLE="Pipeline Status: SUCCESS"
+          EMBED_COLOR=65280 # Green (0x00FF00)
 
           if [[ "$UNIT_TEST_RESULT" == "failure" || "$UNIT_TEST_RESULT" == "cancelled" || \
                 "$INTEGRATION_TEST_RESULT" == "failure" || "$INTEGRATION_TEST_RESULT" == "cancelled" || \
@@ -79,19 +125,21 @@ jobs:
                 "$BUILD_RESULT" == "failure" || "$BUILD_RESULT" == "cancelled" || \
                 "$GITOPS_RESULT" == "failure" || "$GITOPS_RESULT" == "cancelled" ]]; then
             OVERALL_STATUS_ICON="❌"
-            OVERALL_STATUS_TEXT="FAILURE"
+            OVERALL_STATUS_TITLE="Pipeline Status: FAILURE"
+            EMBED_COLOR=16711680 # Red (0xFF0000)
           elif [[ "$UNIT_TEST_RESULT" == "skipped" && "$INTEGRATION_TEST_RESULT" == "skipped" && "$E2E_TEST_RESULT" == "skipped" && "$BUILD_RESULT" == "skipped" && "$GITOPS_RESULT" == "skipped" ]]; then
             OVERALL_STATUS_ICON="⚪" # White circle for all skipped
-            OVERALL_STATUS_TEXT="SKIPPED"
+            OVERALL_STATUS_TITLE="Pipeline Status: SKIPPED"
+            EMBED_COLOR=12632256 # Grey (0xC0C0C0)
           fi
 
           get_status_emoji() {
             case "$1" in
               success) echo "✅" ;;
               failure) echo "❌" ;;
-              skipped) echo "⚪" ;; 
-              cancelled) echo "🚫" ;; 
-              *) echo "❓" ;; 
+              skipped) echo "⚪" ;; # White circle for skipped
+              cancelled) echo "🚫" ;; # No entry sign for cancelled
+              *) echo "❓" ;; # Question mark for unknown
             esac
           }
 
@@ -101,36 +149,69 @@ jobs:
           BUILD_EMOJI=$(get_status_emoji "$BUILD_RESULT")
           GITOPS_EMOJI=$(get_status_emoji "$GITOPS_RESULT")
 
-          WEBHOOK_URL="$DISCORD_WEBHOOK"
           REPO_URL="https://github.com/$REPO_NAME"
-          RUN_URL="$REPO_URL/actions/runs/$RUN_ID"
+          RUN_URL="https://github.com/$REPO_NAME/actions/runs/$RUN_ID"
+          COMMIT_URL="$REPO_URL/commit/$COMMIT_SHA"
 
-          printf -v MESSAGE_CONTENT "
-          %s **CI/CD Pipeline Status: %s**
-          **Repository:** [%s](%s)
-          **Branch:** \`%s\`
-          **Commit:** \`%s\`
-          **Workflow Run:** [View Run](%s)
+          JSON_PAYLOAD=$(jq -n \
+            --arg overall_status_icon "$OVERALL_STATUS_ICON" \
+            --arg overall_status_title "$OVERALL_STATUS_TITLE" \
+            --argjson embed_color "$EMBED_COLOR" \
+            --arg repo "$REPO_NAME" \
+            --arg repo_url "$REPO_URL" \
+            --arg branch "$BRANCH_NAME" \
+            --arg image_tag "$IMAGE_TAG" \
+            --arg image_url "$IMAGE_URL" \
+            --arg commit_sha "$COMMIT_SHA" \
+            --arg commit_message "$COMMIT_MESSAGE" \
+            --arg commit_url "$COMMIT_URL" \
+            --arg gitops_repo_url "$GITOPS_REPO_URL" \
+            --arg run_url "$RUN_URL" \
+            --arg unit_test_emoji "$UNIT_TEST_EMOJI" \
+            --arg unit_test_result "$UNIT_TEST_RESULT" \
+            --arg integration_test_emoji "$INTEGRATION_TEST_EMOJI" \
+            --arg integration_test_result "$INTEGRATION_TEST_RESULT" \
+            --arg e2e_test_emoji "$E2E_TEST_EMOJI" \
+            --arg e2e_test_result "$E2E_TEST_RESULT" \
+            --arg build_emoji "$BUILD_EMOJI" \
+            --arg build_result "$BUILD_RESULT" \
+            --arg gitops_emoji "$GITOPS_EMOJI" \
+            --arg gitops_result "$GITOPS_RESULT" \
+            '{
+              "embeds": [
+                {
+                  "title": "\($overall_status_icon) \($overall_status_title)",
+                  "color": $embed_color,
+                  "fields": [
+                    { "name": "📘 App Repo", "value": "[\($repo)](\($repo_url))", "inline": true },
+                    { "name": "🌿 Branch", "value": "`\($branch)`", "inline": true },
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
 
-          ---
-          **Job Results:**
-          %s Unit Tests: \`%s\`
-          %s Integration Tests: \`%s\`
-          %s E2E Tests: \`%s\`
-          %s Build & Push: \`%s\`
-          %s GitOps Update: \`%s\`
-          " \
-          "$OVERALL_STATUS_ICON" "$OVERALL_STATUS_TEXT" \
-          "$REPO_NAME" "$REPO_URL" \
-          "$BRANCH_NAME" "$COMMIT_SHA" "$RUN_URL" \
-          "$UNIT_TEST_EMOJI" "$UNIT_TEST_RESULT" \
-          "$INTEGRATION_TEST_EMOJI" "$INTEGRATION_TEST_RESULT" \
-          "$E2E_TEST_EMOJI" "$E2E_TEST_RESULT" \
-          "$BUILD_EMOJI" "$BUILD_RESULT" \
-          "$GITOPS_EMOJI" "$GITOPS_RESULT"
+                    { "name": "🐳 Image", "value": "\($image_tag == "N/A" and "N/A" or "[\($image_tag)](\($image_url))")", "inline": true },
+                    { "name": "📦 GHCR", "value": "\($image_tag == "N/A" and "N/A" or "[ghcr.io](\($image_url))")", "inline": true },
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
 
-          JSON_PAYLOAD=$(jq -n --arg content "$MESSAGE_CONTENT" '{"content": $content}')
+                    { "name": "📝 Commit", "value": "[\($commit_message)](\($commit_url))", "inline": false }, # Not inline
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
 
+                    { "name": "🔄 GitOps Repo", "value": "[s8lls-backend-gitops](\($gitops_repo_url))", "inline": false }, # Not inline
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+
+                    { "name": "🧪 Workflow Logs", "value": "[View Logs](\($run_url))", "inline": false }, # Not inline
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+
+                    { "name": "---", "value": "**Job Results:**", "inline": false }, # Section separator
+
+                    { "name": "Unit Tests", "value": "\($unit_test_emoji) `\($unit_test_result)`", "inline": true },
+                    { "name": "Integration Tests", "value": "\($integration_test_emoji) `\($integration_test_result)`", "inline": true },
+                    { "name": "E2E Tests", "value": "\($e2e_test_emoji) `\($e2e_test_result)`", "inline": true },
+                    { "name": "Build & Push", "value": "\($build_emoji) `\($build_result)`", "inline": true },
+                    { "name": "GitOps Update", "value": "\($gitops_emoji) `\($gitops_result)`", "inline": true }
+                  ]
+                }
+              ]
+            }'
+          
           curl -X POST -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD" "$WEBHOOK_URL" || {
             echo "curl failed with exit code $?"
