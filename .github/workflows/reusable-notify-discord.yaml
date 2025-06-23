@@ -52,8 +52,7 @@ jobs:
     steps:
       - name: Send Discord Notification
         env:
-          # CORRECTED TYPO: ${{ secrets.discord_webhook_url }}
-          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_url }} # <--- FIXED HERE
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }} 
           UNIT_TEST_RESULT: ${{ inputs.unit_test_result }}
           INTEGRATION_TEST_RESULT: ${{ inputs.integration_test_result }}
           E2E_TEST_RESULT: ${{ inputs.e2e_test_result }}

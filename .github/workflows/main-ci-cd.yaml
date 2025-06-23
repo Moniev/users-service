@@ -106,4 +106,4 @@ jobs:
       sha: ${{ github.sha }}
       run_id: ${{ github.run_id }}
     secrets:
-      discord_webhook_url: ${{ secrets.NOTIFICATIONS_HUB }}
+      discord_webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
