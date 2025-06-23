@@ -19,7 +19,7 @@ on:
         description: "Path to the Docker build context (e.g., repository root)"
 
     secrets:
-      github_token:
+      gh_token:
         required: true
         description: "GitHub Token for Container Registry access"
 

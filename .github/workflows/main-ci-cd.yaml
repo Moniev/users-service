@@ -68,7 +68,7 @@ jobs:
     with:
       version: "v0.3.0"
     secrets:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
 
   call-gitops-workflow:
     name: Update GitOps Manifest
