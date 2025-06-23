@@ -57,28 +57,24 @@ jobs:
       - name: Set image tags
         id: set-image-tags 
         run: |
-          set -e # Exit immediately if any command fails
+          set -e 
           BRANCH="${GITHUB_REF##*/}" # Gets the branch name
           SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7) # Gets the short commit SHA
-          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]') # Repository name in lowercase
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]') 
           VERSION="${{ inputs.version }}" # Version passed as input
 
-          # Determine TAG_NAME based on the branch name
           case "$BRANCH" in
             development-branch) TAG_NAME="${VERSION}-dev-${SHA_SHORT}" ;;
             test-environment) TAG_NAME="${VERSION}-test-${SHA_SHORT}" ;;
-            production) TAG_NAME="${VERSION}" ;; # For production, use only the version number
-            *) TAG_NAME="dev-${SHA_SHORT}" ;; # Default tag for other branches
+            production) TAG_NAME="${VERSION}" ;; 
+            *) TAG_NAME="dev-${SHA_SHORT}" ;; 
           esac
 
-          # Full image name
           IMAGE_NAME="ghcr.io/$REPO_NAME"
           
-          # Set step outputs
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-          # Add an alias for "latest" tag based on branch name, e.g., 'development-branch'
           echo "latest_tag_alias=$BRANCH" >> $GITHUB_OUTPUT 
 
       - name: Build and push image
@@ -90,5 +86,4 @@ jobs:
           tags: |
             ${{ steps.set-image-tags.outputs.image_name }}:${{ steps.set-image-tags.outputs.tag }}
             ${{ steps.set-image-tags.outputs.image_name }}:${{ steps.set-image-tags.outputs.latest_tag_alias }}
-            # Add 'latest' tag only for the 'production' branch
             ${{ startsWith(steps.set-image-tags.outputs.latest_tag_alias, 'production') && format('{0}:latest', steps.set-image-tags.outputs.image_name) || '' }}
