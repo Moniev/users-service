@@ -1,14 +1,15 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import computed_field, AmqpDsn, PostgresDsn
+from pydantic import computed_field, PostgresDsn
+from typing import Optional
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    DB_USER: str | None = "postgres"
-    DB_PASSWORD: str | None = "postgres"
-    DB_HOST: str | None = "localhost"
-    DB_PORT: int | None = 5432
-    DB_NAME: str | None = "postgres"
+    DB_USER: Optional[str] = None
+    DB_PASSWORD: Optional[str] = None
+    DB_HOST: Optional[str] = "postgres.postgres.svc.cluster.local"
+    DB_PORT: Optional[int] = 5432
+    DB_NAME: Optional[str] = "MAIN_DB"
     
     @computed_field
     @property
@@ -19,31 +20,33 @@ class Settings(BaseSettings):
             password=self.DB_PASSWORD,
             host=self.DB_HOST,
             port=self.DB_PORT,
-            path=f"/{self.DB_NAME}",
+            path=f"/{self.DB_NAME or ''}",
         ))
 
-    DB_SSL_CA_PATH: str | None = None
-    DB_SSL_CERT_PATH: str | None = None
-    DB_SSL_KEY_PATH: str | None = None
+    DB_SSL_CA_PATH: Optional[str] = "/etc/postgresql-tls/ca.crt"
+    DB_SSL_CERT_PATH: Optional[str] = "/etc/postgresql-tls/tls.crt"
+    DB_SSL_KEY_PATH: Optional[str] = "/etc/postgresql-tls/tls.key"
     
-    GOOGLE_CLIENT_ID: str | None = None
-    GOOGLE_CLIENT_SECRET: str | None = None
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
     
-    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+    KAFKA_BOOTSTRAP_SERVERS: str = "kafka.kafka.svc.cluster.local:9092"
     KAFKA_CLIENT_ID: str = "users-service"
-    KAFKA_SECURITY_PROTOCOL: str = "SASL_SSL"  
-    KAFKA_SASL_MECHANISM: str | None = None      
-    KAFKA_SASL_USERNAME: str | None = None
-    KAFKA_SASL_PASSWORD: str | None = None
-    KAFKA_SSL_CA_PATH: str | None = None
-    
-    REDIS_HOST: str = "localhost"
+    KAFKA_SECURITY_PROTOCOL: str = "SSL"  
+    KAFKA_SASL_MECHANISM: Optional[str] = None      
+    KAFKA_SASL_USERNAME: Optional[str] = None
+    KAFKA_SASL_PASSWORD: Optional[str] = None
+    KAFKA_SSL_CA_PATH: Optional[str] = "/etc/kafka/tls/ca.crt"
+    KAFKA_SSL_CERT_PATH: Optional[str] = "/etc/kafka/tls/tls.crt"
+    KAFKA_SSL_KEY_PATH: Optional[str] = "/etc/kafka/tls/tls.key"
+
+    REDIS_HOST: str = "redis.redis.svc.cluster.local"
     REDIS_PORT: int = 6379
-    REDIS_DB: int = 0
-    REDIS_PASSWORD: str | None = None
-    REDIS_SSL_CA_PATH: str | None = None
-    REDIS_SSL_CERT_PATH: str | None = None
-    REDIS_SSL_KEY_PATH: str | None = None
+    REDIS_DB: Optional[int] = None
+    REDIS_PASSWORD: Optional[str] = None 
+    REDIS_SSL_CA_PATH: Optional[str] = "/etc/redis/tls/ca.crt"
+    REDIS_SSL_CERT_PATH: Optional[str] = "/etc/redis/tls/tls.crt"
+    REDIS_SSL_KEY_PATH: Optional[str] = "/etc/redis/tls/tls.key"
     
     @computed_field
     @property
