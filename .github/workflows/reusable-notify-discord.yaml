@@ -72,6 +72,7 @@ jobs:
             FULL_STATUS="FAILURE"
           fi
 
+
           WEBHOOK_URL="$DISCORD_WEBHOOK"
           REPO_URL="https://github.com/$REPO_NAME"
           RUN_URL="$REPO_URL/actions/runs/$RUN_ID"
