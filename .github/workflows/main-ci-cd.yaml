@@ -80,7 +80,7 @@ jobs:
       image_tag: ${{ needs.call-build-workflow.outputs.tag }}
       gitops_branch: ${{ needs.call-build-workflow.outputs.branch }}
       service_name: "users-service"
-      deployment_file_path: "k8s/users-service-deployment.yml"
+      deployment_file_path: "k8s/users-service/users-service-deployment.yml"
       gitops_repository: "factory-chainline/users-service-gitops"
     secrets:
       gitops_deploy_key: ${{ secrets.GITOPS_DEPLOY_KEY }}
