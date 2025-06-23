@@ -1,5 +1,3 @@
-# .github/workflows/reusable-notify-discord.yml
-
 name: Reusable - Notify Discord
 
 on:
@@ -52,6 +50,7 @@ jobs:
     steps:
       - name: Install jq (if not already present)
         run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Send Discord Notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook_url }}
@@ -71,22 +70,41 @@ jobs:
           fi
           echo "Webhook URL is set (length: ${#DISCORD_WEBHOOK})"
 
-          STATUS_ICON="✅"
-          FULL_STATUS="SUCCESS"
-          if [[ "$UNIT_TEST_RESULT" != "success" || \
-                "$INTEGRATION_TEST_RESULT" != "success" || \
-                ("$E2E_TEST_RESULT" != "success" && "$E2E_TEST_RESULT" != "skipped") || \
-                "$BUILD_RESULT" != "success" || \
-                "$GITOPS_RESULT" != "success" ]]; then
-            STATUS_ICON="❌"
-            FULL_STATUS="FAILURE"
+          OVERALL_STATUS_ICON="✅"
+          OVERALL_STATUS_TEXT="SUCCESS"
+
+          if [[ "$UNIT_TEST_RESULT" == "failure" || "$UNIT_TEST_RESULT" == "cancelled" || \
+                "$INTEGRATION_TEST_RESULT" == "failure" || "$INTEGRATION_TEST_RESULT" == "cancelled" || \
+                ("$E2E_TEST_RESULT" == "failure" || "$E2E_TEST_RESULT" == "cancelled") || \
+                "$BUILD_RESULT" == "failure" || "$BUILD_RESULT" == "cancelled" || \
+                "$GITOPS_RESULT" == "failure" || "$GITOPS_RESULT" == "cancelled" ]]; then
+            OVERALL_STATUS_ICON="❌"
+            OVERALL_STATUS_TEXT="FAILURE"
+          elif [[ "$UNIT_TEST_RESULT" == "skipped" && "$INTEGRATION_TEST_RESULT" == "skipped" && "$E2E_TEST_RESULT" == "skipped" && "$BUILD_RESULT" == "skipped" && "$GITOPS_RESULT" == "skipped" ]]; then
+            OVERALL_STATUS_ICON="⚪" # White circle for all skipped
+            OVERALL_STATUS_TEXT="SKIPPED"
           fi
+
+          get_status_emoji() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              skipped) echo "⚪" ;; 
+              cancelled) echo "🚫" ;; 
+              *) echo "❓" ;; 
+            esac
+          }
+
+          UNIT_TEST_EMOJI=$(get_status_emoji "$UNIT_TEST_RESULT")
+          INTEGRATION_TEST_EMOJI=$(get_status_emoji "$INTEGRATION_TEST_RESULT")
+          E2E_TEST_EMOJI=$(get_status_emoji "$E2E_TEST_RESULT")
+          BUILD_EMOJI=$(get_status_emoji "$BUILD_RESULT")
+          GITOPS_EMOJI=$(get_status_emoji "$GITOPS_RESULT")
 
           WEBHOOK_URL="$DISCORD_WEBHOOK"
           REPO_URL="https://github.com/$REPO_NAME"
           RUN_URL="$REPO_URL/actions/runs/$RUN_ID"
 
-       
           printf -v MESSAGE_CONTENT "
           %s **CI/CD Pipeline Status: %s**
           **Repository:** [%s](%s)
@@ -94,16 +112,22 @@ jobs:
           **Commit:** \`%s\`
           **Workflow Run:** [View Run](%s)
 
-          - Unit Tests: \`%s\`
-          - Integration Tests: \`%s\`
-          - E2E Tests: \`%s\`
-          - Build & Push: \`%s\`
-          - GitOps Update: \`%s\`
+          ---
+          **Job Results:**
+          %s Unit Tests: \`%s\`
+          %s Integration Tests: \`%s\`
+          %s E2E Tests: \`%s\`
+          %s Build & Push: \`%s\`
+          %s GitOps Update: \`%s\`
           " \
-          "$STATUS_ICON" "$FULL_STATUS" \
+          "$OVERALL_STATUS_ICON" "$OVERALL_STATUS_TEXT" \
           "$REPO_NAME" "$REPO_URL" \
           "$BRANCH_NAME" "$COMMIT_SHA" "$RUN_URL" \
-          "$UNIT_TEST_RESULT" "$INTEGRATION_TEST_RESULT" "$E2E_TEST_RESULT" "$BUILD_RESULT" "$GITOPS_RESULT"
+          "$UNIT_TEST_EMOJI" "$UNIT_TEST_RESULT" \
+          "$INTEGRATION_TEST_EMOJI" "$INTEGRATION_TEST_RESULT" \
+          "$E2E_TEST_EMOJI" "$E2E_TEST_RESULT" \
+          "$BUILD_EMOJI" "$BUILD_RESULT" \
+          "$GITOPS_EMOJI" "$GITOPS_RESULT"
 
           JSON_PAYLOAD=$(jq -n --arg content "$MESSAGE_CONTENT" '{"content": $content}')
 
