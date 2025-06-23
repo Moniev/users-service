@@ -106,7 +106,7 @@ jobs:
           RUN_ID: ${{ inputs.run_id }}
           IMAGE_TAG: ${{ inputs.image_tag }}
           IMAGE_URL: ${{ inputs.image_url }}
-          COMMIT_MESSAGE: ${{ steps.get_commit_msg.outputs.commit_message || inputs.commit_msg }} 
+          COMMIT_MESSAGE: ${{ steps.get_commit_msg.outputs.commit_message || inputs.commit_msg }}
           GITOPS_REPO_URL: ${{ inputs.gitops_repo_url }}
         run: |
           if [ -z "$DISCORD_WEBHOOK" ]; then
@@ -135,10 +135,10 @@ jobs:
 
           get_status_emoji() {
             case "$1" in
-              success) echo "✅" ;;
-              failure) echo "❌" ;;
-              skipped) echo "⚪" ;; # White circle for skipped
-              cancelled) echo "🚫" ;; # No entry sign for cancelled
+              "success") echo "✅" ;;
+              "failure") echo "❌" ;;
+              "skipped") echo "⚪" ;; # White circle for skipped
+              "cancelled") echo "🚫" ;; # No entry sign for cancelled
               *) echo "❓" ;; # Question mark for unknown
             esac
           }
@@ -153,6 +153,43 @@ jobs:
           RUN_URL="https://github.com/$REPO_NAME/actions/runs/$RUN_ID"
           COMMIT_URL="$REPO_URL/commit/$COMMIT_SHA"
 
+          JQ_PROGRAM='
+            {
+              "embeds": [
+                {
+                  "title": "\($overall_status_icon) \($overall_status_title)",
+                  "color": $embed_color,
+                  "fields": [
+                    { "name": "📘 App Repo", "value": "[\($repo)](\($repo_url))", "inline": true },
+                    { "name": "🌿 Branch", "value": "`\($branch)`", "inline": true },
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+          
+                    { "name": "🐳 Image", "value": "\($image_tag == "N/A" and "N/A" or "[\($image_tag)](\($image_url))")", "inline": true },
+                    { "name": "📦 GHCR", "value": "\($image_tag == "N/A" and "N/A" or "[ghcr.io](\($image_url))")", "inline": true },
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+          
+                    { "name": "📝 Commit", "value": "[\($commit_message)](\($commit_url))", "inline": false }, # Not inline
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+          
+                    { "name": "🔄 GitOps Repo", "value": "[s8lls-backend-gitops](\($gitops_repo_url))", "inline": false }, # Not inline
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+          
+                    { "name": "🧪 Workflow Logs", "value": "[View Logs](\($run_url))", "inline": false }, # Not inline
+                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+          
+                    { "name": "---", "value": "**Job Results:**", "inline": false }, # Section separator
+          
+                    { "name": "Unit Tests", "value": "\($unit_test_emoji) `\($unit_test_result)`", "inline": true },
+                    { "name": "Integration Tests", "value": "\($integration_test_emoji) `\($integration_test_result)`", "inline": true },
+                    { "name": "E2E Tests", "value": "\($e2e_test_emoji) `\($e2e_test_result)`", "inline": true },
+                    { "name": "Build & Push", "value": "\($build_emoji) `\($build_result)`", "inline": true },
+                    { "name": "GitOps Update", "value": "\($gitops_emoji) `\($gitops_result)`", "inline": true }
+                  ]
+                }
+              ]
+            }
+          '
+          
           JSON_PAYLOAD=$(jq -n \
             --arg overall_status_icon "$OVERALL_STATUS_ICON" \
             --arg overall_status_title "$OVERALL_STATUS_TITLE" \
@@ -177,40 +214,7 @@ jobs:
             --arg build_result "$BUILD_RESULT" \
             --arg gitops_emoji "$GITOPS_EMOJI" \
             --arg gitops_result "$GITOPS_RESULT" \
-            '{
-              "embeds": [
-                {
-                  "title": "\($overall_status_icon) \($overall_status_title)",
-                  "color": $embed_color,
-                  "fields": [
-                    { "name": "📘 App Repo", "value": "[\($repo)](\($repo_url))", "inline": true },
-                    { "name": "🌿 Branch", "value": "`\($branch)`", "inline": true },
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
-
-                    { "name": "🐳 Image", "value": "\($image_tag == "N/A" and "N/A" or "[\($image_tag)](\($image_url))")", "inline": true },
-                    { "name": "📦 GHCR", "value": "\($image_tag == "N/A" and "N/A" or "[ghcr.io](\($image_url))")", "inline": true },
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
-
-                    { "name": "📝 Commit", "value": "[\($commit_message)](\($commit_url))", "inline": false }, # Not inline
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
-
-                    { "name": "🔄 GitOps Repo", "value": "[s8lls-backend-gitops](\($gitops_repo_url))", "inline": false }, # Not inline
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
-
-                    { "name": "🧪 Workflow Logs", "value": "[View Logs](\($run_url))", "inline": false }, # Not inline
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
-
-                    { "name": "---", "value": "**Job Results:**", "inline": false }, # Section separator
-
-                    { "name": "Unit Tests", "value": "\($unit_test_emoji) `\($unit_test_result)`", "inline": true },
-                    { "name": "Integration Tests", "value": "\($integration_test_emoji) `\($integration_test_result)`", "inline": true },
-                    { "name": "E2E Tests", "value": "\($e2e_test_emoji) `\($e2e_test_result)`", "inline": true },
-                    { "name": "Build & Push", "value": "\($build_emoji) `\($build_result)`", "inline": true },
-                    { "name": "GitOps Update", "value": "\($gitops_emoji) `\($gitops_result)`", "inline": true }
-                  ]
-                }
-              ]
-            }'
+            "$JQ_PROGRAM")
           
           curl -X POST -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD" "$WEBHOOK_URL" || {
