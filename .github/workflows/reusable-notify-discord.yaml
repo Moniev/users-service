@@ -3,67 +3,94 @@ name: Reusable - Notify Discord
 on:
   workflow_call:
     inputs:
+      unit_test_result:
+        required: true
+        type: string
+        description: "Result of the unit tests job (success, failure, skipped, cancelled)"
+      integration_test_result:
+        required: true
+        type: string
+        description: "Result of the integration tests job (success, failure, skipped, cancelled)"
+      e2e_test_result:
+        required: true
+        type: string
+        description: "Result of the E2E tests job (success, failure, skipped, cancelled)"
       build_result:
         required: true
         type: string
+        description: "Result of the build and push job (success, failure, skipped, cancelled)"
       gitops_result:
         required: true
         type: string
+        description: "Result of the GitOps update job (success, failure, skipped, cancelled)"
       branch:
         required: true
         type: string
+        description: "Branch name that triggered the workflow"
       repo:
         required: true
         type: string
+        description: "Repository name"
       sha:
         required: true
         type: string
+        description: "Commit SHA"
       run_id:
         required: true
         type: string
+        description: "GitHub Actions run ID"
     secrets:
       discord_webhook_url:
         required: true
+        description: "Discord webhook URL for notifications"
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Send Discord notification
+      - name: Send Discord Notification
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.discord_webhook_url }}
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_url }}
+          UNIT_TEST_RESULT: ${{ inputs.unit_test_result }}
+          INTEGRATION_TEST_RESULT: ${{ inputs.integration_test_result }}
+          E2E_TEST_RESULT: ${{ inputs.e2e_test_result }}
+          BUILD_RESULT: ${{ inputs.build_result }}
+          GITOPS_RESULT: ${{ inputs.gitops_result }}
+          BRANCH_NAME: ${{ inputs.branch }}
+          REPO_NAME: ${{ inputs.repo }}
+          COMMIT_SHA: ${{ inputs.sha }}
+          RUN_ID: ${{ inputs.run_id }}
         run: |
-          set -euo pipefail
-
-          if [[ "${{ inputs.build_result }}" == "success" && ("${{ inputs.gitops_result }}" == "success" || "${{ inputs.gitops_result }}" == "skipped") ]]; then
-            STATUS="✅ Build & Deploy Succeeded"
-            COLOR=3066993
-          else
-            STATUS="❌ Workflow Failed"
-            COLOR=15158332
+          STATUS_ICON="✅"
+          FULL_STATUS="SUCCESS"
+          if [[ "$UNIT_TEST_RESULT" != "success" || \
+                "$INTEGRATION_TEST_RESULT" != "success" || \
+                ("$E2E_TEST_RESULT" != "success" && "$E2E_TEST_RESULT" != "skipped") || \
+                "$BUILD_RESULT" != "success" || \
+                "$GITOPS_RESULT" != "success" ]]; then
+            STATUS_ICON="❌"
+            FULL_STATUS="FAILURE"
           fi
 
-          BRANCH="${{ inputs.branch }}"
-          COMMIT_URL="https://github.com/${{ inputs.repo }}/commit/${{ inputs.sha }}"
-          RUN_URL="https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}"
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          GITOPS_REPO_URL="https://github.com/${{ github.repository_owner }}/factory-chainline-gitops/tree/$BRANCH"
+          WEBHOOK_URL="$DISCORD_WEBHOOK"
+          REPO_URL="https://github.com/$REPO_NAME"
+          RUN_URL="$REPO_URL/actions/runs/$RUN_ID"
+          
+          MESSAGE="
+          $STATUS_ICON **CI/CD Pipeline Status: $FULL_STATUS**
+          **Repository:** [$REPO_NAME]($REPO_URL)
+          **Branch:** \`$BRANCH_NAME\`
+          **Commit:** \`$COMMIT_SHA\`
+          **Workflow Run:** [View Run]($RUN_URL)
 
-          JSON_PAYLOAD=$(jq -n \
-            --arg username "CI/CD Bot" \
-            --arg title "$STATUS" \
-            --argjson color "$COLOR" \
-            --arg repo "${{ inputs.repo }}" \
-            --arg branch "$BRANCH" \
-            --arg commit_url "$COMMIT_URL" \
-            --arg commit_msg "$COMMIT_MSG" \
-            --arg gitops_repo_url "$GITOPS_REPO_URL" \
-            --arg run_url "$RUN_URL" \
-            '{ "username": $username, "embeds": [{ "title": $title, "color": $color, "fields": [ { "name": "📘 App Repo", "value": "[\($repo)](https://github.com/\($repo))", "inline": true }, { "name": "🌿 Branch", "value": "`\($branch)`", "inline": true }, { "name": "📝 Commit", "value": "[\($commit_msg)](\($commit_url))" }, { "name": "🔄 GitOps Repo", "value": "[users-service-gitops](\($gitops_repo_url))" }, { "name": "🧪 Workflow", "value": "[Logs](\($run_url))" } ] }] }')
-
-          curl --fail --show-error -H "Content-Type: application/json" -X POST -d "$JSON_PAYLOAD" "$DISCORD_WEBHOOK_URL"
+          ---
+          **Job Results:**
+          - Unit Tests: \`$UNIT_TEST_RESULT\`
+          - Integration Tests: \`$INTEGRATION_TEST_RESULT\`
+          - E2E Tests: \`$E2E_TEST_RESULT\`
+          - Build & Push: \`$BUILD_RESULT\`
+          - GitOps Update: \`$GITOPS_RESULT\`
+          "
+          
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"$MESSAGE\"}" "$WEBHOOK_URL"
