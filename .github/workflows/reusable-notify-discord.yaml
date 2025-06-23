@@ -48,9 +48,19 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      - name: Set DISCORD_WEBHOOK
+        run: echo "DISCORD_WEBHOOK=${{ secrets.discord_webhook_url }}" >> $GITHUB_ENV
+      - name: Check DISCORD_WEBHOOK
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "Error: DISCORD_WEBHOOK is empty or undefined"
+            exit 1
+          else
+            echo "DISCORD_WEBHOOK is set"
+          fi
       - name: Send Discord Notification
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_ur }}
           UNIT_TEST_RESULT: ${{ inputs.unit_test_result }}
           INTEGRATION_TEST_RESULT: ${{ inputs.integration_test_result }}
           E2E_TEST_RESULT: ${{ inputs.e2e_test_result }}
