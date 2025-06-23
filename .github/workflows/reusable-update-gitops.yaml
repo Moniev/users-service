@@ -61,7 +61,7 @@ jobs:
             exit 1
           fi
           
-          yq e '(.spec.template.spec.containers[] | select(.name == "${{ inputs.service_name }}")).image = $new_image' \
+          /usr/bin/yq e '(.spec.template.spec.containers[] | select(.name == "${{ inputs.service_name }}")).image = $new_image' \
              --arg new_image "$FULL_IMAGE" \
              -i "$DEPLOYMENT_FILE"
 
