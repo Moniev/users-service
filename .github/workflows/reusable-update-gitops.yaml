@@ -6,9 +6,20 @@ on:
       image_tag:
         required: true
         type: string
+        description: "The full tag of the new image (e.g., v0.3.0-dev-a1b2c3d)"
       gitops_branch:
         required: true
         type: string
+        description: "The branch in the GitOps repo to update (e.g., development-branch)"
+      service_name:
+        required: true
+        type: string
+        description: "Name of the service to update (e.g., users-service)"
+      deployment_file_path:
+        required: true
+        type: string
+        description: "Path to the deployment manifest within the GitOps repo"
+
     secrets:
       gitops_deploy_key:
         required: true
@@ -18,7 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install yq
-        run: sudo pip install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Checkout GitOps Repository
         uses: actions/checkout@v4
@@ -26,32 +39,37 @@ jobs:
           repository: factory-chainline/factory-chainline-gitops
           ref: ${{ inputs.gitops_branch }}
           ssh-key: ${{ secrets.gitops_deploy_key }}
-          fetch-depth: 1
 
       - name: Update deployment YAML
+        id: update_yaml
         run: |
           set -euo pipefail
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/factory-chainline" 
-          FULL_IMAGE="${IMAGE_NAME}:${{ inputs.image_tag }}"
-          DEPLOYMENT_FILE="k8s/backend/backend-deployment.yml"
+          
+          IMAGE_BASENAME="ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}"
+          FULL_IMAGE="${IMAGE_BASENAME}:${{ inputs.image_tag }}"
+          DEPLOYMENT_FILE="${{ inputs.deployment_file_path }}"
 
-          echo "Updating $DEPLOYMENT_FILE with image: $FULL_IMAGE"
+          echo "Updating file: $DEPLOYMENT_FILE"
+          echo "New image: $FULL_IMAGE"
+
           if [ ! -f "$DEPLOYMENT_FILE" ]; then
-            echo "Error: $DEPLOYMENT_FILE does not exist"
+            echo "Error: Deployment file '$DEPLOYMENT_FILE' does not exist."
             exit 1
           fi
           
-          yq e ".spec.template.spec.containers[0].image = \"$FULL_IMAGE\"" -i "$DEPLOYMENT_FILE"
+          yq e '(.spec.template.spec.containers[] | select(.name == "${{ inputs.service_name }}")).image = strenv(FULL_IMAGE)' -i "$DEPLOYMENT_FILE"
 
       - name: Commit and push changes
         run: |
           set -euo pipefail
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions-bot@users.noreply.github.com"
-          git add k8s/backend/backend-deployment.yml
+
+          git add "${{ inputs.deployment_file_path }}"
+
           if git diff --staged --quiet; then
-            echo "No changes to commit."
+            echo "No changes to commit for ${{ inputs.service_name }}."
           else
-            git commit -m "ci: Update backend image to ${{ inputs.image_tag }}"
+            git commit -m "ci: Update ${{ inputs.service_name }} image to ${{ inputs.image_tag }}"
             git push
           fi
