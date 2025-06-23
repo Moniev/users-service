@@ -132,7 +132,7 @@ jobs:
           
           OVERALL_STATUS_ICON="✅"
           OVERALL_STATUS_TITLE="Pipeline Status: SUCCESS"
-          EMBED_COLOR=3066993 )
+          EMBED_COLOR=3066993 
 
           if [[ "$UNIT_TEST_RESULT" == "failure" || "$UNIT_TEST_RESULT" == "cancelled" || \
                 "$INTEGRATION_TEST_RESULT" == "failure" || "$INTEGRATION_TEST_RESULT" == "cancelled" || \
@@ -143,7 +143,7 @@ jobs:
             OVERALL_STATUS_TITLE="Pipeline Status: FAILURE"
             EMBED_COLOR=15158332 
           elif [[ "$UNIT_TEST_RESULT" == "skipped" && "$INTEGRATION_TEST_RESULT" == "skipped" && "$E2E_TEST_RESULT" == "skipped" && "$BUILD_RESULT" == "skipped" && "$GITOPS_RESULT" == "skipped" ]]; then
-            OVERALL_STATUS_ICON="🔮"
+            OVERALL_STATUS_ICON="⚪" 
             OVERALL_STATUS_TITLE="Pipeline Status: SKIPPED"
             EMBED_COLOR=8355711 
           fi
@@ -152,7 +152,7 @@ jobs:
             case "$1" in
               "success") echo "✅" ;;
               "failure") echo "❌" ;;
-              "skipped") echo "🔮" ;; 
+              "skipped") echo "⚪" ;; 
               "cancelled") echo "🚫" ;; 
               *) echo "❓" ;; 
             esac
@@ -186,7 +186,7 @@ jobs:
                     { "name": "\u200B", "value": "\u200B", "inline": false }, 
           
                     { "name": "📝 Commit", "value": "[\($commit_message)](\($commit_url))", "inline": false },
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, r
+                    { "name": "\u200B", "value": "\u200B", "inline": false },
           
                     { "name": "🔄 GitOps Repo", "value": "[users-service-gitops](\($gitops_repo_url))", "inline": false },
                     { "name": "\u200B", "value": "\u200B", "inline": false }, 
