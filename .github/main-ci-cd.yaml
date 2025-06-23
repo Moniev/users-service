@@ -1,0 +1,106 @@
+name: Main CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**' 
+  pull_request:
+    branches:
+      - development-branch
+      - test-environment
+      - production
+  workflow_dispatch:
+
+jobs:
+  setup:
+    name: Setup Workflow Context
+    runs-on: ubuntu-latest
+    outputs:
+      is_mainline_branch: ${{ steps.check_branch.outputs.is_mainline }}
+      is_pr: ${{ steps.check_event.outputs.is_pr }}
+    steps:
+      - name: Check branch name
+        id: check_branch
+        run: |
+          if [[ "${{ github.ref_name }}" == "development-branch" || \
+                "${{ github.ref_name }}" == "test-environment" || \
+                "${{ github.ref_name }}" == "production" ]]; then
+            echo "is_mainline=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_mainline=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Check event type
+        id: check_event
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "is_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_pr=false" >> $GITHUB_OUTPUT
+          fi
+
+  call-unit-tests:
+    name: Run Unit Tests
+    uses: ./.github/workflows/reusable-unit-tests.yml
+
+  call-integration-tests:
+    name: Run Integration Tests
+    needs: setup
+    if: needs.setup.outputs.is_pr == 'true' || needs.setup.outputs.is_mainline_branch == 'true'
+    uses: ./.github/workflows/reusable-integration-tests.yml
+
+  call-e2e-tests:
+    name: Run End-to-End Tests
+    needs: [call-unit-tests, call-integration-tests]
+    if: >-
+      (github.event_name == 'push' && github.ref_name == 'test-environment') ||
+      (github.event_name == 'pull_request' && github.base_ref == 'test-environment' && github.head_ref == 'development-branch')
+    uses: ./.github/workflows/reusable-e2e-tests.yml
+  call-build-workflow:
+    name: Build & Push Docker Image
+    needs: [setup, call-unit-tests, call-integration-tests, call-e2e-tests]
+    if: >
+      needs.setup.outputs.is_mainline_branch == 'true' &&
+      needs.setup.outputs.is_pr == 'false' &&
+      needs.call-unit-tests.result == 'success' &&
+      needs.call-integration-tests.result == 'success' &&
+      (needs.call-e2e-tests.result == 'success' || needs.call-e2e-tests.result == 'skipped')
+    uses: ./.github/workflows/reusable-build-push.yml
+    with:
+      version: "v0.3.0"
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  call-gitops-workflow:
+    name: Update GitOps Manifest
+    needs: call-build-workflow 
+    if: needs.call-build-workflow.result == 'success' 
+    uses: ./.github/workflows/reusable-update-gitops.yml
+    with:
+      image_tag: ${{ needs.call-build-workflow.outputs.tag }}
+      gitops_branch: ${{ needs.call-build-workflow.outputs.branch }}
+    secrets:
+      gitops_deploy_key: ${{ secrets.GITOPS_DEPLOY_KEY }}
+
+  call-notify-workflow:
+    name: Notify on Discord
+    needs: 
+      - setup 
+      - call-unit-tests
+      - call-integration-tests
+      - call-e2e-tests
+      - call-build-workflow
+      - call-gitops-workflow
+    if: always() 
+    uses: ./.github/workflows/reusable-notify-discord.yml
+    with:
+      unit_test_result: ${{ needs.call-unit-tests.result }}
+      integration_test_result: ${{ needs.call-integration-tests.result }}
+      e2e_test_result: ${{ needs.call-e2e-tests.result }}
+      build_result: ${{ needs.call-build-workflow.result }}
+      gitops_result: ${{ needs.call-gitops-workflow.result }}
+      branch: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      repo: ${{ github.repository }}
+      sha: ${{ github.sha }}
+      run_id: ${{ github.run_id }}
+    secrets:
+      discord_webhook_url: ${{ secrets.NOTIFICATIONS_HUB }}

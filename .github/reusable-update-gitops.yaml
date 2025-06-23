@@ -1,0 +1,57 @@
+name: Reusable - Update GitOps Manifest
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
+      gitops_branch:
+        required: true
+        type: string
+    secrets:
+      gitops_deploy_key:
+        required: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install yq
+        run: sudo pip install yq
+
+      - name: Checkout GitOps Repository
+        uses: actions/checkout@v4
+        with:
+          repository: factory-chainline/factory-chainline-gitops
+          ref: ${{ inputs.gitops_branch }}
+          ssh-key: ${{ secrets.gitops_deploy_key }}
+          fetch-depth: 1
+
+      - name: Update deployment YAML
+        run: |
+          set -euo pipefail
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/factory-chainline" # Uproszczone, dostosuj w razie potrzeby
+          FULL_IMAGE="${IMAGE_NAME}:${{ inputs.image_tag }}"
+          DEPLOYMENT_FILE="k8s/backend/backend-deployment.yml"
+
+          echo "Updating $DEPLOYMENT_FILE with image: $FULL_IMAGE"
+          if [ ! -f "$DEPLOYMENT_FILE" ]; then
+            echo "Error: $DEPLOYMENT_FILE does not exist"
+            exit 1
+          fi
+          
+          yq e ".spec.template.spec.containers[0].image = \"$FULL_IMAGE\"" -i "$DEPLOYMENT_FILE"
+
+      - name: Commit and push changes
+        run: |
+          set -euo pipefail
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions-bot@users.noreply.github.com"
+          git add k8s/backend/backend-deployment.yml
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "ci: Update backend image to ${{ inputs.image_tag }}"
+            git push
+          fi

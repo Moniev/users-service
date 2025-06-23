@@ -1,0 +1,138 @@
+{
+  "description": "Comprehensive tests for the User model, including state, business logic, and retrieval methods.",
+  "setup_data": [
+    {
+      "model": "User",
+      "data": {
+        "id": 101,
+        "uuid": "f8a9b3d0-5e6f-4c7b-8a9d-1e2f3a4b5c6d",
+        "mail": "existing.user@example.com",
+        "phone": "+48500500500",
+        "password": "correct_password",
+        "active": true,
+        "verified": true
+      }
+    },
+    {
+      "model": "UserSettings",
+      "data": { "user_id": 101, "theme": "dark", "notifications_enabled": false }
+    },
+    {
+      "model": "UserDevice",
+      "data": { "user_id": 101, "device_id": "device-1", "device_type": "mobile" }
+    },
+    {
+      "model": "UserDevice",
+      "data": { "user_id": 101, "device_id": "device-2", "device_type": "desktop" }
+    },
+    {
+      "model": "ActivationCode",
+      "data": { "user_id": 101, "code": "ACTIVATION-123" }
+    },
+    {
+      "model": "VerificationCode",
+      "data": { "user_id": 101, "code": "VERIFY-456" }
+    }
+  ],
+  "test_cases": [
+    {
+      "description": "1. Initial State & Data Integrity Verification",
+      "assertions": [
+        {
+          "type": "row_count", "params": { "model": "User", "expected": 1 }
+        },
+        {
+          "type": "row_count", "params": { "model": "UserSettings", "expected": 1 }
+        },
+        {
+          "type": "row_count", "params": { "model": "UserDevice", "expected": 2 }
+        },
+        {
+          "type": "row_count", "params": { "model": "ActivationCode", "expected": 1 }
+        },
+        {
+          "type": "attribute_equals",
+          "params": {
+            "model": "User", "lookup": { "id": 101 }, "attribute": "mail", "expected": "existing.user@example.com"
+          }
+        },
+        {
+            "type": "attribute_equals",
+            "params": {
+              "model": "User", "lookup": { "id": 101 }, "attribute": "active", "expected": true
+            }
+        },
+        {
+          "type": "attribute_equals",
+          "params": {
+            "model": "User", "lookup": { "id": 101 }, "attribute": "settings.theme", "expected": "dark"
+          }
+        },
+        {
+          "type": "collection_has_length",
+          "params": {
+            "model": "User", "lookup": { "id": 101 }, "attribute": "devices", "expected": 2
+          }
+        }
+      ]
+    },
+    {
+      "description": "3. User Authentication Logic",
+      "assertions": [
+        {
+          "type": "execute_function",
+          "params": {
+            "function_name": "user_verify_password",
+            "function_params": { "mail": "existing.user@example.com", "password": "correct_password" },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        },
+        {
+          "type": "execute_function",
+          "params": {
+            "function_name": "user_verify_password",
+            "function_params": { "mail": "existing.user@example.com", "password": "wrong_password" },
+            "expected_result": { "operator": "is_none" }
+          }
+        }
+      ]
+    },
+    {
+      "description": "4. User Retrieval Methods",
+      "assertions": [
+        {
+          "type": "execute_function",
+          "params": {
+            "function_name": "user_get_user_by_id",
+            "function_params": { "id": 101 },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        },
+         {
+          "type": "execute_function",
+          "params": {
+            "function_name": "user_get_user_by_id",
+            "function_params": { "id": 102 },
+            "expected_result": { "operator": "is_none" }
+          }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_mail",
+              "function_params": { "mail": "existing.user@example.com" },
+              "expected_result": { "operator": "is_not_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_mail",
+              "function_params": { "mail": "notexisting.user@example.com" },
+              "expected_result": { "operator": "is_none" }
+            }
+        }
+      ]
+    }
+  ]
+}

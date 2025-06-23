@@ -1,0 +1,69 @@
+name: Reusable - Notify Discord
+
+on:
+  workflow_call:
+    inputs:
+      build_result:
+        required: true
+        type: string
+      gitops_result:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+      repo:
+        required: true
+        type: string
+      sha:
+        required: true
+        type: string
+      run_id:
+        required: true
+        type: string
+    secrets:
+      discord_webhook_url:
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.discord_webhook_url }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ inputs.build_result }}" == "success" && ("${{ inputs.gitops_result }}" == "success" || "${{ inputs.gitops_result }}" == "skipped") ]]; then
+            STATUS="✅ Build & Deploy Succeeded"
+            COLOR=3066993
+          else
+            STATUS="❌ Workflow Failed"
+            COLOR=15158332
+          fi
+
+          BRANCH="${{ inputs.branch }}"
+          COMMIT_URL="https://github.com/${{ inputs.repo }}/commit/${{ inputs.sha }}"
+          RUN_URL="https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}"
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          GITOPS_REPO_URL="https://github.com/${{ github.repository_owner }}/factory-chainline-gitops/tree/$BRANCH"
+
+          JSON_PAYLOAD=$(jq -n \
+            --arg username "CI/CD Bot" \
+            --arg title "$STATUS" \
+            --argjson color "$COLOR" \
+            --arg repo "${{ inputs.repo }}" \
+            --arg branch "$BRANCH" \
+            --arg commit_url "$COMMIT_URL" \
+            --arg commit_msg "$COMMIT_MSG" \
+            --arg gitops_repo_url "$GITOPS_REPO_URL" \
+            --arg run_url "$RUN_URL" \
+            '{ "username": $username, "embeds": [{ "title": $title, "color": $color, "fields": [ { "name": "📘 App Repo", "value": "[\($repo)](https://github.com/\($repo))", "inline": true }, { "name": "🌿 Branch", "value": "`\($branch)`", "inline": true }, { "name": "📝 Commit", "value": "[\($commit_msg)](\($commit_url))" }, { "name": "🔄 GitOps Repo", "value": "[users-service-gitops](\($gitops_repo_url))" }, { "name": "🧪 Workflow", "value": "[Logs](\($run_url))" } ] }] }')
+
+          curl --fail --show-error -H "Content-Type: application/json" -X POST -d "$JSON_PAYLOAD" "$DISCORD_WEBHOOK_URL"
