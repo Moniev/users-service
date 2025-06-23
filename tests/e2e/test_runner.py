@@ -34,6 +34,7 @@ def get_nested_attribute(instance, attribute_path: str):
 
 
 @pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_assertion_runner(prepared_session_factory, assertion_data):
     session_factory = prepared_session_factory
     assertion_type = assertion_data["type"]
