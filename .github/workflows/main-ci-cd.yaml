@@ -40,13 +40,13 @@ jobs:
 
   call-unit-tests:
     name: Run Unit Tests
-    uses: ./.github/workflows/reusable-unit-tests.yml
+    uses: ./.github/workflows/reusable-unit-tests.yaml
 
   call-integration-tests:
     name: Run Integration Tests
     needs: setup
     if: needs.setup.outputs.is_pr == 'true' || needs.setup.outputs.is_mainline_branch == 'true'
-    uses: ./.github/workflows/reusable-integration-tests.yml
+    uses: ./.github/workflows/reusable-integration-tests.yaml
 
   call-e2e-tests:
     name: Run End-to-End Tests
@@ -54,7 +54,7 @@ jobs:
     if: >-
       (github.event_name == 'push' && github.ref_name == 'test-environment') ||
       (github.event_name == 'pull_request' && github.base_ref == 'test-environment' && github.head_ref == 'development-branch')
-    uses: ./.github/workflows/reusable-e2e-tests.yml
+    uses: ./.github/workflows/reusable-e2e-tests.yaml
   call-build-workflow:
     name: Build & Push Docker Image
     needs: [setup, call-unit-tests, call-integration-tests, call-e2e-tests]
@@ -64,7 +64,7 @@ jobs:
       needs.call-unit-tests.result == 'success' &&
       needs.call-integration-tests.result == 'success' &&
       (needs.call-e2e-tests.result == 'success' || needs.call-e2e-tests.result == 'skipped')
-    uses: ./.github/workflows/reusable-build-push.yml
+    uses: ./.github/workflows/reusable-build-push.yaml
     with:
       version: "v0.3.0"
     secrets:
@@ -74,7 +74,7 @@ jobs:
     name: Update GitOps Manifest
     needs: call-build-workflow 
     if: needs.call-build-workflow.result == 'success' 
-    uses: ./.github/workflows/reusable-update-gitops.yml
+    uses: ./.github/workflows/reusable-update-gitops.yaml
     with:
       image_tag: ${{ needs.call-build-workflow.outputs.tag }}
       gitops_branch: ${{ needs.call-build-workflow.outputs.branch }}
@@ -91,7 +91,7 @@ jobs:
       - call-build-workflow
       - call-gitops-workflow
     if: always() 
-    uses: ./.github/workflows/reusable-notify-discord.yml
+    uses: ./.github/workflows/reusable-notify-discord.yaml
     with:
       unit_test_result: ${{ needs.call-unit-tests.result }}
       integration_test_result: ${{ needs.call-integration-tests.result }}
