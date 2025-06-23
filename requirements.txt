@@ -13,3 +13,4 @@ PyYAML==6.0.2
 PyYAML==6.0.2
 SQLAlchemy==2.0.35
 uvicorn==0.34.3
+asyncpg
