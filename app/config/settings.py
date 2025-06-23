@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     DB_USER: str | None = "postgres"
     DB_PASSWORD: str | None = "postgres"
     DB_HOST: str | None = "localhost"
-    DB_PORT: str | None = "5432"
+    DB_PORT: int | None = 5432
     DB_NAME: str | None = "postgres"
     
     @computed_field
