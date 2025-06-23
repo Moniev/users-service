@@ -8,9 +8,12 @@ from app.models.schema.activation_code import ActivationCode
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from typing import Tuple, Optional
 
-from app.config.database import async_session_loader
+
+
+
 
 router: APIRouter = APIRouter(
     prefix="/auth",

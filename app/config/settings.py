@@ -4,11 +4,11 @@ from pydantic import computed_field, AmqpDsn, PostgresDsn
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    DB_USER: str = "postgres"
-    DB_PASSWORD: str = "postgres"
-    DB_HOST: str = "localhost"
-    DB_PORT: int = 5432
-    DB_NAME: str = "postgres"
+    DB_USER: str | None = "postgres"
+    DB_PASSWORD: str | None = "postgres"
+    DB_HOST: str | None = "localhost"
+    DB_PORT: str | None = 5432
+    DB_NAME: str | None = "postgres"
     
     @computed_field
     @property
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str | None = None
     
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
-    KAFKA_CLIENT_ID: str = "my-fastapi-app"
+    KAFKA_CLIENT_ID: str = "users-service"
     KAFKA_SECURITY_PROTOCOL: str = "SASL_SSL"  
     KAFKA_SASL_MECHANISM: str | None = None      
     KAFKA_SASL_USERNAME: str | None = None
