@@ -113,8 +113,11 @@ jobs:
             echo "Error: DISCORD_WEBHOOK is empty or undefined. Please check workflow secrets."
             exit 1
           fi
-          echo "Webhook URL is set (length: ${#DISCORD_WEBHOOK})"
+          
+          WEBHOOK_URL=$(echo "$DISCORD_WEBHOOK" | tr -d '[:space:]')
 
+          echo "Webhook URL is set (length: ${#WEBHOOK_URL})" # Use WEBHOOK_URL here
+          
           OVERALL_STATUS_ICON="✅"
           OVERALL_STATUS_TITLE="Pipeline Status: SUCCESS"
           EMBED_COLOR=65280 # Green (0x00FF00)
@@ -137,9 +140,9 @@ jobs:
             case "$1" in
               "success") echo "✅" ;;
               "failure") echo "❌" ;;
-              "skipped") echo "⚪" ;; # White circle for skipped
-              "cancelled") echo "🚫" ;; # No entry sign for cancelled
-              *) echo "❓" ;; # Question mark for unknown
+              "skipped") echo "⚪" ;;
+              "cancelled") echo "🚫" ;;
+              *) echo "❓" ;;
             esac
           }
 
@@ -162,22 +165,22 @@ jobs:
                   "fields": [
                     { "name": "📘 App Repo", "value": "[\($repo)](\($repo_url))", "inline": true },
                     { "name": "🌿 Branch", "value": "`\($branch)`", "inline": true },
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+                    { "name": "\u200B", "value": "\u200B", "inline": false },
           
                     { "name": "🐳 Image", "value": "\($image_tag == "N/A" and "N/A" or "[\($image_tag)](\($image_url))")", "inline": true },
                     { "name": "📦 GHCR", "value": "\($image_tag == "N/A" and "N/A" or "[ghcr.io](\($image_url))")", "inline": true },
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+                    { "name": "\u200B", "value": "\u200B", "inline": false },
           
-                    { "name": "📝 Commit", "value": "[\($commit_message)](\($commit_url))", "inline": false }, # Not inline
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+                    { "name": "📝 Commit", "value": "[\($commit_message)](\($commit_url))", "inline": false },
+                    { "name": "\u200B", "value": "\u200B", "inline": false },
           
-                    { "name": "🔄 GitOps Repo", "value": "[s8lls-backend-gitops](\($gitops_repo_url))", "inline": false }, # Not inline
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+                    { "name": "🔄 GitOps Repo", "value": "[s8lls-backend-gitops](\($gitops_repo_url))", "inline": false },
+                    { "name": "\u200B", "value": "\u200B", "inline": false },
           
-                    { "name": "🧪 Workflow Logs", "value": "[View Logs](\($run_url))", "inline": false }, # Not inline
-                    { "name": "\u200B", "value": "\u200B", "inline": false }, # Newline separator
+                    { "name": "🧪 Workflow Logs", "value": "[View Logs](\($run_url))", "inline": false },
+                    { "name": "\u200B", "value": "\u200B", "inline": false },
           
-                    { "name": "---", "value": "**Job Results:**", "inline": false }, # Section separator
+                    { "name": "---", "value": "**Job Results:**", "inline": false },
           
                     { "name": "Unit Tests", "value": "\($unit_test_emoji) `\($unit_test_result)`", "inline": true },
                     { "name": "Integration Tests", "value": "\($integration_test_emoji) `\($integration_test_result)`", "inline": true },
