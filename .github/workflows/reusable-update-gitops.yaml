@@ -61,7 +61,9 @@ jobs:
             exit 1
           fi
           
-          yq e '(.spec.template.spec.containers[] | select(.name == "${{ inputs.service_name }}")).image = strenv(FULL_IMAGE)' -i "$DEPLOYMENT_FILE"
+          yq e '(.spec.template.spec.containers[] | select(.name == "${{ inputs.service_name }}")).image = $new_image' \
+             --arg new_image "$FULL_IMAGE" \
+             -i "$DEPLOYMENT_FILE"
 
       - name: Commit and push changes
         run: |
