@@ -58,10 +58,10 @@ jobs:
         id: set-image-tags 
         run: |
           set -e 
-          BRANCH="${GITHUB_REF##*/}" # Gets the branch name
-          SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7) # Gets the short commit SHA
+          BRANCH="${GITHUB_REF##*/}" 
+          SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7) 
           REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]') 
-          VERSION="${{ inputs.version }}" # Version passed as input
+          VERSION="${{ inputs.version }}" 
 
           case "$BRANCH" in
             development-branch) TAG_NAME="${VERSION}-dev-${SHA_SHORT}" ;;
