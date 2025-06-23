@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     DB_USER: str | None = "postgres"
     DB_PASSWORD: str | None = "postgres"
     DB_HOST: str | None = "localhost"
-    DB_PORT: str | None = 5432
+    DB_PORT: str | None = "5432"
     DB_NAME: str | None = "postgres"
     
     @computed_field
@@ -52,7 +52,5 @@ class Settings(BaseSettings):
         auth = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
         
         return f"{scheme}://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
-
-
 
 settings: Settings = Settings()
