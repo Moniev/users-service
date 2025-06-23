@@ -9,7 +9,7 @@ app/logs
 tests/logs
 app_log_*.json
 
-start.sh
+./start.sh
 
 ./k8s/*.yaml
 ./k8s/certificates/*.pem

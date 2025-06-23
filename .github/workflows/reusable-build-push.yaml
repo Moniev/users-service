@@ -10,19 +10,13 @@ on:
       dockerfile_path:
         required: false
         type: string
-        default: "./k8s/docker/Dockerfile" 
+        default: "./k8s/docker/Dockerfile"
         description: "Path to the Dockerfile"
       context_path:
         required: false
         type: string
-        default: "." 
+        default: "."
         description: "Path to the Docker build context (e.g., repository root)"
-
-    secrets:
-      gh_token:
-        required: true
-        description: "GitHub Token for Container Registry access"
-
     outputs:
       tag:
         description: "The generated Docker image tag (e.g., 1.0.0-dev-abcdefg)"
@@ -33,13 +27,13 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.set-image-tags.outputs.tag }} 
-      branch: ${{ steps.set-image-tags.outputs.branch }} 
+      tag: ${{ steps.set-image-tags.outputs.tag }}
+      branch: ${{ steps.set-image-tags.outputs.branch }}
     permissions:
       contents: read
-      packages: write
+      packages: write 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,38 +46,45 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.github_token }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set image tags
-        id: set-image-tags 
+        id: set-image-tags
         run: |
-          set -e 
-          BRANCH="${GITHUB_REF##*/}" 
-          SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7) 
-          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]') 
-          VERSION="${{ inputs.version }}" 
+          set -e
+          BRANCH="${GITHUB_REF##*/}"
+          SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          VERSION="${{ inputs.version }}"
 
           case "$BRANCH" in
             development-branch) TAG_NAME="${VERSION}-dev-${SHA_SHORT}" ;;
-            test-environment) TAG_NAME="${VERSION}-test-${SHA_SHORT}" ;;
-            production) TAG_NAME="${VERSION}" ;; 
-            *) TAG_NAME="dev-${SHA_SHORT}" ;; 
+            test-environment)   TAG_NAME="${VERSION}-test-${SHA_SHORT}" ;;
+            production)         TAG_NAME="${VERSION}" ;;
+            *)                  TAG_NAME="dev-${SHA_SHORT}" ;;
           esac
 
           IMAGE_NAME="ghcr.io/$REPO_NAME"
+          LATEST_TAG_ALIAS="$BRANCH"
           
+          ALL_TAGS="${IMAGE_NAME}:${TAG_NAME}\n${IMAGE_NAME}:${LATEST_TAG_ALIAS}"
+          
+          if [ "$BRANCH" = "production" ]; then
+            ALL_TAGS="${ALL_TAGS}\n${IMAGE_NAME}:latest"
+          fi
+
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-          echo "latest_tag_alias=$BRANCH" >> $GITHUB_OUTPUT 
+          # Używamy heredoc do bezpiecznego przekazania wieloliniowej listy tagów
+          echo "all_tags<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$ALL_TAGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Build and push image
-        uses: docker/build-push-action@v5 
+        uses: docker/build-push-action@v5
         with:
-          context: ${{ inputs.context_path }} 
+          context: ${{ inputs.context_path }}
           file: ${{ inputs.dockerfile_path }}
           push: true
-          tags: |
-            ${{ steps.set-image-tags.outputs.image_name }}:${{ steps.set-image-tags.outputs.tag }}
-            ${{ steps.set-image-tags.outputs.image_name }}:${{ steps.set-image-tags.outputs.latest_tag_alias }}
-            ${{ startsWith(steps.set-image-tags.outputs.latest_tag_alias, 'production') && format('{0}:latest', steps.set-image-tags.outputs.image_name) || '' }}
+          tags: ${{ steps.set-image-tags.outputs.all_tags }}

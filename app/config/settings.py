@@ -49,9 +49,9 @@ class Settings(BaseSettings):
     @property
     def REDIS_URI(self) -> str:
         scheme = "rediss" if self.REDIS_SSL_CA_PATH else "redis"
-        password = f":{self.REDIS_PASSWORD}" if self.REDIS_PASSWORD else ""
+        auth = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
         
-        return f"{scheme}://{password}@{self.REDIS_HOST}:{self.PORT}/{self.DB}"
+        return f"{scheme}://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 
 
