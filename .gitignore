@@ -8,3 +8,10 @@ __pycache__
 app/logs
 tests/logs
 app_log_*.json
+
+start.sh
+
+./k8s/*.yaml
+./k8s/certificates/*.pem
+./k8s/certificates/*.clr
+./k8s/certificates/*.crt
