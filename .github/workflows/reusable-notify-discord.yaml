@@ -1,3 +1,5 @@
+# .github/workflows/reusable-notify-discord.yml
+
 name: Reusable - Notify Discord
 
 on:
@@ -48,19 +50,10 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Set DISCORD_WEBHOOK
-        run: echo "DISCORD_WEBHOOK=${{ secrets.discord_webhook_url }}" >> $GITHUB_ENV
-      - name: Check DISCORD_WEBHOOK
-        run: |
-          if [ -z "$DISCORD_WEBHOOK" ]; then
-            echo "Error: DISCORD_WEBHOOK is empty or undefined"
-            exit 1
-          else
-            echo "DISCORD_WEBHOOK is set"
-          fi
       - name: Send Discord Notification
         env:
-          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_ur }}
+          # CORRECTED TYPO: ${{ secrets.discord_webhook_url }}
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_url }} # <--- FIXED HERE
           UNIT_TEST_RESULT: ${{ inputs.unit_test_result }}
           INTEGRATION_TEST_RESULT: ${{ inputs.integration_test_result }}
           E2E_TEST_RESULT: ${{ inputs.e2e_test_result }}
@@ -71,13 +64,16 @@ jobs:
           COMMIT_SHA: ${{ inputs.sha }}
           RUN_ID: ${{ inputs.run_id }}
         run: |
+          # The check for DISCORD_WEBHOOK can remain, it's good defensive programming
           if [ -z "$DISCORD_WEBHOOK" ]; then
-            echo "Error: DISCORD_WEBHOOK is empty or undefined"
+            echo "Error: DISCORD_WEBHOOK is empty or undefined. Please check workflow secrets."
             exit 1
           fi
           echo "Webhook URL is set (length: ${#DISCORD_WEBHOOK})"
+
           STATUS_ICON="✅"
           FULL_STATUS="SUCCESS"
+          # Logic for overall status
           if [[ "$UNIT_TEST_RESULT" != "success" || \
                 "$INTEGRATION_TEST_RESULT" != "success" || \
                 ("$E2E_TEST_RESULT" != "success" && "$E2E_TEST_RESULT" != "skipped") || \
@@ -86,15 +82,18 @@ jobs:
             STATUS_ICON="❌"
             FULL_STATUS="FAILURE"
           fi
+
           WEBHOOK_URL="$DISCORD_WEBHOOK"
           REPO_URL="https://github.com/$REPO_NAME"
           RUN_URL="$REPO_URL/actions/runs/$RUN_ID"
+
           MESSAGE="
           $STATUS_ICON **CI/CD Pipeline Status: $FULL_STATUS**
           **Repository:** [$REPO_NAME]($REPO_URL)
           **Branch:** \`$BRANCH_NAME\`
           **Commit:** \`$COMMIT_SHA\`
           **Workflow Run:** [View Run]($RUN_URL)
+
           ---
           **Job Results:**
           - Unit Tests: \`$UNIT_TEST_RESULT\`
@@ -103,8 +102,15 @@ jobs:
           - Build & Push: \`$BUILD_RESULT\`
           - GitOps Update: \`$GITOPS_RESULT\`
           "
+          # Escape double quotes for JSON payload
+          ESCAPED_MESSAGE=$(echo "$MESSAGE" | sed 's/"/\\"/g')
+
+          # Use a dedicated Discord action for better reliability and features,
+          # or ensure your curl command is robust.
+          # For example: https://github.com/wei/discord-webhook
+          
           curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"$MESSAGE\"}" "$WEBHOOK_URL" || {
+            -d "{\"content\": \"$ESCAPED_MESSAGE\"}" "$WEBHOOK_URL" || {
             echo "curl failed with exit code $?"
             exit 1
           }
