@@ -12,9 +12,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from typing import Tuple, Optional
 
 
-
-
-
 router: APIRouter = APIRouter(
     prefix="/auth",
     tags=["controller responsible for user authentication"]
