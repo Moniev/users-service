@@ -65,6 +65,9 @@ jobs:
       needs.call-integration-tests.result == 'success' &&
       (needs.call-e2e-tests.result == 'success' || needs.call-e2e-tests.result == 'skipped')
     uses: ./.github/workflows/reusable-build-push.yaml
+    permissions:
+      contents: read 
+      packages: write
     with:
       version: "v0.3.0"
     secrets:
