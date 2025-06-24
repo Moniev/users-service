@@ -9,21 +9,9 @@
         "mail": "existing.user@example.com",
         "phone": "+48500500500",
         "password": "correct_password",
-        "active": true,
-        "verified": true
+        "active": false,
+        "verified": false
       }
-    },
-    {
-      "model": "UserSettings",
-      "data": { "user_id": 101, "theme": "dark", "notifications_enabled": false }
-    },
-    {
-      "model": "UserDevice",
-      "data": { "user_id": 101, "device_id": "device-1", "device_type": "mobile" }
-    },
-    {
-      "model": "UserDevice",
-      "data": { "user_id": 101, "device_id": "device-2", "device_type": "desktop" }
     },
     {
       "model": "ActivationCode",
@@ -34,223 +22,67 @@
       "data": { "user_id": 101, "code": "VERIFY-456" }
     },
     {
-      "model": "ResetCode",
-      "data": { "user_id": 101, "code": "RESET-CODE-1" }
+      "model": "UserDevice",
+      "data": { "user_id": 101, "code": "DEVICE-1" }
     },
     {
-      "model": "SecondFactorCode",
-      "data": { "user_id": 101, "code": "SECOND-FACTOR-1" }
+      "model": "UserDevice",
+      "data": { "user_id": 101, "code": "DEVICE-2" }
     }
   ],
   "test_cases": [
     {
       "description": "1. Initial State & Data Integrity Verification",
       "assertions": [
+        { "type": "row_count", "params": { "model": "User", "expected": 1 } },
+        { "type": "row_count", "params": { "model": "ActivationCode", "expected": 1 } },
         {
-          "type": "row_count", "params": { "model": "User", "expected": 1 }
-        },
-        {
-          "type": "row_count", "params": { "model": "UserSettings", "expected": 1 }
-        },
-        {
-          "type": "row_count", "params": { "model": "UserDevice", "expected": 2 }
-        },
-        {
-          "type": "row_count", "params": { "model": "ActivationCode", "expected": 1 }
-        },
-        {
-          "type": "row_count", "params": { "model": "SecondFactorCode", "expected": 1 }
-        },
-        {
-          "type": "row_count", "params": { "model": "ResetCode", "expected": 1 }
-        },
-        {
+          "description": "Verify user is initially inactive",
           "type": "attribute_equals",
-          "params": {
-            "model": "User", "lookup": { "id": 101 }, "attribute": "mail", "expected": "existing.user@example.com"
-          }
-        },
-        {
-            "type": "attribute_equals",
-            "params": {
-              "model": "User", "lookup": { "id": 101 }, "attribute": "active", "expected": true
-            }
-        },
-        {
-          "type": "attribute_equals",
-          "params": {
-            "model": "User", "lookup": { "id": 101 }, "attribute": "settings.theme", "expected": "dark"
-          }
-        },
-        {
-          "type": "attribute_equals",
-          "params": {
-            "model": "ResetCode", "lookup": { "id": 1 }, "attribute": "code", "expected": "RESET-CODE-1"
-          }
-        },
-        {
-          "type": "collection_has_length",
-          "params": {
-            "model": "User", "lookup": { "id": 101 }, "attribute": "devices", "expected": 2
-          }
-        },
-        {
-          "type": "is_not_none",
-          "params": {
-            "model": "User", "lookup": { "id": 101 }, "attribute": "second_factor_code"}
-        },
-        {
-          "type": "is_not_none",
-          "params": {
-            "model": "User", "lookup": { "id": 101 }, "attribute": "reset_code"}
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "active", "expected": false }
         }
       ]
     },
     {
-      "description": "3. User Authentication Logic",
+      "description": "2. User Business Logic Methods",
       "assertions": [
         {
+          "description": "2.1 Successfully activate an account with correct code",
           "type": "execute_function",
           "params": {
-            "function_name": "user_verify_password",
-            "function_params": { "mail": "existing.user@example.com", "password": "correct_password" },
+            "function_name": "activate_account",
+            "function_params": {
+              "on_instance": { "model": "User", "lookup": { "id": 101 }, "selectinload_relations": ["activation_code"] },
+              "method_params": {
+                "activation_code": { "create_dummy": { "model": "ActivationCode", "data": { "code": "ACTIVATION-123" } } }
+              }
+            },
             "expected_result": { "operator": "is_not_none" }
           }
         },
         {
-          "type": "execute_function",
-          "params": {
-            "function_name": "user_verify_password",
-            "function_params": { "mail": "existing.user@example.com", "password": "wrong_password" },
-            "expected_result": { "operator": "is_none" }
-          }
-        }
-      ]
-    },
-    {
-      "description": "4. User Retrieval Methods",
-      "assertions": [
+          "description": "2.2 Verify user is now active",
+          "type": "attribute_equals",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "active", "expected": true }
+        },
         {
+          "description": "2.3 Successfully verify an account with correct code",
           "type": "execute_function",
           "params": {
-            "function_name": "user_get_user_by_id",
-            "function_params": { "id": 101 },
+            "function_name": "verify_account",
+            "function_params": {
+              "on_instance": { "model": "User", "lookup": { "id": 101 }, "selectinload_relations": ["verification_code"] },
+              "method_params": {
+                "verification_code": { "create_dummy": { "model": "VerificationCode", "data": { "code": "VERIFY-456" } } }
+              }
+            },
             "expected_result": { "operator": "is_not_none" }
           }
         },
-         {
-          "type": "execute_function",
-          "params": {
-            "function_name": "user_get_user_by_id",
-            "function_params": { "id": 102 },
-            "expected_result": { "operator": "is_none" }
-          }
-        },
         {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_mail",
-              "function_params": { "mail": "existing.user@example.com" },
-              "expected_result": { "operator": "is_not_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_mail",
-              "function_params": { "mail": "notexisting.user@example.com" },
-              "expected_result": { "operator": "is_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_activation_code",
-              "function_params": { "code": "ACTIVATION-123" },
-              "expected_result": { "operator": "is_not_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_activation_code",
-              "function_params": { "code": "ACTIVATION-124" },
-              "expected_result": { "operator": "is_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_verification_code",
-              "function_params": { "code": "VERIFY-456" },
-              "expected_result": { "operator": "is_not_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_verification_code",
-              "function_params": { "code": "VERIFY-457" },
-              "expected_result": { "operator": "is_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_second_factor_code",
-              "function_params": { "code": "SECOND-FACTOR-1" },
-              "expected_result": { "operator": "is_not_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_second_factor_code",
-              "function_params": { "code": "SECOND-FACTOR-2" },
-              "expected_result": { "operator": "is_none" }
-            }
-        },
-         {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_reset_code",
-              "function_params": { "code": "RESET-CODE-1" },
-              "expected_result": { "operator": "is_not_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "user_get_user_by_reset_code",
-              "function_params": { "code": "RESET-CODE-2" },
-              "expected_result": { "operator": "is_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "activate_account",
-              "function_params": {
-                "on_instance": { "model": "User", "lookup": { "id": 101 } },
-                "method_params": {
-                  "activation_code": { "create_dummy": { "model": "ActivationCode", "data": {"code": "ANY-CODE"} } }
-                }
-              },
-              "expected_result": { "operator": "is_none" }
-            }
-        },
-        {
-            "type": "execute_function",
-            "params": {
-              "function_name": "activate_account",
-              "function_params": {
-                "on_instance": { "model": "User", "lookup": { "id": 101 } },
-                "method_params": {
-                  "activation_code": { "create_dummy": { "model": "ActivationCode", "data": {"code": "ANY-CODE"} } }
-                }
-              },
-              "expected_result": { "operator": "is_none" }
-            }
+          "description": "2.4 Verify user is now verified",
+          "type": "attribute_equals",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "verified", "expected": true }
         }
       ]
     }

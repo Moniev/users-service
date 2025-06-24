@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .user_details import UserDetails
@@ -166,7 +166,7 @@ class User(Base):
     
     @classmethod
     async def verify_password(cls, async_session: async_sessionmaker[AsyncSession], mail: str, password: str) -> User:
-        user: Optional[User] = await cls.get_user_by_mail(async_session, mail)
+        user: Optional['User'] = await cls.get_user_by_mail(async_session, mail)
 
         if not user:
             return None
@@ -183,10 +183,11 @@ class User(Base):
     
     @classmethod
     async def register(cls, async_session: async_sessionmaker[AsyncSession], mail: str, password: str) -> Optional[Tuple[User, ActivationCode]]:
+        from .activation_code import ActivationCode
         async with async_session() as session:
             existing_user = await cls.get_user_by_mail(async_session=async_session, mail=mail)
             if existing_user:
-                logger.warning(f"Mail already exists is database")
+                logger.warning(f"Mail '{mail}' already exists in database.")
                 return None
 
             try:
@@ -194,18 +195,14 @@ class User(Base):
                 activation_code = ActivationCode.create_activation_code() 
                 user.activation_code = activation_code
                 session.add(user)
-
                 await session.commit()
-
                 await session.refresh(user)
                 await session.refresh(activation_code)
-                
-                logger.info(f"Succesfully created user with ID: {user.id}")
+                logger.info(f"Successfully created user with ID: {user.id}")
                 return user, activation_code
-
             except IntegrityError as e:
                 await session.rollback()
-                logger.error(f"{e}")
+                logger.error(f"Error during registration: {e}")
                 return None
 
     async def activate_account(self, async_session: async_sessionmaker[AsyncSession], activation_code: ActivationCode) -> Optional['User']:
@@ -242,25 +239,164 @@ class User(Base):
                 return None
         
         logger.error(f"Failed to activate user with ID: {self.id}")
+        
+    async def verify_account(self, async_session: async_sessionmaker[AsyncSession], verification_code: VerificationCode) -> Optional['User']:
+        from app.models.schema import VerificationCode
+        
+        if self.verified:
+            logger.info("User is already verified")
+            return None
+        
+        if not self.verification_code or self.verification_code.code != verification_code.code:
+            logger.error(f"Failed to verify user with ID: {self.id}. Failed to find activation code.")
+            return None
+
+        async with async_session() as session:
+            try:
+                user_in_session: User = await session.merge(self)
+                code_in_session: VerificationCode = await session.merge(self.verification_code)
+
+                user_in_session.verified = True
+                await session.delete(code_in_session)
+
+                await session.commit()
+
+                logger.info(f"Successfully verified user with ID: {user_in_session.id}")
+                return user_in_session
+
+            except IntegrityError as e:
+                await session.rollback()
+                logger.error(f"Integrity error for user with ID: {self.id}. {e}")
+                return None
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Unknown error for user with ID: {self.id}: {e}")
+                return None
+        
+        logger.error(f"Failed to verify user with ID: {self.id}")
                 
+    async def create_verification_code(self, async_session: async_sessionmaker[AsyncSession]) -> Optional[VerificationCode]:
+        from .verification_code import VerificationCode
+        if self.verified:
+            logger.info(f"User with ID {self.id} is already verified.")
+            return None
+            
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                if user_in_session.verification_code:
+                    await session.delete(await session.merge(user_in_session.verification_code))
+                
+                new_code: VerificationCode = VerificationCode.create_verification_code()
+                user_in_session.verification_code = new_code
+                await session.commit()
+                await session.refresh(new_code)
+                logger.info(f"Created new verification code for user ID {self.id}")
+                return new_code
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to create verification code for user ID {self.id}: {e}")
+                return None
+
+    async def add_user_role(self, async_session: async_sessionmaker[AsyncSession], role: UserRole) -> Optional['User']:
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                role_in_session = await session.merge(role)
+                
+                if role_in_session not in user_in_session.user_roles:
+                    user_in_session.user_roles.append(role_in_session)
+                    await session.commit()
+                    logger.info(f"Added role '{role.name}' to user ID {self.id}")
+                else:
+                    logger.info(f"User ID {self.id} already has role '{role.name}'")
+                
+                return user_in_session
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to add role to user ID {self.id}: {e}")
+                return None
+
+    async def revoke_user_role(self, async_session: async_sessionmaker[AsyncSession], role: UserRole) -> Optional['User']:
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                role_to_revoke = next((r for r in user_in_session.user_roles if r.id == role.id), None)
+
+                if role_to_revoke:
+                    user_in_session.user_roles.remove(role_to_revoke)
+                    await session.commit()
+                    logger.info(f"Revoked role '{role.name}' from user ID {self.id}")
+                else:
+                    logger.warning(f"Role '{role.name}' not found for user ID {self.id}. Cannot revoke.")
+                
+                return user_in_session
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to revoke role from user ID {self.id}: {e}")
+                return None
+
+    async def modify_user_settings(self, async_session: async_sessionmaker[AsyncSession], settings_data: Dict[str, Any]) -> Optional[UserSettings]:
+        from .user_settings import UserSettings
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                if not user_in_session.settings:
+                    user_in_session.settings = UserSettings(user_id=user_in_session.id)
+                
+                for key, value in settings_data.items():
+                    if hasattr(user_in_session.settings, key):
+                        setattr(user_in_session.settings, key, value)
+                
+                await session.commit()
+                await session.refresh(user_in_session.settings)
+                logger.info(f"Modified settings for user ID {self.id}")
+                return user_in_session.settings
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to modify settings for user ID {self.id}: {e}")
+                return None
+
+    async def modify_user_details(self, async_session: async_sessionmaker[AsyncSession], details_data: Dict[str, Any]) -> Optional[UserDetails]:
+        from .user_details import UserDetails
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                if not user_in_session.details:
+                    user_in_session.details = UserDetails(user_id=user_in_session.id)
+                
+                for key, value in details_data.items():
+                    if hasattr(user_in_session.details, key):
+                        setattr(user_in_session.details, key, value)
+                
+                await session.commit()
+                await session.refresh(user_in_session.details)
+                logger.info(f"Modified details for user ID {self.id}")
+                return user_in_session.details
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to modify details for user ID {self.id}: {e}")
+                return None
+
+    async def add_user_action(self, async_session: async_sessionmaker[AsyncSession], action: UserAction) -> Optional['User']:
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                action_in_session = await session.merge(action)
+                
+                if action_in_session not in user_in_session.user_actions:
+                    user_in_session.user_actions.append(action_in_session)
+                    await session.commit()
+                    logger.info(f"Added action '{action.name}' to user ID {self.id}")
+                else:
+                    logger.info(f"User ID {self.id} already has action '{action.name}'")
+
+                return user_in_session
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to add action to user ID {self.id}: {e}")
+                return None
     
-    async def create_verification_code():
+    async def remove_device(self, async_session: async_sessionmaker[AsyncSession], action: UserAction) -> Optional['User']:
         pass
-    
-    async def verify_account():
-        pass
-    
-    async def add_user_role():
-        pass
-    
-    async def revoke_user_role():
-        pass
-    
-    async def modify_user_settings():
-        pass
-    
-    async def modify_user_details():
-        pass
-    
-    async def add_user_action():
-        pass
+        
