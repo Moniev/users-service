@@ -5,13 +5,19 @@ from app.config.kafka import kafka_producer, consumer_tasks
 from app.config.logger import setup_logger
 from app.config.redis import redis_client, close_redis_connection
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from pathlib import Path
 from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import ProcessCollector
 
-setup_logger()
+
+BASE_PATH: Path = Path(__file__).parent
+LOGS_PATH: Path = BASE_PATH / "logs" 
+
+
+setup_logger(LOGS_PATH)
 
 
 @asynccontextmanager
@@ -74,7 +80,7 @@ app: FastAPI = FastAPI(
 )
 
 instrumentator: Instrumentator = Instrumentator().instrument(app)
-ProcessCollector(namespace="users-service")
+ProcessCollector(namespace="users_service")
 
 app.add_middleware(
     CORSMiddleware,
@@ -92,6 +98,13 @@ app.include_router(users_controller.router, prefix="/api/v1")
 def read_root():
     return {"status": "ok", "message": "Welcome to the Factory Chainlines Users Service API"}
 
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 if __name__ == "__main__":
     logger.info("Starting development server with Uvicorn...")

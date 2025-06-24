@@ -1,7 +1,7 @@
 from .settings import settings
 import ssl
 from loguru import logger
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
@@ -14,7 +14,7 @@ from sqlalchemy.orm import DeclarativeBase
 class Base(DeclarativeBase):
     pass
 
-def get_ssl_context() -> ssl.SSLContext | None:
+def get_ssl_context() -> Optional[ssl.SSLContext]:
     if not all([settings.DB_SSL_CA_PATH, settings.DB_SSL_CERT_PATH, settings.DB_SSL_KEY_PATH]):
         return None
     try:

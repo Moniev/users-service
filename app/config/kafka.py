@@ -1,82 +1,69 @@
-import asyncio, ssl
-from loguru import logger
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
-from .settings import settings 
+import asyncio, ssl
+from .settings import settings
+from loguru import logger
+from typing import Any, Dict, Optional
 
 
-kafka_ssl_context = None
-if settings.KAFKA_SECURITY_PROTOCOL in ("SSL", "SASL_SSL"):
-    if settings.KAFKA_SSL_CA_PATH:
-        try:
-            kafka_ssl_context = ssl.create_default_context(
-                purpose=ssl.Purpose.SERVER_AUTH,
-                cafile=settings.KAFKA_SSL_CA_PATH
-            )
+def create_kafka_ssl_context() -> Optional[ssl.SSLContext]:
+    if settings.KAFKA_SECURITY_PROTOCOL not in ("SSL", "SASL_SSL"):
+        logger.info("Kafka security protocol does not require SSL. Skipping SSL context creation.")
+        return None
 
-            logger.info(f"Kafka SSL context created using CA path: {settings.KAFKA_SSL_CA_PATH}")
-        except FileNotFoundError as e:
-            logger.error(f"Kafka CA certificate file not found at {settings.KAFKA_SSL_CA_PATH}. Error: {e}")
-            raise RuntimeError(f"Kafka SSL/SASL_SSL configured but CA file not found: {e}")
-        except Exception as e:
-            logger.error(f"Error creating Kafka SSL context: {e}")
-            raise RuntimeError(f"Failed to create Kafka SSL context: {e}")
-    else:
-        logger.error(f"Kafka security protocol is '{settings.KAFKA_SECURITY_PROTOCOL}' but KAFKA_SSL_CA_PATH is not configured in settings.")
-        raise ValueError(f"`ssl_context` is mandatory if security_protocol=='{settings.KAFKA_SECURITY_PROTOCOL}' and KAFKA_SSL_CA_PATH is missing.")
-elif settings.KAFKA_SECURITY_PROTOCOL == "PLAINTEXT":
-    logger.info("Kafka security protocol is PLAINTEXT. No SSL context needed.")
-else:
-    logger.warning(f"Unknown Kafka security protocol: {settings.KAFKA_SECURITY_PROTOCOL}")
+    try:
+        if not all([settings.KAFKA_SSL_CA_PATH, settings.KAFKA_SSL_CERT_PATH, settings.KAFKA_SSL_KEY_PATH]):
+            logger.error("Kafka SSL protocol is configured, but one or more certificate paths (CA, CERT, KEY) are missing.")
+            raise ValueError("For SSL protocol, KAFKA_SSL_CA_PATH, KAFKA_SSL_CERT_PATH, and KAFKA_SSL_KEY_PATH are mandatory.")
 
-kafka_producer_params = {
+        context = ssl.create_default_context(
+            purpose=ssl.Purpose.SERVER_AUTH,
+            cafile=settings.KAFKA_SSL_CA_PATH
+        )
+
+        context.load_cert_chain(
+            certfile=settings.KAFKA_SSL_CERT_PATH,
+            keyfile=settings.KAFKA_SSL_KEY_PATH
+        )
+        
+        logger.info("Kafka SSL context with client certificate created successfully.")
+        return context
+
+    except FileNotFoundError as e:
+        logger.error(f"A Kafka certificate file was not found: {e}")
+        raise RuntimeError(f"Could not create Kafka SSL context due to a missing file: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while creating Kafka SSL context: {e}")
+        raise RuntimeError(f"Failed to create Kafka SSL context: {e}")
+
+
+kafka_ssl_context = create_kafka_ssl_context()
+kafka_connection_params: Dict[str, Any] = {
     "bootstrap_servers": settings.KAFKA_BOOTSTRAP_SERVERS,
     "client_id": settings.KAFKA_CLIENT_ID,
     "security_protocol": settings.KAFKA_SECURITY_PROTOCOL,
+    "ssl_context": kafka_ssl_context,
 }
 
-if settings.KAFKA_SECURITY_PROTOCOL in ("SASL_SSL", "SASL_PLAINTEXT"):
-    if not all([settings.KAFKA_SASL_MECHANISM, settings.KAFKA_SASL_USERNAME, settings.KAFKA_SASL_PASSWORD]):
-        logger.error("Kafka SASL_SSL/SASL_PLAINTEXT protocol selected, but SASL credentials are incomplete.")
-        raise ValueError("SASL credentials (mechanism, username, password) are mandatory for SASL protocols.")
-    
-    kafka_producer_params["sasl_mechanism"] = settings.KAFKA_SASL_MECHANISM
-    kafka_producer_params["sasl_plain_username"] = settings.KAFKA_SASL_USERNAME
-    kafka_producer_params["sasl_plain_password"] = settings.KAFKA_SASL_PASSWORD
-    
-    if settings.KAFKA_SECURITY_PROTOCOL == "SASL_SSL":
-        if kafka_ssl_context:
-            kafka_producer_params["ssl_context"] = kafka_ssl_context
-        else:
-            logger.error("Kafka SASL_SSL requires SSL context, but it was not created.")
-            raise RuntimeError("Kafka SASL_SSL protocol requires a valid SSL context.")
-elif settings.KAFKA_SECURITY_PROTOCOL == "SSL":
-    if kafka_ssl_context:
-        kafka_producer_params["ssl_context"] = kafka_ssl_context
-    else:
-        logger.error("Kafka SSL protocol requires SSL context, but it was not created.")
-        raise RuntimeError("Kafka SSL protocol requires a valid SSL context.")
 
-kafka_producer: AIOKafkaProducer = AIOKafkaProducer(**kafka_producer_params)
+kafka_producer: AIOKafkaProducer = AIOKafkaProducer(**kafka_connection_params)
 
 
 async def get_kafka_producer() -> AIOKafkaProducer:
     return kafka_producer
 
-async def consume_messages(topic: str):
+
+async def consume_messages(topic: str) -> None:
     consumer_params = {
-        **kafka_producer_params, 
-        "group_id": f"{settings.KAFKA_CLIENT_ID}-group", 
-        "auto_offset_reset": 'earliest', 
+        **kafka_connection_params, 
+        "group_id": f"{settings.KAFKA_CLIENT_ID}-{topic}-group", 
+        "auto_offset_reset": 'earliest',
     }
     
-    consumer = AIOKafkaConsumer(
-        topic,
-        **consumer_params
-    )
+    consumer = AIOKafkaConsumer(topic, **consumer_params)
     
-    await consumer.start()
-    logger.info(f"Kafka consumer started for topic '{topic}'...")
     try:
+        await consumer.start()
+        logger.info(f"Kafka consumer started for topic '{topic}'...")
         async for msg in consumer:
             logger.info(
                 f"Consumed message from topic {msg.topic}: "
@@ -90,7 +77,6 @@ async def consume_messages(topic: str):
     finally:
         logger.info(f"Kafka consumer for topic '{topic}' stopped.")
         await consumer.stop()
-
 
 consumer_tasks = [
     asyncio.create_task(consume_messages("users-events")),

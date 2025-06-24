@@ -5,34 +5,30 @@ from redis.asyncio.connection import ConnectionPool
 from typing import Any, Dict
 from .settings import settings
 
+logger.info(f"Preparing Redis connection for {settings.REDIS_HOST}:{settings.REDIS_PORT}")
 
-def get_redis_connection_kwargs() -> Dict[str, Any]:
-    kwargs = {
-        "host": settings.REDIS_HOST,
-        "port": settings.REDIS_PORT,
-        "db": settings.REDIS_DB,
-        "password": settings.REDIS_PASSWORD,
-        "max_connections": 10,
-        "decode_responses": True
-    }
+pool_kwargs = {
+    "max_connections": 10,
+    "decode_responses": True
+}
 
-    if settings.REDIS_SSL_CA_PATH:
-        logger.info("Configuring Redis connection with TLS/SSL...")
-        kwargs.update({
-            "ssl": True,
-            "ssl_cert_reqs": "required",
-            "ssl_ca_certs": settings.REDIS_SSL_CA_PATH,
-            "ssl_certfile": settings.REDIS_SSL_CERT_PATH,
-            "ssl_keyfile": settings.REDIS_SSL_KEY_PATH,
-        })
-    else:
-        logger.warning("Redis SSL certificates not configured. Connection will not use TLS.")
-    
-    return kwargs
+if settings.REDIS_SSL_CA_PATH:
+    logger.info("Configuring Redis connection with TLS/SSL using from_url...")
+    pool_kwargs.update({
+        "ssl_cert_reqs": "required",
+        "ssl_ca_certs": settings.REDIS_SSL_CA_PATH,
+        "ssl_certfile": settings.REDIS_SSL_CERT_PATH,
+        "ssl_keyfile": settings.REDIS_SSL_KEY_PATH,
+})
+else:
+    logger.warning("Redis SSL certificates not configured. Connection will not use TLS.")
 
 logger.info(f"Preparing Redis connection for {settings.REDIS_HOST}:{settings.REDIS_PORT}")
 
-pool: ConnectionPool = redis.ConnectionPool(**get_redis_connection_kwargs())
+pool: ConnectionPool = redis.ConnectionPool.from_url(
+    settings.REDIS_URI, 
+    **pool_kwargs
+)
 redis_client: Redis = redis.Redis(connection_pool=pool)
 
 

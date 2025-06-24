@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from app.models.responses.user import UserPublic
+from fastapi import APIRouter, Depends, HTTPException, status
+
 
 router: APIRouter = APIRouter(
     prefix="/users",

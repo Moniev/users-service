@@ -1,0 +1,70 @@
+name: Reusable - Update Python Requirements
+
+on:
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
+        description: "Package name for actualization"
+      package_version:
+        required: true
+        type: string
+        description: "New package version"
+      branch:
+        required: true
+        type: string
+        description: "Branch has to be actualized"
+    secrets:
+      gh_token:
+        required: true
+        description: "Token with rights to write into repositories"
+
+jobs:
+  update-requirements:
+    name: Update requirements.txt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          token: ${{ secrets.gh_token }}
+
+      - name: Update package version in requirements.txt
+        id: update_file
+        run: |
+          set -e
+          REQUIREMENTS_FILE="requirements.txt"
+          PACKAGE_NAME="${{ inputs.package_name }}"
+          NEW_VERSION="${{ inputs.package_version }}"
+
+          if [ ! -f "$REQUIREMENTS_FILE" ]; then
+            echo "Error: file '$REQUIREMENTS_FILE' is not in main directory"
+            exit 1
+          fi
+
+          if grep -q "^${PACKAGE_NAME}==" "$REQUIREMENTS_FILE"; then
+            echo "Foound package '${PACKAGE_NAME}'. Updating into: '${NEW_VERSION}'..."
+            sed -i "s/^${PACKAGE_NAME}==.*/${PACKAGE_NAME}==${NEW_VERSION}/" "$REQUIREMENTS_FILE"
+            echo "::set-output name=changes_made::true"
+          else
+            echo "PAckage '${PACKAGE_NAME}' hasn't been found in file. Adding new line."
+            echo "${PACKAGE_NAME}==${NEW_VERSION}" >> "$REQUIREMENTS_FILE"
+            echo "::set-output name=changes_made::true"
+          fi
+
+      - name: Commit and push changes
+        if: steps.update_file.outputs.changes_made == 'true'
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions-bot@users.noreply.github.com"
+
+          git add requirements.txt
+
+          if git diff --staged --quiet; then
+            echo "No changes in requirements.txt"
+          else
+            git commit -m "CI: Updated ${{ inputs.package_name }} into version ${{ inputs.package_version }}"
+            git push origin ${{ inputs.branch }}
+          fi

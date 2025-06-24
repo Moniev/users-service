@@ -15,3 +15,5 @@ uvicorn==0.34.3
 asyncpg
 aiosqlite
 gunicorn
+email-validator
+redis==4.2.0

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ...config.database import Base
+from app.config.database import Base
 import asyncio
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ...config.database import Base
+from app.config.database import Base
 from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
