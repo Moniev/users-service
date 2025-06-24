@@ -23,11 +23,11 @@
     },
     {
       "model": "UserDevice",
-      "data": { "user_id": 101, "code": "DEVICE-1" }
+      "data": { "user_id": 101, "device_id": "DEVICE-1", "device_type": "GUN" }
     },
     {
       "model": "UserDevice",
-      "data": { "user_id": 101, "code": "DEVICE-2" }
+      "data": { "user_id": 101, "device_id": "DEVICE-2", "device_type": "PHONE" }
     }
   ],
   "test_cases": [
