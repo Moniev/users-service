@@ -23,9 +23,9 @@ class Settings(BaseSettings):
             path=f"{self.DB_NAME or ''}",
         ))
 
-    DB_SSL_CA_PATH: Optional[str] = "/etc/users-service-tls/postgres/ca.crt"
-    DB_SSL_CERT_PATH: Optional[str] = "/etc/users-service-tls/postgres/tls.crt"
-    DB_SSL_KEY_PATH: Optional[str] = "/etc/users-service-tls/postgres/tls.key"
+    DB_SSL_CA_PATH: Optional[str] = None
+    DB_SSL_CERT_PATH: Optional[str] = None
+    DB_SSL_KEY_PATH: Optional[str] = None
     
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None

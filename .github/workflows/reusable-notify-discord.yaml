@@ -20,7 +20,7 @@ on:
         type: string
         description: "Result of the build and push job (success, failure, skipped, cancelled)"
       gitops_result:
-        required: true
+        required: false
         type: string
         description: "Result of the GitOps update job (success, failure, skipped, cancelled)"
       branch:

@@ -1,0 +1,60 @@
+name: Auto-commit on Dependabot PR
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  extract-info:
+    name: Extract Package Info
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      package_name: ${{ steps.extract_info.outputs.package_name }}
+      package_version: ${{ steps.extract_info.outputs.package_version }}
+      branch: ${{ github.head_ref }}
+    steps:
+      - name: Extract package info from PR title
+        id: extract_info
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          
+          PACKAGE_NAME=$(echo "$TITLE" | sed -n 's/Bump \(.*\) from .*/\1/p')
+          
+          PACKAGE_VERSION=$(echo "$TITLE" | sed -n 's/.* to \(.*\)/\1/p')
+          
+          echo "Found package: $PACKAGE_NAME"
+          echo "New version: $PACKAGE_VERSION"
+          
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+  call-update-workflow:
+    name: Update requirements.txt
+
+    needs: extract-info
+    uses: ./.github/workflows/reusable-update-requirements.yaml
+    with:
+      package_name: ${{ needs.extract-info.outputs.package_name }}
+      package_version: ${{ needs.extract-info.outputs.package_version }}
+      branch: ${{ needs.extract-info.outputs.branch }}
+    secrets:
+      gh_token: ${{ secrets.gh_token }}
+
+  notify-on-discord:
+    name: Notify Discord
+    needs: [extract-info, call-update-workflow]
+    if: always()
+    uses: ./.github/workflows/reusable-notify-discord.yaml
+    with:
+      unit_test_result: 'skipped'
+      integration_test_result: 'skipped'
+      e2e_test_result: 'skipped'
+      build_result: 'skipped'
+      branch: ${{ needs.extract-info.outputs.branch }}
+      repo: ${{ github.repository }}
+      sha: ${{ github.sha }}
+      run_id: ${{ github.run_id }}
+      commit_msg: "Dependencies update ${{ needs.extract-info.outputs.package_name }} to ${{ needs.extract-info.outputs.package_version }}"
+    secrets:
+      discord_webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
