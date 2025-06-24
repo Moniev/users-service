@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+from typing import Optional
 from .user import User
 
 class VerificationCode(Base):
@@ -16,3 +17,7 @@ class VerificationCode(Base):
     user: Mapped["User"] = relationship(back_populates="verification_code")
     
     __tablename__ = "VerificationCode"
+    
+    @classmethod
+    def create_verification_code(cls, user: User) -> Optional['VerificationCode']:
+        pass

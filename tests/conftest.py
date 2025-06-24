@@ -88,7 +88,8 @@ FUNCTION_MAP: dict[str,  Callable[..., Any]] = {
     "user_get_user_by_verification_code": User.get_user_by_verification_code,
     "user_get_user_by_second_factor_code": User.get_user_by_second_factor_code,
     "user_get_user_by_reset_code": User.get_user_by_reset_code,
-    "activate_account": User.activate_account
+    "activate_account": User.activate_account,
+    "verify_account": User.verify_account
 }
 
 
@@ -336,20 +337,14 @@ async def _load_and_populate_db(engine, json_file_path):
 
 @pytest_asyncio.fixture(scope="function")
 async def prepared_session_factory(request):
-    """ _summary_
-
-        Raises:
-            FileNotFoundError: _description_
-
-        Returns:
-            Any: _description_
-    """
     json_file_path = request.param
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     
     session_factory = await _load_and_populate_db(engine, json_file_path)
 
-    yield session_factory
+    async with session_factory() as session:
+        yield session_factory
+        await session.commit()  
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -389,11 +384,38 @@ def load_all_assertions():
     return pytest_params
 
 
+def load_all_test_cases():
+    pytest_params = []
+    for test_file in TEST_FILES:
+        test_type = test_file.parent.name
+        marker = getattr(pytest.mark, test_type, None)
+
+        try:
+            with open(test_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            logger.warning(f"Could not read or decode JSON from: {test_file}. Skipping.")
+            continue
+
+        for case in data.get("test_cases", []):
+            case_desc = case.get("description", "unnamed_case")
+            test_id = f"{test_file.name}-{case_desc}"
+
+            param = pytest.param(
+                test_file,
+                case,  
+                marks=[marker] if marker else [],
+                id=test_id
+            )
+            pytest_params.append(param)
+    return pytest_params
+
+
 def pytest_generate_tests(metafunc):
-    if "prepared_session_factory" in metafunc.fixturenames and "assertion_data" in metafunc.fixturenames:
-        pytest_params = load_all_assertions()
+    if "prepared_session_factory" in metafunc.fixturenames and "test_case_data" in metafunc.fixturenames:
+        pytest_params = load_all_test_cases()
         metafunc.parametrize(
-            "prepared_session_factory, assertion_data",
-            pytest_params, 
+            "prepared_session_factory, test_case_data", 
+            pytest_params,
             indirect=["prepared_session_factory"]
         )
