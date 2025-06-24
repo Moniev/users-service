@@ -17,4 +17,3 @@ aiosqlite
 gunicorn
 email-validator
 redis==4.2.0
-requests==1.0.0
