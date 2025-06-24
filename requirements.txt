@@ -16,4 +16,5 @@ asyncpg
 aiosqlite
 gunicorn
 email-validator
-redis==4.2.0requests==1.0.0
+redis==4.2.0
+requests==1.0.0
