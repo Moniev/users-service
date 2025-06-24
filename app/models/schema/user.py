@@ -102,6 +102,8 @@ class User(Base):
     
     @classmethod
     async def get_user_by_activation_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+        from app.models.schema import ActivationCode
+        
         async with async_session() as session:
             statement: Select = (
                 select(User)
@@ -116,6 +118,8 @@ class User(Base):
     
     @classmethod
     async def get_user_by_verification_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+        from app.models.schema import VerificationCode
+        
         async with async_session() as session:
             statement: Select = (
                 select(User)
@@ -129,12 +133,30 @@ class User(Base):
             return result.scalars().first()
     
     @classmethod
-    async def get_user_by_second_factor(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+    async def get_user_by_second_factor_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+        from app.models.schema import SecondFactorCode
+        
         async with async_session() as session:
             statement: Select = (
                 select(User)
                 .join(User.second_factor_code) 
                 .where(SecondFactorCode.code == code) 
+            )
+            
+            result = await session.execute(statement)
+            
+            await session.close()
+            return result.scalars().first()
+        
+    @classmethod
+    async def get_user_by_reset_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+        from app.models.schema import ResetCode
+        
+        async with async_session() as session:
+            statement: Select = (
+                select(User)
+                .join(User.reset_code) 
+                .where(ResetCode.code == code) 
             )
             
             result = await session.execute(statement)
@@ -186,8 +208,41 @@ class User(Base):
                 logger.error(f"{e}")
                 return None
 
-    async def activate_account(activation_code: ActivationCode):
-        pass
+    async def activate_account(self, async_session: async_sessionmaker[AsyncSession], activation_code: ActivationCode) -> Optional['User']:
+        from app.models.schema import ActivationCode
+        
+        if self.active:
+            logger.info("User is already activated")
+            return None
+        
+        if not self.activation_code or self.activation_code.code != activation_code.code:
+            logger.error(f"Failed to activate user with ID: {self.id}. Failed to find activation code.")
+            return None
+
+        async with async_session() as session:
+            try:
+                user_in_session: User = await session.merge(self)
+                code_in_session: ActivationCode = await session.merge(self.activation_code)
+
+                user_in_session.active = True
+                await session.delete(code_in_session)
+
+                await session.commit()
+
+                logger.info(f"Successfully activated user with ID: {user_in_session.id}")
+                return user_in_session
+
+            except IntegrityError as e:
+                await session.rollback()
+                logger.error(f"Integrity error for user with ID: {self.id}. {e}")
+                return None
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Unknown error for user with ID: {self.id}: {e}")
+                return None
+        
+        logger.error(f"Failed to activate user with ID: {self.id}")
+                
     
     async def create_verification_code():
         pass

@@ -84,7 +84,11 @@ FUNCTION_MAP: dict[str,  Callable[..., Any]] = {
     "verify_user_and_relations": verify_user_and_relations,
     "user_get_user_by_id": User.get_user_by_id,
     "user_get_user_by_mail": User.get_user_by_mail,
-    "user_get_user_by_activation_code": User.get_user_by_activation_code
+    "user_get_user_by_activation_code": User.get_user_by_activation_code,
+    "user_get_user_by_verification_code": User.get_user_by_verification_code,
+    "user_get_user_by_second_factor_code": User.get_user_by_second_factor_code,
+    "user_get_user_by_reset_code": User.get_user_by_reset_code,
+    "activate_account": User.activate_account
 }
 
 

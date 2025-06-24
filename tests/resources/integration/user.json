@@ -32,6 +32,14 @@
     {
       "model": "VerificationCode",
       "data": { "user_id": 101, "code": "VERIFY-456" }
+    },
+    {
+      "model": "ResetCode",
+      "data": { "user_id": 101, "code": "RESET-CODE-1" }
+    },
+    {
+      "model": "SecondFactorCode",
+      "data": { "user_id": 101, "code": "SECOND-FACTOR-1" }
     }
   ],
   "test_cases": [
@@ -49,6 +57,12 @@
         },
         {
           "type": "row_count", "params": { "model": "ActivationCode", "expected": 1 }
+        },
+        {
+          "type": "row_count", "params": { "model": "SecondFactorCode", "expected": 1 }
+        },
+        {
+          "type": "row_count", "params": { "model": "ResetCode", "expected": 1 }
         },
         {
           "type": "attribute_equals",
@@ -69,10 +83,26 @@
           }
         },
         {
+          "type": "attribute_equals",
+          "params": {
+            "model": "ResetCode", "lookup": { "id": 1 }, "attribute": "code", "expected": "RESET-CODE-1"
+          }
+        },
+        {
           "type": "collection_has_length",
           "params": {
             "model": "User", "lookup": { "id": 101 }, "attribute": "devices", "expected": 2
           }
+        },
+        {
+          "type": "is_not_none",
+          "params": {
+            "model": "User", "lookup": { "id": 101 }, "attribute": "second_factor_code"}
+        },
+        {
+          "type": "is_not_none",
+          "params": {
+            "model": "User", "lookup": { "id": 101 }, "attribute": "reset_code"}
         }
       ]
     },
@@ -129,6 +159,96 @@
             "params": {
               "function_name": "user_get_user_by_mail",
               "function_params": { "mail": "notexisting.user@example.com" },
+              "expected_result": { "operator": "is_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_activation_code",
+              "function_params": { "code": "ACTIVATION-123" },
+              "expected_result": { "operator": "is_not_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_activation_code",
+              "function_params": { "code": "ACTIVATION-124" },
+              "expected_result": { "operator": "is_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_verification_code",
+              "function_params": { "code": "VERIFY-456" },
+              "expected_result": { "operator": "is_not_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_verification_code",
+              "function_params": { "code": "VERIFY-457" },
+              "expected_result": { "operator": "is_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_second_factor_code",
+              "function_params": { "code": "SECOND-FACTOR-1" },
+              "expected_result": { "operator": "is_not_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_second_factor_code",
+              "function_params": { "code": "SECOND-FACTOR-2" },
+              "expected_result": { "operator": "is_none" }
+            }
+        },
+         {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_reset_code",
+              "function_params": { "code": "RESET-CODE-1" },
+              "expected_result": { "operator": "is_not_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "user_get_user_by_reset_code",
+              "function_params": { "code": "RESET-CODE-2" },
+              "expected_result": { "operator": "is_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "activate_account",
+              "function_params": {
+                "on_instance": { "model": "User", "lookup": { "id": 101 } },
+                "method_params": {
+                  "activation_code": { "create_dummy": { "model": "ActivationCode", "data": {"code": "ANY-CODE"} } }
+                }
+              },
+              "expected_result": { "operator": "is_none" }
+            }
+        },
+        {
+            "type": "execute_function",
+            "params": {
+              "function_name": "activate_account",
+              "function_params": {
+                "on_instance": { "model": "User", "lookup": { "id": 101 } },
+                "method_params": {
+                  "activation_code": { "create_dummy": { "model": "ActivationCode", "data": {"code": "ANY-CODE"} } }
+                }
+              },
               "expected_result": { "operator": "is_none" }
             }
         }
