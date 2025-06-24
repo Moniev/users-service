@@ -57,4 +57,4 @@ jobs:
       run_id: ${{ github.run_id }}
       commit_msg: "Dependencies update ${{ needs.extract-info.outputs.package_name }} to ${{ needs.extract-info.outputs.package_version }}"
     secrets:
-      discord_webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      discord_webhook_url: ${{ secrets.DISCORD_DEPENDABOT_WEBHOOK_URL }}
