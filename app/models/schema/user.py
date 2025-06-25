@@ -8,9 +8,10 @@ from loguru import logger
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String, Table, Column, select, Select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql import func
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+import uuid as uuid_generator 
 
 if TYPE_CHECKING:
     from .user_details import UserDetails
@@ -57,6 +58,8 @@ class User(Base):
     password: Mapped[str] = mapped_column(String, nullable=False, unique=False)
     active: Mapped[bool] = mapped_column(Boolean, default=False)
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    black_listed: Mapped[bool] = mapped_column(Boolean, default=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     
@@ -77,31 +80,32 @@ class User(Base):
         self.mail: str = mail
         self.phone: str = phone
         self.password: str = password_hasher.hash(password)
-        self.uuid: str = uuid
+        if uuid is None:
+            self.uuid = str(uuid_generator.uuid4()) 
+        else:
+            self.uuid = uuid 
         self.active: bool = active
         self.verified: bool = verified
 
     def __repr__(self):
-        pass
+        return f"<User id={self.id} mail='{self.mail}' active={self.active} verified={self.verified}>"
 
     @classmethod
-    async def get_user_by_id(cls, async_session: async_sessionmaker[AsyncSession], id: int) -> User:
+    async def get_user_by_id(cls, async_session: async_sessionmaker[AsyncSession], id: int) -> Optional[User]:
         async with async_session() as session:
             statement: Select = select(User).where(User.id == id)
             result = await session.execute(statement)
-            await session.close()
             return result.scalars().first()
     
     @classmethod
-    async def get_user_by_mail(cls, async_session: async_sessionmaker[AsyncSession], mail: str) -> User:
+    async def get_user_by_mail(cls, async_session: async_sessionmaker[AsyncSession], mail: str) -> Optional[User]:
         async with async_session() as session:
             statement: Select = select(User).where(User.mail == mail)
             result = await session.execute(statement)
-            await session.close()
             return result.scalars().first()
     
     @classmethod
-    async def get_user_by_activation_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+    async def get_user_by_activation_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> Optional[User]:
         from app.models.schema import ActivationCode
         
         async with async_session() as session:
@@ -113,11 +117,10 @@ class User(Base):
             
             result = await session.execute(statement)
             
-            await session.close()
             return result.scalars().first()
     
     @classmethod
-    async def get_user_by_verification_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+    async def get_user_by_verification_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> Optional[User]:
         from app.models.schema import VerificationCode
         
         async with async_session() as session:
@@ -129,27 +132,21 @@ class User(Base):
             
             result = await session.execute(statement)
             
-            await session.close()
             return result.scalars().first()
     
     @classmethod
-    async def get_user_by_second_factor_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+    async def get_user_by_second_factor_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> Optional[User]:
         from app.models.schema import SecondFactorCode
         
         async with async_session() as session:
-            statement: Select = (
-                select(User)
-                .join(User.second_factor_code) 
-                .where(SecondFactorCode.code == code) 
-            )
-            
+            statement: Select = select(User).options(selectinload(User.settings)).join(User.second_factor_code).where(SecondFactorCode.code == code)
             result = await session.execute(statement)
+            user: User = result.scalars().first()
             
-            await session.close()
-            return result.scalars().first()
+            return user
         
     @classmethod
-    async def get_user_by_reset_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> User:
+    async def get_user_by_reset_code(cls, async_session: async_sessionmaker[AsyncSession], code: str) -> Optional[User]:
         from app.models.schema import ResetCode
         
         async with async_session() as session:
@@ -161,141 +158,200 @@ class User(Base):
             
             result = await session.execute(statement)
             
-            await session.close()
             return result.scalars().first()
     
     @classmethod
-    async def verify_password(cls, async_session: async_sessionmaker[AsyncSession], mail: str, password: str) -> User:
-        user: Optional['User'] = await cls.get_user_by_mail(async_session, mail)
+    async def verify_password(cls, async_session: async_sessionmaker[AsyncSession], mail: str, password: str) -> Optional[User]:
+        async with async_session() as session:
+            statement: Select = select(User).options(selectinload(User.settings)).where(User.mail == mail)
+            result = await session.execute(statement)
+            user: User = result.scalars().first()
 
-        if not user:
-            return None
+            if not user:
+                logger.info(f"User with mail: {mail} not found.")
+                return None
 
-        try:
-            await asyncio.to_thread(password_hasher.verify, user.password, password)
-            
-            logger.info(f"Successfully verified user with ID: {user.id}")
-            return user
+            try:
+                await asyncio.to_thread(password_hasher.verify, user.password, password)
+                
+                logger.info(f"Successfully verified user with ID: {user.id}")
+                return user
 
-        except VerifyMismatchError:
-            logger.info(f"Provided wrong password for user with ID: {user.id}")
-            return None
+            except VerifyMismatchError:
+                logger.info(f"Provided wrong password for user with ID: {user.id}")
+                return None
+            except Exception as e:
+                    await session.rollback()
+                    logger.error(f"Error during password verification for user ID {user.id}: {e}")
+                    return None
     
     @classmethod
     async def register(cls, async_session: async_sessionmaker[AsyncSession], mail: str, password: str) -> Optional[Tuple[User, ActivationCode]]:
         from .activation_code import ActivationCode
         async with async_session() as session:
-            existing_user = await cls.get_user_by_mail(async_session=async_session, mail=mail)
+            existing_user = (await session.execute(select(User).where(User.mail == mail))).scalars().first()
             if existing_user:
-                logger.warning(f"Mail '{mail}' already exists in database.")
+                logger.warning(f"Mail '{mail}' already exists in database. Registration aborted.") 
                 return None
-
             try:
-                user = User(mail, None, password)
-                activation_code = ActivationCode.create_activation_code() 
-                user.activation_code = activation_code
+                user = User(mail=mail, phone=None, password=password) 
+                
                 session.add(user)
-                await session.commit()
-                await session.refresh(user)
-                await session.refresh(activation_code)
+                await session.flush() 
+                activation_code = ActivationCode.create_activation_code(user_id=user.id) 
+
+                if not isinstance(activation_code, ActivationCode):
+                    logger.error(f"ActivationCode.create_activation_code() returned an invalid type ({type(activation_code)}) or None. Expected ActivationCode instance. Registration aborted for {mail}.")
+                    await session.rollback()
+                    return None
+
+                user.activation_code = activation_code 
+                
+                logger.debug(f"Attempting to add user (ID: {getattr(user, 'id', 'N/A')}, Mail: {user.mail}) "
+                             f"with ActivationCode (Code: {getattr(user.activation_code, 'code', 'N/A')}, Type: {type(user.activation_code)}) to session.")
+                
+                session.add(activation_code) 
+                
+                await session.commit() 
+                await session.refresh(user) 
+                await session.refresh(activation_code) 
                 logger.info(f"Successfully created user with ID: {user.id}")
                 return user, activation_code
             except IntegrityError as e:
                 await session.rollback()
-                logger.error(f"Error during registration: {e}")
+                logger.error(f"Integrity error during registration for email {mail}: {e}")
+                return None
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Unexpected error during registration for email {mail}: {e}")
                 return None
 
-    async def activate_account(self, async_session: async_sessionmaker[AsyncSession], activation_code: ActivationCode) -> Optional['User']:
+    async def activate_account(self, async_session: async_sessionmaker[AsyncSession], activation_code: Union[str, ActivationCode]) -> Optional['User']:
         from app.models.schema import ActivationCode
         
-        if self.active:
-            logger.info("User is already activated")
-            return None
-        
-        if not self.activation_code or self.activation_code.code != activation_code.code:
-            logger.error(f"Failed to activate user with ID: {self.id}. Failed to find activation code.")
-            return None
-
         async with async_session() as session:
-            try:
-                user_in_session: User = await session.merge(self)
-                code_in_session: ActivationCode = await session.merge(self.activation_code)
+            user_in_session: User = await session.merge(self)
 
+            if user_in_session.active:
+                logger.info(f"User {user_in_session.id} is already activated.")
+                return user_in_session
+            
+            await session.refresh(user_in_session, attribute_names=["activation_code"])
+            
+            code_str = activation_code.code if isinstance(activation_code, ActivationCode) else activation_code
+
+            if not user_in_session.activation_code or user_in_session.activation_code.code != code_str:
+                logger.error(f"Failed to activate user with ID: {user_in_session.id}. Invalid or missing activation code.")
+                return None
+
+            try:
                 user_in_session.active = True
-                await session.delete(code_in_session)
+                await session.delete(user_in_session.activation_code) 
 
                 await session.commit()
+                await session.refresh(user_in_session) 
 
                 logger.info(f"Successfully activated user with ID: {user_in_session.id}")
                 return user_in_session
 
             except IntegrityError as e:
                 await session.rollback()
-                logger.error(f"Integrity error for user with ID: {self.id}. {e}")
+                logger.error(f"Integrity error for user with ID: {user_in_session.id}. {e}")
                 return None
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Unknown error for user with ID: {self.id}: {e}")
+                logger.error(f"Unknown error for user with ID: {user_in_session.id}: {e}")
                 return None
         
-        logger.error(f"Failed to activate user with ID: {self.id}")
-        
-    async def verify_account(self, async_session: async_sessionmaker[AsyncSession], verification_code: VerificationCode) -> Optional['User']:
+
+    async def verify_account(self, async_session: async_sessionmaker[AsyncSession], verification_code: Union[str, VerificationCode]) -> Optional['User']:
         from app.models.schema import VerificationCode
         
-        if self.verified:
-            logger.info("User is already verified")
-            return None
-        
-        if not self.verification_code or self.verification_code.code != verification_code.code:
-            logger.error(f"Failed to verify user with ID: {self.id}. Failed to find activation code.")
-            return None
-
         async with async_session() as session:
-            try:
-                user_in_session: User = await session.merge(self)
-                code_in_session: VerificationCode = await session.merge(self.verification_code)
+            user_in_session: User = await session.merge(self)
 
+            if user_in_session.verified:
+                logger.info(f"User {user_in_session.id} is already verified.")
+                return user_in_session
+            
+            await session.refresh(user_in_session, attribute_names=["verification_code"])
+
+            code_str = verification_code.code if isinstance(verification_code, VerificationCode) else verification_code
+
+            if not user_in_session.verification_code or user_in_session.verification_code.code != code_str:
+                logger.error(f"Failed to verify user with ID: {user_in_session.id}. Invalid or missing verification code.")
+                return None
+
+            try:
                 user_in_session.verified = True
-                await session.delete(code_in_session)
+                await session.delete(user_in_session.verification_code)
 
                 await session.commit()
+                await session.refresh(user_in_session)
 
                 logger.info(f"Successfully verified user with ID: {user_in_session.id}")
                 return user_in_session
 
             except IntegrityError as e:
                 await session.rollback()
-                logger.error(f"Integrity error for user with ID: {self.id}. {e}")
+                logger.error(f"Integrity error for user with ID: {user_in_session.id}. {e}")
                 return None
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Unknown error for user with ID: {self.id}: {e}")
+                logger.error(f"Unknown error for user with ID: {user_in_session.id}: {e}")
                 return None
-        
-        logger.error(f"Failed to verify user with ID: {self.id}")
+             
                 
     async def create_verification_code(self, async_session: async_sessionmaker[AsyncSession]) -> Optional[VerificationCode]:
         from .verification_code import VerificationCode
-        if self.verified:
-            logger.info(f"User with ID {self.id} is already verified.")
-            return None
-            
         async with async_session() as session:
             try:
                 user_in_session = await session.merge(self)
+                if user_in_session.verified:
+                    logger.info(f"User with ID {user_in_session.id} is already verified. No new code created.")
+                    return user_in_session.verification_code 
+                    
+                await session.refresh(user_in_session, attribute_names=["verification_code"])
                 if user_in_session.verification_code:
-                    await session.delete(await session.merge(user_in_session.verification_code))
+                    await session.delete(user_in_session.verification_code)
                 
                 new_code: VerificationCode = VerificationCode.create_verification_code()
                 user_in_session.verification_code = new_code
                 await session.commit()
                 await session.refresh(new_code)
-                logger.info(f"Created new verification code for user ID {self.id}")
+                logger.info(f"Created new verification code for user ID {user_in_session.id}")
                 return new_code
             except Exception as e:
                 await session.rollback()
                 logger.error(f"Failed to create verification code for user ID {self.id}: {e}")
+                return None
+
+
+    async def generate_second_factor_code(self, async_session: async_sessionmaker[AsyncSession]) -> Optional['SecondFactorCode']:
+        from .second_factor_code import SecondFactorCode
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                
+                await session.refresh(user_in_session, attribute_names=["second_factor_code"])
+                if user_in_session.second_factor_code:
+                    await session.delete(user_in_session.second_factor_code)
+                
+                code_string: str = SecondFactorCode.create_second_factor_code() 
+                
+                new_2fa_code = SecondFactorCode(code=code_string, user_id=user_in_session.id)
+
+                user_in_session.second_factor_code = new_2fa_code 
+                
+                session.add(new_2fa_code) 
+                
+                await session.commit()
+                await session.refresh(new_2fa_code)
+                logger.success(f"Generated 2FA code {new_2fa_code.code[:4]}... for user ID: {user_in_session.id}")
+                return new_2fa_code
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to generate 2FA code for user ID {self.id}: {e}")
                 return None
 
     async def add_user_role(self, async_session: async_sessionmaker[AsyncSession], role: UserRole) -> Optional['User']:
@@ -321,6 +377,8 @@ class User(Base):
         async with async_session() as session:
             try:
                 user_in_session = await session.merge(self)
+                await session.refresh(user_in_session, attribute_names=["user_roles"])
+                
                 role_to_revoke = next((r for r in user_in_session.user_roles if r.id == role.id), None)
 
                 if role_to_revoke:
@@ -341,6 +399,8 @@ class User(Base):
         async with async_session() as session:
             try:
                 user_in_session = await session.merge(self)
+                await session.refresh(user_in_session, attribute_names=["settings"])
+
                 if not user_in_session.settings:
                     user_in_session.settings = UserSettings(user_id=user_in_session.id)
                 
@@ -362,6 +422,8 @@ class User(Base):
         async with async_session() as session:
             try:
                 user_in_session = await session.merge(self)
+                await session.refresh(user_in_session, attribute_names=["details"])
+
                 if not user_in_session.details:
                     user_in_session.details = UserDetails(user_id=user_in_session.id)
                 
@@ -384,6 +446,8 @@ class User(Base):
                 user_in_session = await session.merge(self)
                 action_in_session = await session.merge(action)
                 
+                await session.refresh(user_in_session, attribute_names=["user_actions"])
+
                 if action_in_session not in user_in_session.user_actions:
                     user_in_session.user_actions.append(action_in_session)
                     await session.commit()
@@ -397,6 +461,46 @@ class User(Base):
                 logger.error(f"Failed to add action to user ID {self.id}: {e}")
                 return None
     
-    async def remove_device(self, async_session: async_sessionmaker[AsyncSession], action: UserAction) -> Optional['User']:
-        pass
-        
+    async def remove_device(self, async_session: async_sessionmaker[AsyncSession], device_id: int) -> Optional['User']:
+        async with async_session() as session:
+            try:
+                user_in_session: User = await session.merge(self)
+                await session.refresh(user_in_session, attribute_names=["devices"])
+                
+                device_to_remove: Optional[UserDevice] = next((d for d in user_in_session.devices if d.id == device_id), None)
+                
+                if device_to_remove:
+                    device_to_remove.deleted = True 
+                    await session.add(device_to_remove) 
+                    await session.commit()
+                    await session.refresh(user_in_session) 
+                    logger.success(f"Successfully marked device with ID: {device_id} as deleted for user ID {user_in_session.id}")
+                    return user_in_session
+                else:
+                    logger.warning(f"Device with ID: {device_id} not found for user ID {user_in_session.id}.")
+                    return user_in_session
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to remove device for user ID {self.id}: {e}")
+                return None
+    
+    
+    async def remove_second_factor(self, async_session: async_sessionmaker[AsyncSession]) -> Optional['User']:
+        async with async_session() as session:
+            try:
+                user_in_session = await session.merge(self)
+                await session.refresh(user_in_session, attribute_names=["second_factor_code"])
+
+                if user_in_session.second_factor_code:
+                    await session.delete(user_in_session.second_factor_code)
+                    await session.commit()
+                    await session.refresh(user_in_session) 
+                    logger.success(f"2FA code successfully removed for user ID: {user_in_session.id}.")
+                    return user_in_session
+                else:
+                    logger.warning(f"No 2FA code found to remove for user ID {user_in_session.id}.")
+                    return user_in_session 
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"An error occurred during 2FA code removal for user ID {self.id}: {e}")
+                return None

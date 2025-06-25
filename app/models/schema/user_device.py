@@ -2,11 +2,8 @@ from __future__ import annotations
 from app.config.database import Base
 from .user import User
 from datetime import datetime
-from pydantic import BaseModel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
-
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class UserDevice(Base):
@@ -14,6 +11,7 @@ class UserDevice(Base):
     id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True, nullable=False, unique=True)
     device_id: Mapped[str] = mapped_column(String, unique=True)
     device_type: Mapped[str] = mapped_column(String(50))
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     last_login: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     
     user_id: Mapped[int] = mapped_column(ForeignKey("User.id"))

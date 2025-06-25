@@ -12,6 +12,7 @@ class ResetCode(Base):
     __bind_key__ = "ResetCode"
     id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True, nullable=False, unique=True)
     code: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
     
     user_id: Mapped[int] = mapped_column(ForeignKey("User.id"))
     user: Mapped["User"] = relationship(back_populates="reset_code")

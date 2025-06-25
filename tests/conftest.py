@@ -1,13 +1,20 @@
+import os
+os.environ["TEST_MODE"] = "True"
 from app.models.schema.activation_code import ActivationCode
 from app.models.schema.second_factor_code import SecondFactorCode
 from app.models.schema.reset_code import ResetCode
-from app.models.schema.user import User
+from app.models.schema.user import User, password_hasher
 from app.models.schema.user_device import UserDevice
 from app.models.schema.user_role import UserRole
 from app.models.schema.user_settings import UserSettings
 from app.models.schema.verification_code import VerificationCode
-from app.config.database import Base
+from app.config.database import Base, get_session_factory
 from app.config.logger import setup_logger
+from app.config.kafka import get_kafka_producer, stop_kafka_producer 
+from app.config.redis import redis_client
+from app.services.auth_service import AuthService
+from app.services.users_service import UsersService
+from app.services.diagnostics_service import DiagnosticsService
 import json, pytest, pytest_asyncio, yaml
 from loguru import logger
 from pathlib import Path
@@ -16,7 +23,7 @@ from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import Session, selectinload, joinedload
 from typing import Any, Generator, Callable, Tuple, Dict, List
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-
+from typing import AsyncGenerator, Generator, Callable, Tuple, List, Dict, Any, Optional
 
 async def verify_row_count(async_session: async_sessionmaker[AsyncSession], params: list):
     async with async_session() as session: 
@@ -104,6 +111,18 @@ SCHEMA_MAP: dict[str, Base] = {
     "VerificationCode": VerificationCode,
 }
 
+SERVICE_MAP: dict[str, Any] = {
+    "AuthService": AuthService,
+    "DiagnosticsService": DiagnosticsService,
+    "UsersService": UsersService,
+}
+
+SERVICE_DEPENDENCIES: dict[object, List[Any]] = {
+    AuthService: {"redis_client": redis_client, "kafka_producer": get_kafka_producer, "session_factory": get_session_factory },
+    DiagnosticsService: {},
+    UsersService: {}
+}
+
 BASE_PATH: Path = Path(__file__).parent
 
 RESPONSE_MAP: dict[str, BaseModel] = {}
@@ -122,6 +141,12 @@ TEST_FILES.extend(list(E2E_TEST_PATH.glob("*.json")))
 
 
 setup_logger(LOGS_PATH)
+
+@pytest_asyncio.fixture(scope="session")
+async def kafka_producer_session():
+    producer = await get_kafka_producer()
+    yield producer
+    await stop_kafka_producer()
 
 
 @pytest.fixture(scope="session")  
@@ -233,6 +258,9 @@ def create_data_driven_db_session() -> Generator[Callable[[str], Tuple[Session, 
             if not model_class:
                 raise ValueError(f"Unknown model: '{item['model']}' in JSON file.")
             
+            if item["model"] == "User" and "password" in instance_data:
+                instance_data["password"] = password_hasher.hash(instance_data["password"])
+            
             instance_data: Dict[str] = item["data"].copy()
             instance_id: int = instance_data.pop('id', None)
             instance: Base = model_class(**instance_data)
@@ -253,25 +281,16 @@ def create_data_driven_db_session() -> Generator[Callable[[str], Tuple[Session, 
     Base.metadata.drop_all(engine)
     
 
-@pytest_asyncio.fixture(scope="function")
-async def create_async_data_driven_db(request):
-    """ _summary_
-
-        Raises:
-            FileNotFoundError: _description_
-
-        Returns:
-            Any: _description_
-    """
-    
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+@pytest.fixture(scope="function")
+async def create_async_data_driven_db(request) -> AsyncGenerator[Callable[[str, str], Tuple[async_sessionmaker[AsyncSession], List[Dict]]], None]:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-    async def load_data_and_provide_session(json_file_name: str, type: str = "integration"):
+    async def load_data_and_provide_session(json_file_name: str, type: str = "integration") -> Tuple[async_sessionmaker[AsyncSession], List[Dict]]:
         resource_path = RESOURCE_PATH / type / json_file_name
         if not resource_path.exists():
             raise FileNotFoundError(f"Could not find fixture file: {resource_path}")
@@ -283,18 +302,31 @@ async def create_async_data_driven_db(request):
             setup_data = data.get("setup_data", [])
             for item in setup_data:
                 model_class = SCHEMA_MAP.get(item["model"])
+                if not model_class:
+                    raise ValueError(f"Unknown model: '{item['model']}' in JSON file.")
                 
-                instance_data = item["data"].copy()
-                instance_id = instance_data.pop('id', None)
-                instance = model_class(**instance_data)
+                instance_data: Dict[str, Any] = item["data"].copy()
+                
+                if item["model"] == "User" and "password" in instance_data:
+                    instance_data["password"] = password_hasher.hash(instance_data["password"])
+
+                instance_id: Optional[int] = instance_data.pop('id', None)
+                instance: Base = model_class(**instance_data)
+                
                 if instance_id is not None:
                     instance.id = instance_id
                     
                 session.add(instance)
-            await session.commit()
+            
+            try:
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Error during setup data commit: {e}")
+                raise
 
         test_cases = data.get("test_cases", [])
-        return async_session_factory, test_cases
+        return async_session_factory, test_cases 
 
     yield load_data_and_provide_session
 

@@ -17,3 +17,5 @@ aiosqlite
 gunicorn
 email-validator
 redis==4.2.0
+pyjwt==2.10.1
+cryptography

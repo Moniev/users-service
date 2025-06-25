@@ -30,6 +30,7 @@ jobs:
           echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
   call-update-workflow:
+    if: github.actor == 'dependabot[bot]'
     name: Update requirements.txt
 
     needs: extract-info
@@ -42,9 +43,10 @@ jobs:
       gh_token: ${{ secrets.gh_token }}
 
   notify-on-discord:
+    
     name: Notify Discord
     needs: [extract-info, call-update-workflow]
-    if: always()
+    if: always() && github.actor == 'dependabot[bot]'
     uses: ./.github/workflows/reusable-notify-discord.yaml
     with:
       unit_test_result: 'skipped'

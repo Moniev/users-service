@@ -1,0 +1,197 @@
+{
+  "description": "Integration tests for the AuthService, covering full user flows like registration and login with 2FA.",
+  "setup_data": [
+    {
+      "model": "User",
+      "data": {
+        "id": 301,
+        "mail": "no-2fa-user@example.com",
+        "phone": "+48777888999",
+        "password": "password123",
+        "active": true,
+        "verified": true
+      }
+    },
+    {
+      "model": "User",
+      "data": {
+        "id": 302,
+        "mail": "2fa-user@example.com",
+        "phone": "+48123123123",
+        "password": "password123",
+        "active": true,
+        "verified": true
+      }
+    },
+    {
+      "model": "UserSettings",
+      "data": {
+        "user_id": 302,
+        "theme": "dark",
+        "notifications_enabled": true,
+        "second_factor_enabled": true
+      }
+    }
+  ],
+  "test_cases": [
+    {
+      "description": "1. AuthService Registration Flow",
+      "assertions": [
+        {
+          "description": "1.1 Register a new user successfully",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "register_user",
+            "function_params": {
+              "mail": "new.register@example.com",
+              "password": "new_password"
+            },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        },
+        {
+          "description": "1.2 Verify the new user was created in the database",
+          "type": "row_count",
+          "params": {
+            "model": "User",
+            "filter_by": { "mail": "new.register@example.com" },
+            "expected": 1
+          }
+        },
+        {
+          "description": "1.3 Verify an activation code was created for the new user",
+          "type": "row_count",
+          "params": {
+            "model": "ActivationCode",
+            "filter_by": { "user_id": 303 },
+            "expected": 1
+          }
+        }
+      ]
+    },
+    {
+      "description": "2. AuthService Login Flow",
+      "assertions": [
+        {
+          "description": "2.1 Successful login for a user without 2FA",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "login_user",
+            "function_params": {
+              "mail": "no-2fa-user@example.com",
+              "password": "password123"
+            },
+            "expected_result": {
+              "operator": "equals",
+              "value": { "status": "success" }
+            }
+          }
+        },
+        {
+          "description": "2.2 Register a new user successfully",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "register_user",
+            "function_params": {
+              "mail": "new.register@example.com",
+              "password": "new_password"
+            },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        },
+        {
+          "description": "2.3 Verify the new user was created in the database",
+          "type": "row_count",
+          "params": {
+            "model": "User",
+            "filter_by": { "mail": "new.register@example.com" },
+            "expected": 1
+          }
+        },
+        {
+          "description": "2.4 Login fails for a user with an inactive account",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "login_user",
+            "function_params": {
+              "mail": "new.register@example.com",
+              "password": "new_password"
+            },
+            "expected_result": {
+              "operator": "equals",
+              "value": { "status": "failure", "message": "Account is not active." }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "description": "3. AuthService 2FA Login Flow",
+      "assertions": [
+        {
+          "description": "3.1 Login attempt for a 2FA-enabled user requires MFA",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "login_user",
+            "function_params": {
+              "mail": "2fa-user@example.com",
+              "password": "password123"
+            },
+            "expected_result": {
+              "operator": "equals",
+              "value": { "status": "mfa_required", "user_id": 302 }
+            }
+          }
+        },
+        {
+          "description": "3.2 Verify that a second factor code was created",
+          "type": "row_count",
+          "params": {
+            "model": "SecondFactorCode",
+            "filter_by": { "user_id": 302 },
+            "expected": 1
+          }
+        },
+        {
+          "description": "3.3 Verify login with an invalid 2FA code fails",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "verify_second_factor",
+            "function_params": {
+              "second_factor_code": "INVALID-CODE"
+            },
+            "expected_result": { "operator": "is_none" }
+          }
+        },
+         {
+          "description": "3.4 Retrieve the generated 2FA code",
+          "type": "attribute_equals",
+          "params": {
+            "model": "SecondFactorCode",
+            "lookup": { "user_id": 302 },
+            "attribute": "code",
+            "expected_result_key": "_2fa_code"
+          }
+        },
+        {
+          "description": "3.5 Verify login with a proper 2FA code",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "verify_second_factor",
+            "function_params": {
+              "second_factor_code": { "from_dependency": "_2fa_code" }
+            },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        }
+      ]
+    }
+  ]
+}

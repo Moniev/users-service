@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import computed_field, PostgresDsn
 from typing import Optional
@@ -29,6 +30,9 @@ class Settings(BaseSettings):
     
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
+    
+    JWT_PRIVATE_KEY_PATH: Optional[str] = None
+    JWT_PUBLIC_KEY_PATH: Optional[str] = None
     
     KAFKA_BOOTSTRAP_SERVERS: str = "kafka.kafka.svc.cluster.local:9093"
     KAFKA_CLIENT_ID: str = "users-service"

@@ -12,6 +12,7 @@ class UserAction(Base):
     __bind_key__ = "UserAction"
     id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True, nullable=False, unique=True)
     type: Mapped[str] = mapped_column(String, nullable=False, unique=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

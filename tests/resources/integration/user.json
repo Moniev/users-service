@@ -36,10 +36,74 @@
       "assertions": [
         { "type": "row_count", "params": { "model": "User", "expected": 1 } },
         { "type": "row_count", "params": { "model": "ActivationCode", "expected": 1 } },
+        { "type": "row_count", "params": { "model": "UserDevice", "expected": 2 } },
         {
           "description": "Verify user is initially inactive",
           "type": "attribute_equals",
           "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "active", "expected": false }
+        },
+        {
+          "description": "Verify user is initially not verified",
+          "type": "attribute_equals",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "verified", "expected": false }
+        },
+        {
+          "description": "Verify user is initially not verified",
+          "type": "attribute_equals",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "mail", "expected": "existing.user@example.com" }
+        },
+        {
+          "description": "Verify user is initially not verified",
+          "type": "attribute_equals",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "uuid", "expected": "f8a9b3d0-5e6f-4c7b-8a9d-1e2f3a4b5c6d" }
+        },
+        {
+          "description": "Verify user is initially not verified",
+          "type": "collection_has_length",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "devices", "expected": 2 }
+        }
+      ]
+    },
+    {
+      "description": "2. User Business Logic Methods",
+      "assertions": [
+        {
+          "description": "2.1 Successfully activate an account with correct code",
+          "type": "execute_function",
+          "params": {
+            "function_name": "activate_account",
+            "function_params": {
+              "on_instance": { "model": "User", "lookup": { "id": 101 }, "selectinload_relations": ["activation_code"] },
+              "method_params": {
+                "activation_code": { "create_dummy": { "model": "ActivationCode", "data": { "code": "ACTIVATION-123" } } }
+              }
+            },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        },
+        {
+          "description": "2.2 Verify user is now active",
+          "type": "attribute_equals",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "active", "expected": true }
+        },
+        {
+          "description": "2.3 Successfully verify an account with correct code",
+          "type": "execute_function",
+          "params": {
+            "function_name": "verify_account",
+            "function_params": {
+              "on_instance": { "model": "User", "lookup": { "id": 101 }, "selectinload_relations": ["verification_code"] },
+              "method_params": {
+                "verification_code": { "create_dummy": { "model": "VerificationCode", "data": { "code": "VERIFY-456" } } }
+              }
+            },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        },
+        {
+          "description": "2.4 Verify user is now verified",
+          "type": "attribute_equals",
+          "params": { "model": "User", "lookup": { "id": 101 }, "attribute": "verified", "expected": true }
         }
       ]
     },

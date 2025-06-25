@@ -17,6 +17,8 @@ class UserSettings(Base):
     notifications_personal_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     notifications_tasks_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     second_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     
