@@ -5,13 +5,14 @@ from pydantic import BaseModel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from .user import User, user_action_association_table
 
 class UserAction(Base):
     __bind_key__ = "UserAction"
     id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True, nullable=False, unique=True)
     type: Mapped[str] = mapped_column(String, nullable=False, unique=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
@@ -23,3 +24,9 @@ class UserAction(Base):
     __tablename__ = "UserAction"
     
     
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass

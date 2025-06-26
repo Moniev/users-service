@@ -1,11 +1,10 @@
 from __future__ import annotations
 from app.config.database import Base
-from datetime import datetime
-from pydantic import BaseModel
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
+from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Any, Dict
 from .user import User
+
 
 class UserDetails(Base):
     __bind_key__ = "UserDetails"
@@ -17,8 +16,17 @@ class UserDetails(Base):
     building: Mapped[str] = mapped_column(String(200))
     apartment: Mapped[str] = mapped_column(String(200))
     postal_code: Mapped[str] = mapped_column(String(6))
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     
     user_id: Mapped[int] = mapped_column(ForeignKey("User.id"))
     user: Mapped["User"] = relationship(back_populates="details")
     
     __tablename__ = "UserDetails"
+    
+    
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass

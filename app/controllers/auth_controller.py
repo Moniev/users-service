@@ -1,15 +1,12 @@
 from aiokafka import AIOKafkaProducer
 from app.config.kafka import get_kafka_producer
-from app.config.database import get_session_factory
 from app.models.requests.user import CreateUser
-from app.models.responses.user import UserPublic
 from app.models.schema.user import User
-from app.models.schema.activation_code import ActivationCode
-from datetime import timedelta
+from app.models.responses import Token, UserPublic 
+from app.services.auth_service import get_auth_service, AuthService
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-from typing import Tuple, Optional
+from typing import Any, Dict
 
 
 router: APIRouter = APIRouter(
@@ -21,15 +18,11 @@ router: APIRouter = APIRouter(
 @router.post("/register", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
 async def register_user(
     user_in: CreateUser,
-    session_factory: async_sessionmaker[AsyncSession] = Depends(get_session_factory),
+    auth_service: AuthService = Depends(get_auth_service),
     producer: AIOKafkaProducer = Depends(get_kafka_producer)
 ):
-   
-    result: Optional[Tuple[User, ActivationCode]] = await User.register(
-        async_session=session_factory, 
-        mail=user_in.mail, 
-        password=user_in.password
-    )
+ 
+    result = await auth_service.register_user(mail=user_in.mail, password=user_in.password)
     
     if not result:
         raise HTTPException(
@@ -38,26 +31,72 @@ async def register_user(
         )
     
     new_user, activation_code = result
-
+    
+    await producer.send_and_wait(
+        "user_activations", 
+        {"user_id": new_user.id, "email": new_user.mail, "code": activation_code.code}
+    )
     
     return new_user
 
-@router.post("/activate", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
-async def activate():
-    pass
+@router.post("/activate/{activation_code}", response_model=UserPublic)
+async def activate_account(
+    activation_code: str,
+    auth_service: AuthService = Depends(get_auth_service)
+):
 
-@router.post("/login", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
-async def activate():
-    pass
+    user: User = await auth_service.activate_account(activation_code)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired activation code.",
+        )
+    return user
 
-@router.post("/verify", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
-async def activate():
-    pass
+@router.post("/verify/{verification_code}", response_model=Token)
+async def verify_account(
+    verification_code: str,
+    auth_service: AuthService = Depends(get_auth_service)
+):
 
-@router.patch("/reset-password", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
-async def activate():
-    pass
+    result: Dict[str, Any] = await auth_service.verify_user_account(verification_code)
+    if not result or result.get("status") == "failure":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired activation code.",
+        )
+    return result
 
-@router.patch("/change-password", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
-async def activate():
-    pass
+@router.post("/login", response_model=Token)
+async def login_user(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    result: Dict[str, Any] = await auth_service.login_user(mail=form_data.username, password=form_data.password)
+
+    if not result or result.get("status") == "failure":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=result.get("message", "Login failed"),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return result
+
+
+@router.post("/login/verify-2fa/{second_factor}", response_model=Token)
+async def verify_2fa(
+    second_factor_code: str,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    result: Dict[str, Any] = await auth_service.verify_second_factor(
+        second_factor_code=second_factor_code
+    )
+
+    if not result or result.get("status") != "success":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired second-factor code.",
+        )
+    return result
+
+

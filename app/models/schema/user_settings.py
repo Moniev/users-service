@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-
+from typing import Any, Dict
 
 class UserSettings(Base):
     __bind_key__ = "UserSettings"
@@ -17,6 +17,8 @@ class UserSettings(Base):
     notifications_personal_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     notifications_tasks_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     second_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     
@@ -25,5 +27,14 @@ class UserSettings(Base):
     
     __tablename__ = "UserSettings"
     
+    
     def __repr__(self):
         return f"<UserSettings theme='{self.theme}' notifications={self.notifications_enabled} >"
+    
+    
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass

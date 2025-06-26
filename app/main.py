@@ -90,6 +90,7 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
+
 app.include_router(auth_controller.router, prefix="/api/v1")
 app.include_router(diagnostics_controller.router, prefix="/api/v1")
 app.include_router(users_controller.router, prefix="/api/v1")

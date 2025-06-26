@@ -3,8 +3,9 @@ from loguru import logger
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 import inspect
-
-from tests.conftest import FUNCTION_MAP, SCHEMA_MAP
+from typing import Any, Dict
+import pprint
+from tests.conftest import FUNCTION_MAP, SCHEMA_MAP, SERVICE_MAP, SERVICE_DEPENDENCIES
 
 
 async def get_object(session, model_name, lookup_criteria, relationships_to_load=None):
@@ -34,13 +35,66 @@ def get_nested_attribute(instance, attribute_path: str):
     return current_value
 
 
+async def check_expected_result(result, expected_params):
+    op = expected_params["operator"]
+    
+    if op == "is_not_none":
+        assert result is not None, "Expected result to not be None, but it was."
+    elif op == "is_none":
+        assert result is None, "Expected result to be None, but it was not."
+    elif op == "equals":
+        expected_value = expected_params["value"]
+        if isinstance(result, dict) and isinstance(expected_value, dict):
+            for key, val in expected_value.items():
+                assert key in result, f"Expected key '{key}' not in result dictionary."
+                assert result[key] == val, f"For key '{key}', expected '{val}', but got '{result[key]}'."
+        else:
+            assert result == expected_value, f"Expected result '{expected_value}', but got '{result}'."
+    else:
+        pytest.fail(f"Unknown result operator: '{op}'")
+
+
+def resolve_params_from_dependencies(params: Dict[str, Any], dependencies: Dict[str, Any]) -> Dict[str, Any]:
+    resolved_params = {}
+    for key, value in params.items():
+        if isinstance(value, dict) and "from_dependency" in value:
+            dependency_key = value["from_dependency"]
+            if dependency_key not in dependencies:
+                pytest.fail(f"Dependency '{dependency_key}' not found for parameter '{key}'.")
+            resolved_params[key] = dependencies[dependency_key]
+        elif isinstance(value, dict):
+            resolved_params[key] = resolve_params_from_dependencies(value, dependencies)
+        elif isinstance(value, list):
+            resolved_params[key] = [
+                resolve_params_from_dependencies(item, dependencies) if isinstance(item, dict) else item
+                for item in value
+            ]
+        else:
+            resolved_params[key] = value
+    return resolved_params
+
+
 @pytest.mark.asyncio
 @pytest.mark.integration
 @pytest.mark.unit
 @pytest.mark.e2e
-async def test_assertion_runner(prepared_session_factory, test_case_data):
-    session_factory = prepared_session_factory
+async def test_assertion_runner(
+    prepared_session_factory,
+    test_case_data,
+    test_environment   
+):
     
+    logger.info("--- SETTINGS OBJECT USED IN THIS TEST ---")
+    try:
+        pprint.pprint(test_environment.settings.dict())
+    except AttributeError:
+        pprint.pprint(vars(test_environment.settings))
+    logger.info("-----------------------------------------")
+    
+    session_factory = prepared_session_factory
+    dependency_instances = {}
+
+
     for assertion_data in test_case_data["assertions"]:
         async with session_factory() as session:
             assertion_type = assertion_data["type"]
@@ -61,7 +115,14 @@ async def test_assertion_runner(prepared_session_factory, test_case_data):
                 rels_to_load = [params["attribute"].split('.')[0]] if '.' in params["attribute"] else None
                 instance = await get_object(session, params["model"], params["lookup"], rels_to_load)
                 actual = get_nested_attribute(instance, params["attribute"])
-                assert actual == params["expected"], f"Expected {params['attribute']} to be {params['expected']}, got {actual}"
+                
+                if "expected_result_key" in params:
+                    dependency_instances[params["expected_result_key"]] = actual
+                    logger.debug(f"Stored '{params['attribute']}' ({actual}) into dependency '{params['expected_result_key']}'.")
+                elif "expected" in params:
+                    assert actual == params["expected"], f"Expected {params['attribute']} to be {params['expected']}, got {actual}"
+                else:
+                    pytest.fail(f"AttributeEquals assertion for '{params['attribute']}' is missing 'expected' or 'expected_result_key' in params.")
             
             elif assertion_type == "collection_has_length":
                 rels_to_load = [params["attribute"]]
@@ -73,12 +134,46 @@ async def test_assertion_runner(prepared_session_factory, test_case_data):
                 instance = await get_object(session, params["model"], params["lookup"])
                 assert instance is not None, f"Expected instance of {params['model']} to exist"
 
+            elif assertion_type == "execute_service_function":
+                service_name = params["service"]
+                func_name = params["function_name"]
+
+                resolved_func_params = resolve_params_from_dependencies(params.get("function_params", {}), dependency_instances)
+
+                service_class = SERVICE_MAP.get(service_name)
+                if not service_class:
+                    pytest.fail(f"Service '{service_name}' not found in SERVICE_MAP.")
+
+                available_fixtures = {
+                    "session_factory": prepared_session_factory,
+                    "redis_client": test_environment.redis_client,
+                    "kafka_producer": test_environment.kafka_producer,
+                    "settings": test_environment.settings
+                }
+
+                service_kwargs = {}
+                if service_class in SERVICE_DEPENDENCIES:
+                    required_deps = SERVICE_DEPENDENCIES[service_class]
+                    for dep_name in required_deps:
+                        if dep_name not in available_fixtures:
+                            pytest.fail(f"Test fixture for dependency '{dep_name}' not found.")
+                        service_kwargs[dep_name] = available_fixtures[dep_name]
+
+                service_instance = service_class(**service_kwargs)
+                method_to_call = getattr(service_instance, func_name)
+
+                result = await method_to_call(**resolved_func_params)
+
+                if "expected_result" in params:
+                    await check_expected_result(result, params["expected_result"])
+
             elif assertion_type == "execute_function":
                 func_name = params["function_name"]
-                func_params = params.get("function_params", {})
-                
-                if "on_instance" in func_params:
-                    instance_config = func_params.pop("on_instance")
+                service_name = params.get("service")
+                resolved_func_params = resolve_params_from_dependencies(params.get("function_params", {}), dependency_instances)
+
+                if "on_instance" in resolved_func_params:
+                    instance_config = resolved_func_params.pop("on_instance")
                     
                     instance = await get_object(
                         session,
@@ -94,8 +189,11 @@ async def test_assertion_runner(prepared_session_factory, test_case_data):
                     call_params = {}
                     if 'async_session' in allowed_params_names:
                         call_params['async_session'] = session_factory
-                    
-                    method_params = func_params.get("method_params", {})
+                        
+                    if 'redis_client' in allowed_params_names:
+                        call_params['redis_client'] = test_environment.redis_client
+
+                    method_params = resolved_func_params.get("method_params", {}) 
                     for name, value in method_params.items():
                         if name not in allowed_params_names:
                             continue
@@ -118,7 +216,7 @@ async def test_assertion_runner(prepared_session_factory, test_case_data):
                     if not target_function:
                         pytest.fail(f"Function '{func_name}' not found in FUNCTION_MAP.")
                     
-                    call_params = func_params.copy()
+                    call_params = resolved_func_params.copy() 
                     if 'async_session' in inspect.signature(target_function).parameters:
                         call_params["async_session"] = session_factory
                     

@@ -22,6 +22,11 @@ jobs:
           python-version: ${{ inputs.python-version }}
           cache: 'pip'
 
+      - name: Setup Docker Environment for Testcontainers
+        run: |
+          sudo chown runner:docker /var/run/docker.sock
+          echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
+
       - name: Upgrade Python build tools
         run: python -m pip install --upgrade pip setuptools wheel
 
@@ -31,6 +36,9 @@ jobs:
           pip install -r requirements.txt pytest-xdist pytest-cov
 
       - name: Run E2E tests
+        env:
+          TEST_MODE: "True"
+          DOCKER_HOST: ""
         run: pytest -v -m e2e --junitxml=e2e-tests.xml --cov=app --cov-report=xml || true
 
       - name: Upload E2E Test Results (JUnit XML)

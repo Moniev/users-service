@@ -1,4 +1,4 @@
-from ...config.database import Base
+from app.config.database import Base
 from .user_role import UserRole
 from .user import User
 from .user_action import UserAction

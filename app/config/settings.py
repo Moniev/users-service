@@ -1,9 +1,13 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import computed_field, PostgresDsn
 from typing import Optional
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    DOCKER_HOST: Optional[str] = None
+    TEST_MODE: Optional[str] = None
 
     DB_USER: Optional[str] = None 
     DB_PASSWORD: Optional[str] = None
@@ -29,6 +33,9 @@ class Settings(BaseSettings):
     
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
+    
+    JWT_PRIVATE_KEY_PATH: Optional[str] = None
+    JWT_PUBLIC_KEY_PATH: Optional[str] = None
     
     KAFKA_BOOTSTRAP_SERVERS: str = "kafka.kafka.svc.cluster.local:9093"
     KAFKA_CLIENT_ID: str = "users-service"
@@ -56,4 +63,10 @@ class Settings(BaseSettings):
         
         return f"{scheme}://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
-settings: Settings = Settings()
+cached_settings: Optional[Settings] = None
+
+def get_settings() -> Settings:
+    global cached_settings
+    if cached_settings is None:
+        cached_settings = Settings() 
+    return cached_settings
