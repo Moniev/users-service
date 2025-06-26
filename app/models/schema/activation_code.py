@@ -3,13 +3,15 @@ from app.config.database import Base
 from datetime import datetime, timedelta 
 import uuid
 from loguru import logger
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, select 
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, select, Select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession 
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from .user import User
+
 
 class ActivationCode(Base):
     __bind_key__ = "ActivationCode"
@@ -21,25 +23,33 @@ class ActivationCode(Base):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("User.id"), unique=True, nullable=False)
     user: Mapped["User"] = relationship(back_populates="activation_code")
-
     __tablename__ = "ActivationCode"
+
 
     def __init__(self, code: str, user_id: int):
         self.code: str = code
         self.user_id: int = user_id
     
+    
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass
+    
     @classmethod
     async def get_activation_code_by_id(cls, id: int, async_session: async_sessionmaker[AsyncSession]) -> Optional['ActivationCode']:
         async with async_session() as session:
-            stmt = select(cls).where(cls.id == id)
-            result = await session.execute(stmt)
+            statement: Select = select(cls).where(cls.id == id)
+            result = await session.execute(statement)
             return result.scalars().first()
     
     @classmethod
     async def get_activation_code_by_code(cls, code: str, async_session: async_sessionmaker[AsyncSession]) -> Optional['ActivationCode']:
         async with async_session() as session:
-            stmt = select(cls).where(cls.code == code)
-            result = await session.execute(stmt)
+            statement: Select = select(cls).where(cls.code == code)
+            result = await session.execute(statement)
             return result.scalars().first()
     
     @classmethod

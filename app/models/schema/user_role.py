@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String, se
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class UserRole(Base):
@@ -25,15 +25,21 @@ class UserRole(Base):
     
     __tablename__ = "UserRole"
     
+    
     @classmethod
     async def get_user_role_by_user_id(cls, async_session: async_sessionmaker[AsyncSession], user_id: int) -> Optional['UserRole']:
-         async with async_session() as session:
+        async with async_session() as session:
             statement: Select = (
                 select(UserRole)
-                .join(User) 
-                .where(User.id == user_id) 
+                .where(UserRole.users.any(User.id == user_id))
             )
-            
             result = await session.execute(statement)
-            
             return result.scalars().first()
+        
+        
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass

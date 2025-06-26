@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from .user import User, user_action_association_table
 
 class UserAction(Base):
@@ -24,3 +24,9 @@ class UserAction(Base):
     __tablename__ = "UserAction"
     
     
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass

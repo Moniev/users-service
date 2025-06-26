@@ -192,6 +192,96 @@
           }
         }
       ]
+    },
+    {
+      "description": "4. AuthService Reset password flow",
+      "assertions": [
+        {
+          "description": "4.1 Login attempt for a 2FA-enabled user requires MFA",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "login_user",
+            "function_params": {
+              "mail": "2fa-user@example.com",
+              "password": "password1234"
+            },
+            "expected_result": {
+              "operator": "equals",
+              "value": { "status": "Invalid credentials.", "user_id": 302 }
+            }
+          }
+        },
+        {
+          "description": "4.2 Verify that a second factor code wasn't created",
+          "type": "row_count",
+          "params": {
+            "model": "SecondFactorCode",
+            "filter_by": { "user_id": 302 },
+            "expected": 0
+          }
+        },
+        {
+          "description": "4.3 Request reset token creation",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "verify_second_factor",
+            "function_params": {
+              "second_factor_code": "INVALID-CODE"
+            },
+            "expected_result": { "operator": "is_none" }
+          }
+        },
+         {
+          "description": "4.4 Confirm password reset",
+          "type": "attribute_equals",
+          "params": {
+            "model": "SecondFactorCode",
+            "lookup": { "user_id": 302 },
+            "attribute": "code",
+            "expected_result_key": "_2fa_code"
+          }
+        },
+        {
+          "description": "4.5 Second ogin attempt for a 2FA-enabled user requires MFA",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "login_user",
+            "function_params": {
+              "mail": "2fa-user@example.com",
+              "password": "password1234"
+            },
+            "expected_result": {
+              "operator": "equals",
+              "value": { "status": "mfa_required", "user_id": 302 }
+            }
+          }
+        },
+        {
+          "description": "4.6 Retrieve the generated 2FA code",
+          "type": "attribute_equals",
+          "params": {
+            "model": "SecondFactorCode",
+            "lookup": { "user_id": 302 },
+            "attribute": "code",
+            "expected_result_key": "_2fa_code"
+          }
+        },
+        {
+          "description": "4.7 Verify login with a proper 2FA code",
+          "type": "execute_service_function",
+          "params": {
+            "service": "AuthService",
+            "function_name": "verify_second_factor",
+            "function_params": {
+              "second_factor_code": { "from_dependency": "_2fa_code" }
+            },
+            "expected_result": { "operator": "is_not_none" }
+          }
+        }
+      ]
     }
   ]
 }

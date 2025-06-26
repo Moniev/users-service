@@ -1,0 +1,35 @@
+DB_USER: PASSWORD
+DB_PASSWORD: PASSWORD
+DB_HOST: postgres.postgres.svc.cluster.local 
+DB_PORT: 5432
+DB_NAME: MAIN_DB
+
+DB_SSL_CA_PATH: /etc/users-service-tls/db/ca.crt 
+DB_SSL_CERT_PATH: /etc/users-service-tls/db/tls.crt 
+DB_SSL_KEY_PATH: /etc/users-service-tls/db/tls.key 
+
+GOOGLE_CLIENT_ID: your_google_client_id_here
+GOOGLE_CLIENT_SECRET: your_google_client_secret_here
+
+JWT_PRIVATE_KEY_PATH: /etc/users-service-tls/jwt/private.pem 
+JWT_PUBLIC_KEY_PATH: /etc/users-service-tls/jwt/public.pem   
+
+KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9093 
+KAFKA_CLIENT_ID: users-service
+KAFKA_SECURITY_PROTOCOL: PLAINTEXT 
+KAFKA_SASL_MECHANISM: "" 
+KAFKA_SASL_USERNAME: "" 
+KAFKA_SASL_PASSWORD: "" 
+KAFKA_SSL_CA_PATH: "" 
+KAFKA_SSL_CERT_PATH: "" 
+KAFKA_SSL_KEY_PATH: "" 
+
+REDIS_HOST: redis.redis.svc.cluster.local
+REDIS_PORT: 6379
+REDIS_DB: 0 
+REDIS_PASSWORD: REDIS_PASSOWRD
+REDIS_SSL_CA_PATH: /etc/users-service-tls/redis/ca.crt 
+REDIS_SSL_CERT_PATH: /etc/users-service-tls/redis/tls.crt 
+REDIS_SSL_KEY_PATH: /etc/users-service-tls/redis/tls.key 
+DOCKER_HOST: ""
+TEST_MODE: "True"

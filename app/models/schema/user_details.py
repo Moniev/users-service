@@ -2,6 +2,7 @@ from __future__ import annotations
 from app.config.database import Base
 from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Any, Dict
 from .user import User
 
 
@@ -21,3 +22,11 @@ class UserDetails(Base):
     user: Mapped["User"] = relationship(back_populates="details")
     
     __tablename__ = "UserDetails"
+    
+    
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass

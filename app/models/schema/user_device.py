@@ -4,7 +4,7 @@ from .user import User
 from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from typing import Any, Dict
 
 class UserDevice(Base):
     __bind_key__ = "UserDevice"
@@ -21,3 +21,11 @@ class UserDevice(Base):
     
     def __repr__(self):
         return f"<UserDevice(id={self.id}, type='{self.device_type}', user_id={self.user_id})>"
+    
+    
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass

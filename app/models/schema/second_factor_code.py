@@ -8,8 +8,9 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Float, String
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import Optional
+from typing import Any, Dict, Optional
 from .user import User
+
 
 class SecondFactorCode(Base):
     __bind_key__ = "SecondFactorCode"
@@ -19,16 +20,25 @@ class SecondFactorCode(Base):
     
     user_id: Mapped[int] = mapped_column(ForeignKey("User.id"))
     user: Mapped["User"] = relationship(back_populates="second_factor_code")
-    
     __tablename__ = "SecondFactorCode"
+    
     
     def __init__(self, code: str, user_id: int): 
         self.code: str = code
         self.user_id: int = user_id
     
+
+    def to_dict(self) -> Dict[str, Any]:
+        pass
+    
+    
+    def from_dict(self) -> Dict[str, Any]:
+        pass
+
     @staticmethod 
     def create_second_factor_code() -> str: 
         code_value = str(uuid.uuid4())
         logger.info(f"Generated raw SecondFactorCode string: {code_value[:8]}...")
         return code_value
+
 

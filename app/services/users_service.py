@@ -1,20 +1,20 @@
 from __future__ import annotations
+from aiokafka import AIOKafkaProducer
 from app.config.redis import get_redis_client
 from app.models.schema import User, UserRole, UserDetails, UserSettings
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from redis.asyncio.client import Redis
-from aiokafka import AIOKafkaProducer
 from loguru import logger
 from typing import Dict, List, Optional, Any
 
 
 class UsersService:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession], kafka_producer: AIOKafkaProducer = None, redis_client: Redis = None):
-        self.async_session = session_factory
-        self.kafka_producer = kafka_producer
-        self.redis_client = redis_client
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession], kafka_producer: AIOKafkaProducer = None):
+        self.async_session: async_sessionmaker[AsyncSession] = session_factory
+        self.kafka_producer: AIOKafkaProducer = kafka_producer
+
 
     async def get_all_users(self, skip: int = 0, limit: int = 100) -> List[User]:
         logger.info(f"Fetching all users with skip: {skip}, limit: {limit}")

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
 )
 from sqlalchemy.orm import DeclarativeBase
-from .settings import settings
+from .settings import get_settings
 
 
 class Base(DeclarativeBase):
@@ -20,12 +20,12 @@ def get_ssl_context() -> Optional[ssl.SSLContext]:
     if os.environ.get("TEST_MODE") == "True":
         return None  
 
-    if not all([settings.DB_SSL_CA_PATH, settings.DB_SSL_CERT_PATH, settings.DB_SSL_KEY_PATH]):
+    if not all([get_settings().DB_SSL_CA_PATH, get_settings().DB_SSL_CERT_PATH, get_settings().DB_SSL_KEY_PATH]):
         logger.warning("One or more DB SSL certificate paths are not set. Proceeding without SSL.")
         return None
     try:
-        context = ssl.create_default_context(cafile=settings.DB_SSL_CA_PATH)
-        context.load_cert_chain(certfile=settings.DB_SSL_CERT_PATH, keyfile=settings.DB_SSL_KEY_PATH)
+        context = ssl.create_default_context(cafile=get_settings().DB_SSL_CA_PATH)
+        context.load_cert_chain(certfile=get_settings().DB_SSL_CERT_PATH, keyfile=get_settings().DB_SSL_KEY_PATH)
         logger.info("Database SSL context created successfully.")
         return context
     except Exception as e:
@@ -38,8 +38,8 @@ if os.environ.get("TEST_MODE") == "True":
     DATABASE_URI = "sqlite+aiosqlite:///:memory:"
     connect_args = {}
 else:
-    logger.info(f"Database URI configured for host: {settings.DB_HOST}")
-    DATABASE_URI = settings.DATABASE_URI
+    logger.info(f"Database URI configured for host: {get_settings().DB_HOST}")
+    DATABASE_URI = get_settings().DATABASE_URI
     ssl_context = get_ssl_context()
     connect_args = {"ssl": ssl_context} if ssl_context else {}
 

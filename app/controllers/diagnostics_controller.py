@@ -6,6 +6,7 @@ from app.services.diagnostics_service import DiagnosticsService
 from fastapi import APIRouter, Depends, HTTPException, status
 from redis.asyncio.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Dict
 
 
 router = APIRouter(
@@ -28,7 +29,7 @@ async def readiness_check(
     kafka_producer: AIOKafkaProducer = Depends(get_kafka_producer)
 ):
     
-    dependency_statuses = await diagnostics_service.get_readiness_status(
+    dependency_statuses: Dict[str, str] = await diagnostics_service.get_readiness_status(
         session=session,
         redis=redis,
         kafka_producer=kafka_producer

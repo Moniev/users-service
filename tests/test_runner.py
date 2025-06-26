@@ -4,8 +4,8 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 import inspect
 from typing import Any, Dict
-
-from tests.conftest import FUNCTION_MAP, SCHEMA_MAP, SERVICE_MAP, SERVICE_DEPENDENCIES
+import pprint
+from tests.conftest import FUNCTION_MAP, SCHEMA_MAP, SERVICE_MAP, SERVICE_DEPENDENCIES, get_session_factory
 
 
 async def get_object(session, model_name, lookup_criteria, relationships_to_load=None):
@@ -54,7 +54,7 @@ async def check_expected_result(result, expected_params):
         pytest.fail(f"Unknown result operator: '{op}'")
 
 
-def _resolve_params_from_dependencies(params: Dict[str, Any], dependencies: Dict[str, Any]) -> Dict[str, Any]:
+def resolve_params_from_dependencies(params: Dict[str, Any], dependencies: Dict[str, Any]) -> Dict[str, Any]:
     resolved_params = {}
     for key, value in params.items():
         if isinstance(value, dict) and "from_dependency" in value:
@@ -63,10 +63,10 @@ def _resolve_params_from_dependencies(params: Dict[str, Any], dependencies: Dict
                 pytest.fail(f"Dependency '{dependency_key}' not found for parameter '{key}'.")
             resolved_params[key] = dependencies[dependency_key]
         elif isinstance(value, dict):
-            resolved_params[key] = _resolve_params_from_dependencies(value, dependencies)
+            resolved_params[key] = resolve_params_from_dependencies(value, dependencies)
         elif isinstance(value, list):
             resolved_params[key] = [
-                _resolve_params_from_dependencies(item, dependencies) if isinstance(item, dict) else item
+                resolve_params_from_dependencies(item, dependencies) if isinstance(item, dict) else item
                 for item in value
             ]
         else:
@@ -78,7 +78,20 @@ def _resolve_params_from_dependencies(params: Dict[str, Any], dependencies: Dict
 @pytest.mark.integration
 @pytest.mark.unit
 @pytest.mark.e2e
-async def test_assertion_runner(prepared_session_factory, test_case_data, kafka_producer_session):
+async def test_assertion_runner(
+    prepared_session_factory,
+    test_case_data,
+    redis_client_session,          
+    kafka_producer_client,        
+    test_app_settings   
+):
+    
+    logger.info("--- SETTINGS OBJECT USED IN THIS TEST ---")
+    try:
+        pprint.pprint(test_app_settings.dict())
+    except AttributeError:
+        pprint.pprint(vars(test_app_settings))
+    logger.info("-----------------------------------------")
     session_factory = prepared_session_factory
     dependency_instances = {}
 
@@ -124,26 +137,31 @@ async def test_assertion_runner(prepared_session_factory, test_case_data, kafka_
             elif assertion_type == "execute_service_function":
                 service_name = params["service"]
                 func_name = params["function_name"]
-                
-                resolved_func_params = _resolve_params_from_dependencies(params.get("function_params", {}), dependency_instances)
+
+                resolved_func_params = resolve_params_from_dependencies(params.get("function_params", {}), dependency_instances)
 
                 service_class = SERVICE_MAP.get(service_name)
                 if not service_class:
                     pytest.fail(f"Service '{service_name}' not found in SERVICE_MAP.")
 
+                available_fixtures = {
+                    "session_factory": prepared_session_factory,
+                    "redis_client": redis_client_session,
+                    "kafka_producer": kafka_producer_client,
+                    "settings": test_app_settings
+                }
+
                 service_kwargs = {}
                 if service_class in SERVICE_DEPENDENCIES:
-                    service_kwargs = SERVICE_DEPENDENCIES[service_class].copy()
+                    required_deps = SERVICE_DEPENDENCIES[service_class]
+                    for dep_name in required_deps:
+                        if dep_name not in available_fixtures:
+                            pytest.fail(f"Test fixture for dependency '{dep_name}' not found.")
+                        service_kwargs[dep_name] = available_fixtures[dep_name]
 
-                service_kwargs['session_factory'] = session_factory
-
-                service_signature = inspect.signature(service_class)
-                if 'kafka_producer' in service_signature.parameters:
-                    service_kwargs['kafka_producer'] = kafka_producer_session
-                
                 service_instance = service_class(**service_kwargs)
                 method_to_call = getattr(service_instance, func_name)
-                
+
                 result = await method_to_call(**resolved_func_params)
 
                 if "expected_result" in params:
@@ -151,9 +169,8 @@ async def test_assertion_runner(prepared_session_factory, test_case_data, kafka_
 
             elif assertion_type == "execute_function":
                 func_name = params["function_name"]
-                
-                # Resolve function parameters from dependencies
-                resolved_func_params = _resolve_params_from_dependencies(params.get("function_params", {}), dependency_instances)
+                service_name = params.get("service")
+                resolved_func_params = resolve_params_from_dependencies(params.get("function_params", {}), dependency_instances)
 
                 if "on_instance" in resolved_func_params:
                     instance_config = resolved_func_params.pop("on_instance")
@@ -172,8 +189,11 @@ async def test_assertion_runner(prepared_session_factory, test_case_data, kafka_
                     call_params = {}
                     if 'async_session' in allowed_params_names:
                         call_params['async_session'] = session_factory
+                        
+                    if 'redis_client' in allowed_params_names:
+                        call_params['redis_client'] = redis_client_session
                     
-                    method_params = resolved_func_params.get("method_params", {}) # Use resolved_func_params
+                    method_params = resolved_func_params.get("method_params", {}) 
                     for name, value in method_params.items():
                         if name not in allowed_params_names:
                             continue
@@ -196,7 +216,7 @@ async def test_assertion_runner(prepared_session_factory, test_case_data, kafka_
                     if not target_function:
                         pytest.fail(f"Function '{func_name}' not found in FUNCTION_MAP.")
                     
-                    call_params = resolved_func_params.copy() # Use resolved_func_params
+                    call_params = resolved_func_params.copy() 
                     if 'async_session' in inspect.signature(target_function).parameters:
                         call_params["async_session"] = session_factory
                     

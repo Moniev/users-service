@@ -6,6 +6,9 @@ from typing import Optional
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+    DOCKER_HOST: Optional[str] = None
+    TEST_MODE: Optional[str] = None
+
     DB_USER: Optional[str] = None 
     DB_PASSWORD: Optional[str] = None
     DB_HOST: Optional[str] = "postgres.postgres.svc.cluster.local"
@@ -60,4 +63,10 @@ class Settings(BaseSettings):
         
         return f"{scheme}://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
-settings: Settings = Settings()
+cached_settings: Optional[Settings] = None
+
+def get_settings() -> Settings:
+    global cached_settings
+    if cached_settings is None:
+        cached_settings = Settings() 
+    return cached_settings
