@@ -1,4 +1,4 @@
-from app.config.database import Base, get_session_factory
+from app.config.database import Base
 from app.models.schema.activation_code import ActivationCode
 from app.models.schema.second_factor_code import SecondFactorCode
 from app.models.schema.reset_code import ResetCode
@@ -10,8 +10,6 @@ from app.models.schema.verification_code import VerificationCode
 from app.config.settings import Settings
 from app.config.logger import setup_logger
 from app.config.kafka import get_kafka_producer, stop_kafka_producer 
-from app.config.redis import redis_client_instance, get_redis_client
-from app.config.settings import get_settings
 from app.services.auth_service import AuthService
 from app.services.users_service import UsersService
 from app.services.diagnostics_service import DiagnosticsService
@@ -29,6 +27,7 @@ from sqlalchemy.orm import Session, selectinload, joinedload
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from testcontainers.redis import RedisContainer
 from testcontainers.kafka import KafkaContainer
+from types import SimpleNamespace
 from typing import Any, Generator, Callable, Tuple, Dict, List
 from typing import AsyncGenerator, Generator, Callable, Tuple, List, Dict, Any, Optional
 from unittest.mock import AsyncMock, patch
@@ -143,6 +142,12 @@ TEST_FILES.extend(list(UNIT_TEST_PATH.glob("*.json")))
 TEST_FILES.extend(list(E2E_TEST_PATH.glob("*.json")))
 
 
+TEST_TYPE_PATHS: dict[str, Path] = {
+    "unit": UNIT_TEST_PATH,
+    "integration": INTEGRATION_TEST_PATH,
+    "e2e": E2E_TEST_PATH,
+}
+
 setup_logger(LOGS_PATH)
 
 
@@ -150,6 +155,25 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "integration: mark tests as integration tests")
     config.addinivalue_line("markers", "unit: mark tests as unit tests")
     config.addinivalue_line("markers", "e2e: mark tests as end-to-end tests")
+
+
+@pytest.fixture(scope="function")
+def test_environment(request):
+    env = SimpleNamespace()
+
+    if request.node.get_closest_marker("unit"):
+        logger.info("Test-type: UNIT. Providing MOCKED environment.")
+        env.redis_client = request.getfixturevalue("mock_redis_client_session")
+        env.kafka_producer = request.getfixturevalue("mock_kafka_producer_session")
+        env.settings = request.getfixturevalue("app_settings")
+
+    else: 
+        logger.info("Test-type: INTEGRATION/E2E. Providing REAL environment with Testcontainers.")
+        env.redis_client = request.getfixturevalue("redis_client_session")
+        env.kafka_producer = request.getfixturevalue("kafka_producer_client")
+        env.settings = request.getfixturevalue("test_app_settings") 
+
+    return env
 
 
 @pytest.fixture(scope="session")
@@ -264,6 +288,10 @@ def app_settings() -> Settings:
     settings: Settings = Settings.model_validate(yaml_data)
     
     os.environ["DOCKER_HOST"] = settings.DOCKER_HOST
+    if os.environ.get("CI") == "true":
+        logger.info("CI environment detected. Forcing DOCKER_HOST to None to use runner's default.")
+        settings.DOCKER_HOST = None 
+    
     os.environ["TEST_MODE"] = "True"
     
     return settings
@@ -693,13 +721,58 @@ def load_all_test_cases():
 
 
 def pytest_generate_tests(metafunc):
-    if "prepared_session_factory" in metafunc.fixturenames and "test_case_data" in metafunc.fixturenames:
-        pytest_params = load_all_test_cases()
-        metafunc.parametrize(
-            "prepared_session_factory, test_case_data", 
-            pytest_params,
-            indirect=["prepared_session_factory"]
-        )
+    if "prepared_session_factory" not in metafunc.fixturenames or "test_case_data" not in metafunc.fixturenames:
+        return
+
+    pytest_params = []
+    
+    marker_expression = metafunc.config.getoption("-m")
+
+    paths_to_scan = []
+
+    if not marker_expression:
+        logger.info("No marker provided. Scanning all test directories.")
+        paths_to_scan.extend(TEST_TYPE_PATHS.values())
+    else:
+        logger.info(f"Marker expression '{marker_expression}' provided. Scanning specific directories.")
+        for marker, path in TEST_TYPE_PATHS.items():
+            if marker in marker_expression:
+                paths_to_scan.append(path)
+    
+    if not paths_to_scan:
+        logger.warning(f"Could not match marker expression '{marker_expression}' to any known test path. Scanning all paths as a fallback.")
+        paths_to_scan.extend(TEST_TYPE_PATHS.values())
+
+
+    for path in paths_to_scan:
+        test_type = path.name
+        marker = getattr(pytest.mark, test_type, None)
+
+        for test_file in path.glob("*.json"):
+            try:
+                with open(test_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError):
+                logger.warning(f"Could not read or decode JSON from: {test_file}. Skipping.")
+                continue
+
+            for case in data.get("test_cases", []):
+                case_desc = case.get("description", "unnamed_case")
+                test_id = f"{test_file.name}-{case_desc}"
+
+                param = pytest.param(
+                    test_file,
+                    case,
+                    marks=[marker] if marker else [],
+                    id=test_id
+                )
+                pytest_params.append(param)
+
+    metafunc.parametrize(
+        "prepared_session_factory,test_case_data",
+        pytest_params,
+        indirect=["prepared_session_factory"]
+    )
         
         
 SERVICE_DEPENDENCIES: dict[object, list[str]] = {

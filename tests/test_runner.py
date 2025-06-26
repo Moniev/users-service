@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 import inspect
 from typing import Any, Dict
 import pprint
-from tests.conftest import FUNCTION_MAP, SCHEMA_MAP, SERVICE_MAP, SERVICE_DEPENDENCIES, get_session_factory
+from tests.conftest import FUNCTION_MAP, SCHEMA_MAP, SERVICE_MAP, SERVICE_DEPENDENCIES
 
 
 async def get_object(session, model_name, lookup_criteria, relationships_to_load=None):
@@ -81,19 +81,19 @@ def resolve_params_from_dependencies(params: Dict[str, Any], dependencies: Dict[
 async def test_assertion_runner(
     prepared_session_factory,
     test_case_data,
-    redis_client_session,          
-    kafka_producer_client,        
-    test_app_settings   
+    test_environment   
 ):
     
     logger.info("--- SETTINGS OBJECT USED IN THIS TEST ---")
     try:
-        pprint.pprint(test_app_settings.dict())
+        pprint.pprint(test_environment.settings.dict())
     except AttributeError:
-        pprint.pprint(vars(test_app_settings))
+        pprint.pprint(vars(test_environment.settings))
     logger.info("-----------------------------------------")
+    
     session_factory = prepared_session_factory
     dependency_instances = {}
+
 
     for assertion_data in test_case_data["assertions"]:
         async with session_factory() as session:
@@ -146,9 +146,9 @@ async def test_assertion_runner(
 
                 available_fixtures = {
                     "session_factory": prepared_session_factory,
-                    "redis_client": redis_client_session,
-                    "kafka_producer": kafka_producer_client,
-                    "settings": test_app_settings
+                    "redis_client": test_environment.redis_client,
+                    "kafka_producer": test_environment.kafka_producer,
+                    "settings": test_environment.settings
                 }
 
                 service_kwargs = {}
@@ -191,8 +191,8 @@ async def test_assertion_runner(
                         call_params['async_session'] = session_factory
                         
                     if 'redis_client' in allowed_params_names:
-                        call_params['redis_client'] = redis_client_session
-                    
+                        call_params['redis_client'] = test_environment.redis_client
+
                     method_params = resolved_func_params.get("method_params", {}) 
                     for name, value in method_params.items():
                         if name not in allowed_params_names:

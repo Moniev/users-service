@@ -25,5 +25,5 @@ redis[async]
 pyjwt==2.10.1
 cryptography
 testcontainers==4.10.0
-testcontainers-python[redis] 
-testcontainers-python[kafka] 
+testcontainers[redis]
+testcontainers[kafka]
