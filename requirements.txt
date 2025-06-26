@@ -27,3 +27,4 @@ cryptography
 testcontainers==4.10.0
 testcontainers[redis]
 testcontainers[kafka]
+fakeredis==2.30.1

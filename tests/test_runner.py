@@ -84,12 +84,12 @@ async def test_assertion_runner(
     test_environment   
 ):
     
-    logger.info("--- SETTINGS OBJECT USED IN THIS TEST ---")
+    pprint.pprint("--- SETTINGS OBJECT USED IN THIS TEST ---")
     try:
         pprint.pprint(test_environment.settings.dict())
     except AttributeError:
         pprint.pprint(vars(test_environment.settings))
-    logger.info("-----------------------------------------")
+    pprint.pprint("-----------------------------------------")
     
     session_factory = prepared_session_factory
     dependency_instances = {}
@@ -97,11 +97,11 @@ async def test_assertion_runner(
 
     for assertion_data in test_case_data["assertions"]:
         async with session_factory() as session:
-            assertion_type = assertion_data["type"]
+            assertion_type: str = assertion_data["type"]
             params = assertion_data["params"]
             desc = assertion_data.get('description', assertion_type)
 
-            logger.debug(f"--> Executing: '{desc}'")
+            pprint.pprint(f"--> Executing: '{desc}'")
         
             if assertion_type == "row_count":
                 model_class = SCHEMA_MAP.get(params["model"])
@@ -118,7 +118,7 @@ async def test_assertion_runner(
                 
                 if "expected_result_key" in params:
                     dependency_instances[params["expected_result_key"]] = actual
-                    logger.debug(f"Stored '{params['attribute']}' ({actual}) into dependency '{params['expected_result_key']}'.")
+                    pprint.pprint(f"Stored '{params['attribute']}' ({actual}) into dependency '{params['expected_result_key']}'.")
                 elif "expected" in params:
                     assert actual == params["expected"], f"Expected {params['attribute']} to be {params['expected']}, got {actual}"
                 else:

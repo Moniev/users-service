@@ -18,3 +18,5 @@ k8s/certificates/*.crt
 *.crt
 *.key
 *.sh
+start.sh
+tests/settings/settings.yaml
