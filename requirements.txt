@@ -20,7 +20,7 @@ asyncpg
 aiosqlite
 gunicorn
 email-validator
-redis==4.2.0
+redis==4.3.0
 redis[async]
 pyjwt==2.10.1
 cryptography
