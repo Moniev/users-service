@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -40,23 +41,27 @@ type Step struct {
 	StoreResultAs string          `json:"store_result_as"`
 }
 
+var testType = flag.String("test_type", "", "type of test to run (unit, integration, e2e)")
+
 func TestDataDriven(t *testing.T) {
-	router := TestApp.Router
+	flag.Parse()
 
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	t.Logf("Current working directory: %s", wd)
+	if *testType == "" {
+		t.Skip("Skipping data-driven tests: -test_type flag not provided")
+		return
+	}
 
-	t.Log("Scanning 'resources' directory for contents...")
-	filepath.Walk("resources", func(path string, info os.FileInfo, err error) error {
-		if err == nil {
-			t.Logf("Found path: %s", path)
-		}
-		return nil
-	})
+	var router *gin.Engine
+	if TestApp != nil {
+		router = TestApp.Router
+	} else {
+		gin.SetMode(gin.TestMode)
+		router = gin.New()
+	}
 
+	testDir := filepath.Join("resources", *testType)
 	var testFiles []string
-	err = filepath.Walk("resources/e2e", func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(testDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -66,10 +71,10 @@ func TestDataDriven(t *testing.T) {
 		return nil
 	})
 
-	require.NoError(t, err, "Failed to walk test case directory 'resources/e2e'")
-	t.Logf("Found %d test files in 'resources/e2e' to execute.", len(testFiles))
+	require.NoError(t, err, "Failed to walk test case directory: %s", testDir)
 	if len(testFiles) == 0 {
-		t.Skip("Skipping test run because no test files were found.")
+		t.Skipf("Skipping: No test files found in directory: %s", testDir)
+		return
 	}
 
 	for _, file := range testFiles {
@@ -83,11 +88,13 @@ func TestDataDriven(t *testing.T) {
 
 			for _, tc := range suite.TestCases {
 				t.Run(tc.Name, func(t *testing.T) {
-					tx, err := TestDB.Tx(context.Background())
-					require.NoError(t, err)
-					defer tx.Rollback()
-
-					registry.SetupDatabase(t, tx, suite.SetupData)
+					var tx *ent.Tx
+					if TestDB != nil {
+						tx, err = TestDB.Tx(context.Background())
+						require.NoError(t, err)
+						defer tx.Rollback()
+						registry.SetupDatabase(t, tx, suite.SetupData)
+					}
 
 					dependencies := make(map[string]interface{})
 
