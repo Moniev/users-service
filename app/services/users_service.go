@@ -1,0 +1,137 @@
+package services
+
+import (
+	"context"
+	"errors"
+	"users-service/app/infrastructure"
+	"users-service/app/models/ent"
+	"users-service/app/models/requests"
+	"users-service/app/repositories"
+
+	"github.com/rs/zerolog"
+)
+
+type UsersService struct {
+	UsersRepository repositories.UsersRepositoryInterface
+	EventNotifier   infrastructure.EventNotifierInterface
+	Logger          zerolog.Logger
+}
+
+type UsersServiceInterface interface {
+	UpdateUser(ctx context.Context, userID int, req *requests.User) (*ent.User, error)
+	UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error)
+	UpdateSettings(ctx context.Context, userID int, req *requests.Settings) (*ent.User, error)
+	RemoveAccount(ctx context.Context, userID int) error
+	GetUserPublic(ctx context.Context, userID int) (*ent.User, error)
+}
+
+var _ UsersServiceInterface = (*UsersService)(nil)
+
+func NewUsersService(
+	usersRepository repositories.UsersRepositoryInterface,
+	eventNotifier infrastructure.EventNotifierInterface,
+	logger zerolog.Logger) *UsersService {
+
+	return &UsersService{
+		UsersRepository: usersRepository,
+		EventNotifier:   eventNotifier,
+		Logger:          logger,
+	}
+}
+
+func (s *UsersService) UpdateUser(ctx context.Context, userID int, req *requests.User) (*ent.User, error) {
+	user, err := s.UsersRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user")
+	}
+
+	updatedUser, err := s.UsersRepository.UpdateUser(ctx, user, req)
+	if err != nil {
+		return nil, errors.New("failed to update user")
+	}
+
+	if updatedUser.Phone != user.Phone {
+		if err := s.EventNotifier.CreateVerificationEvent(updatedUser.Edges.UserSettings, updatedUser.Phone, updatedUser.Edges.VerificationCode); err != nil {
+			s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce verification event")
+			return nil, errors.New("failed to send second factor code")
+		}
+	}
+
+	if updatedUser.Mail != user.Mail {
+		if err := s.EventNotifier.CreateRegistrationEvent(updatedUser, updatedUser.Edges.ActivationCode); err != nil {
+			s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce activation event")
+			return nil, errors.New("failed to send second factor code")
+		}
+	}
+
+	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
+		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce notification event")
+		return nil, errors.New("failed to send notification")
+	}
+
+	return updatedUser, nil
+}
+
+func (s *UsersService) UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error) {
+	user, err := s.UsersRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user")
+	}
+
+	updatedUser, err := s.UsersRepository.UpdateUsersDetails(ctx, user, req)
+	if err != nil {
+		return nil, errors.New("failed to update user")
+	}
+
+	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
+		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce notification event")
+		return nil, errors.New("failed to send notification")
+	}
+
+	return updatedUser, nil
+}
+
+func (s *UsersService) UpdateSettings(ctx context.Context, userID int, req *requests.Settings) (*ent.User, error) {
+	user, err := s.UsersRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user")
+	}
+
+	updatedUser, err := s.UsersRepository.UpdateUsersSettings(ctx, user, req)
+	if err != nil {
+		return nil, errors.New("failed to update user")
+	}
+
+	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
+		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce notification event")
+		return nil, errors.New("failed to send notification")
+	}
+
+	return updatedUser, nil
+}
+
+func (s *UsersService) RemoveAccount(ctx context.Context, userID int) error {
+	user, err := s.UsersRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return errors.New("failed to fetch user")
+	}
+
+	if err := s.UsersRepository.RemoveAccount(ctx, user); err != nil {
+		return errors.New("failed to remove user")
+	}
+
+	if err := s.EventNotifier.CreateNotificationEvent(user.Edges.UserSettings, user.Edges.UserDevices); err != nil {
+		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce notification event")
+		return errors.New("failed to send notification")
+	}
+
+	return nil
+}
+
+func (s *UsersService) GetUserPublic(ctx context.Context, userID int) (*ent.User, error) {
+	return nil, nil
+}
+
+func (s *UsersService) GetUserPrivate(ctx context.Context, userID int) (*ent.User, error) {
+	return nil, nil
+}

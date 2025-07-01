@@ -10,7 +10,7 @@ on:
       dockerfile_path:
         required: false
         type: string
-        default: "./k8s/docker/Dockerfile"
+        default: "./docker/Dockerfile"
         description: "Path to the Dockerfile"
       context_path:
         required: false

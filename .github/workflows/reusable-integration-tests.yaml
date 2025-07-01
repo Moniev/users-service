@@ -3,10 +3,10 @@ name: Reusable - Run Integration Tests
 on:
   workflow_call:
     inputs:
-      python-version:
+      go-version:
         required: false
         type: string
-        default: '3.12'
+        default: '1.24'
 
 jobs:
   test:
@@ -16,30 +16,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v5
+      - name: Set up Go ${{ inputs.go-version }}
+        uses: actions/setup-go@v5
         with:
-          python-version: ${{ inputs.python-version }}
-          cache: 'pip'
+          go-version: ${{ inputs.go-version }}
 
       - name: Setup Docker Environment for Testcontainers
         run: |
-          sudo chown runner:docker /var/run/docker.sock
+          # This ensures that the runner user can access the Docker socket.
+          # The Ryuk container is disabled, which is a recommended practice for CI environments.
           echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
 
-      - name: Upgrade Python build tools
-        run: python -m pip install --upgrade pip setuptools wheel
-
-      - name: Install dependencies
+      - name: Install Go test report tools
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt pytest-xdist pytest-cov
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go install github.com/axw/gocov/gocov@latest
+          go install github.com/AlekSi/gocov-xml@latest
 
-      - name: Run integration tests
-        env:
-            TEST_MODE: "True"
-            DOCKER_HOST: ""
-        run: pytest -v -m integration --junitxml=integration-tests.xml --cov=app --cov-report=xml || true
+      - name: Run Integration tests and generate reports
+        run: |
+          go test -v -tags=integration ./tests -args -test_type=integration -coverprofile=coverage.out | go-junit-report -set-exit-code > integration-tests.xml || true
+          gocov-xml < coverage.out > coverage.xml
 
       - name: Upload Integration Test Results (JUnit XML)
         uses: actions/upload-artifact@v4
@@ -47,9 +44,9 @@ jobs:
         with:
           name: integration-test-results
           path: integration-tests.xml
-          retention-days: 7
+          retention-days: 7 
 
-      - name: Upload Integration Test Coverage Report
+      - name: Upload Integration Test Coverage Report (Cobertura XML)
         uses: actions/upload-artifact@v4
         if: always() 
         with:
