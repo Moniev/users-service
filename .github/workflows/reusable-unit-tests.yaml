@@ -34,7 +34,7 @@ jobs:
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
           go install github.com/axw/gocov/gocov@latest
-          go install github.com/AlekSi/gocov-xml@latest
+          go install github.com/t-yuki/gocover-cobertura@latest
 
       - name: Check for test files
         run: |
@@ -46,31 +46,18 @@ jobs:
       - name: Run Unit tests
         run: go test -v -tags=unit -covermode=atomic -coverprofile=coverage.out ./tests -args -test_type=unit || true
 
-      - name: Generate JUnit report
-        if: always()
-        run: go test -v -tags=unit ./tests -args -test_type=unit | go-junit-report -set-exit-code > unit-tests.xml || true
-
-      - name: Generate coverage report
+      - name: Debug coverage.out
         if: always()
         run: |
           if [ -f coverage.out ]; then
-            gocov-xml < coverage.out > coverage.xml
+            echo "Contents of coverage.out:"
+            cat coverage.out
+            echo "Size of coverage.out:"
+            wc -c coverage.out
           else
-            echo "Skipping coverage report: coverage.out not found"
+            echo "coverage.out does not exist"
           fi
 
-      - name: Upload Unit Test Results (JUnit XML)
-        uses: actions/upload-artifact@v4
+      - name: Generate JUnit report
         if: always()
-        with:
-          name: unit-test-results
-          path: unit-tests.xml
-          retention-days: 7
-
-      - name: Upload Unit Test Coverage Report (Cobertura XML)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: unit-coverage-report
-          path: coverage.xml
-          retention-days: 7
+        run: go test -v -tags=unit ./tests -args -
