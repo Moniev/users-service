@@ -13,6 +13,9 @@ jobs:
     name: Run End-to-End Tests
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Go environment
+        run: echo "GOPROXY=https://proxy.golang.org,direct" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -20,35 +23,63 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
+          cache: true
+          cache-dependency-path: '**/go.sum'
+          check-latest: false
+
+      - name: Download Go modules
+        run: go mod download
 
       - name: Setup Docker Environment for Testcontainers
         run: |
-          # This ensures that the runner user can access the Docker socket.
-          # The Ryuk container is disabled, which is a recommended practice for CI environments.
           echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
 
       - name: Install Go test report tools
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
           go install github.com/axw/gocov/gocov@latest
-          go install github.com/AlekSi/gocov-xml@latest
+          go install github.com/t-yuki/gocover-cobertura@latest
+
+      - name: Check for test files
+        run: |
+          if [ -z "$(find ./tests -name '*_test.go')" ]; then
+            echo "No test files found in ./tests"
+            exit 1
+          fi
 
       - name: Run E2E tests and generate reports
         run: |
-          go test -v -tags=e2e ./tests -args -test_type=e2e -coverprofile=coverage.out | go-junit-report -set-exit-code > e2e-tests.xml || true
-          gocov-xml < coverage.out > coverage.xml
+          go test -v -tags=e2e -covermode=atomic -coverprofile=coverage.out -parallel 4 ./tests -args -test_type=e2e | go-junit-report -set-exit-code > e2e-tests.xml || true
+          if [ -f coverage.out ] && [ -s coverage.out ]; then
+            echo "Generating coverage.xml from coverage.out"
+            gocover-cobertura < coverage.out > coverage.xml || echo "Failed to generate coverage.xml"
+          else
+            echo "Skipping coverage report: coverage.out is missing or empty"
+          fi
+
+      - name: Debug coverage.out
+        if: always()
+        run: |
+          if [ -f coverage.out ]; then
+            echo "Contents of coverage.out:"
+            cat coverage.out
+            echo "Size of coverage.out:"
+            wc -c coverage.out
+          else
+            echo "coverage.out does not exist"
+          fi
 
       - name: Upload E2E Test Results (JUnit XML)
         uses: actions/upload-artifact@v4
-        if: always() 
+        if: always()
         with:
           name: e2e-test-results
           path: e2e-tests.xml
-          retention-days: 7 
+          retention-days: 7
 
       - name: Upload E2E Test Coverage Report (Cobertura XML)
         uses: actions/upload-artifact@v4
-        if: always() 
+        if: always()
         with:
           name: e2e-coverage-report
           path: coverage.xml
