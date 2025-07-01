@@ -4,7 +4,7 @@ import "users-service/app/utils"
 
 type FunctionContainer map[string]interface{}
 
-var functionRegistry = &FunctionContainer{
+var FunctionRegistry = &FunctionContainer{
 	"utils.CheckEmailFormat":    utils.CheckEmailFormat,
 	"utils.CheckPasswordFormat": utils.CheckPasswordFormat,
 	"utils.CheckTokenFormat":    utils.CheckTokenFormat,

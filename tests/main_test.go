@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"crypto/ed25519"
+	"flag"
 	"log"
 	"os"
 	"testing"
@@ -28,7 +29,26 @@ var (
 	TestDB  *ent.Client
 )
 
+var TestType = flag.String("test_type", "", "type of test to run (unit, integration, e2e)")
+
 func TestMain(m *testing.M) {
+	flag.Parse()
+
+	switch *TestType {
+	case "integration", "e2e":
+		setupIntegrationEnvironment()
+	case "unit":
+		log.Println("--- Running in UNIT test mode. Skipping container setup. ---")
+	default:
+		log.Println("No -test_type flag provided, defaulting to 'unit'.")
+		*TestType = "unit"
+	}
+
+	code := m.Run()
+	os.Exit(code)
+}
+
+func setupIntegrationEnvironment() {
 	ctx := context.Background()
 
 	v := viper.New()
@@ -48,6 +68,8 @@ func TestMain(m *testing.M) {
 		logger = logger.Level(level)
 	}
 
+	log.Println("--- Setting up INTEGRATION/E2E environment... ---")
+
 	pgContainer, err := postgres.Run(ctx,
 		"postgres:16-alpine",
 		postgres.WithDatabase("testdb"),
@@ -62,8 +84,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("failed to start postgres container: %s", err)
 	}
-
-	defer pgContainer.Terminate(ctx)
 
 	pgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
@@ -87,8 +107,6 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to start redis container: %s", err)
 	}
 
-	defer redisContainer.Terminate(ctx)
-
 	redisURI, err := redisContainer.ConnectionString(ctx)
 	if err != nil {
 		log.Fatalf("failed to get redis connection string: %s", err)
@@ -101,11 +119,9 @@ func TestMain(m *testing.M) {
 		"confluentinc/cp-kafka:7.3.2",
 		tckafka.WithClusterID("test-cluster"),
 	)
-
 	if err != nil {
 		log.Fatalf("failed to start kafka container: %s", err)
 	}
-	defer kafkaContainer.Terminate(ctx)
 
 	brokers, err := kafkaContainer.Brokers(ctx)
 	if err != nil {
@@ -125,7 +141,4 @@ func TestMain(m *testing.M) {
 	TestApp = registry.NewTestAppContainer(testSettings, dbClient, redisClient, kafkaProducer, logger, pubKey, privKey)
 
 	log.Println("--- Test environment successfully initialized ---")
-	code := m.Run()
-
-	os.Exit(code)
 }

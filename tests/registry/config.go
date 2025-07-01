@@ -74,7 +74,7 @@ func NewTestAppContainer(
 		Router:      router,
 		Services:    serviceContainer,
 		Controllers: controllerContainer,
-		Functions:   functionRegistry,
+		Functions:   FunctionRegistry,
 	}
 }
 

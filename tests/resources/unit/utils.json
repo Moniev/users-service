@@ -1,0 +1,238 @@
+{
+  "setup_data": [],
+  "test_cases": [
+    {
+      "name": "Email Validation",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a valid email",
+          "params": {
+            "function_name": "utils.CheckEmailFormat",
+            "args": ["test.user@example.com"]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for an email with no TLD",
+          "params": {
+            "function_name": "utils.CheckEmailFormat",
+            "args": ["test@example"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for an email with consecutive dots in domain",
+          "params": {
+            "function_name": "utils.CheckEmailFormat",
+            "args": ["test@example..com"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Password Validation",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a valid, strong password",
+          "params": {
+            "function_name": "utils.CheckPasswordFormat",
+            "args": ["ValidPassword123!@#"]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a password without a digit",
+          "params": {
+            "function_name": "utils.CheckPasswordFormat",
+            "args": ["ValidPassword!@#"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a password without an uppercase letter",
+          "params": {
+            "function_name": "utils.CheckPasswordFormat",
+            "args": ["validpassword123!@#"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Token Validation",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a valid 6-digit token",
+          "params": {
+            "function_name": "utils.CheckTokenFormat",
+            "args": ["123456"]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a token with letters",
+          "params": {
+            "function_name": "utils.CheckTokenFormat",
+            "args": ["123a56"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a token that is too short",
+          "params": {
+            "function_name": "utils.CheckTokenFormat",
+            "args": ["12345"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Phone Number Validation",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a valid international phone number",
+          "params": {
+            "function_name": "utils.CheckPhoneFormat",
+            "args": ["+14155552671"]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a number with non-digit characters",
+          "params": {
+            "function_name": "utils.CheckPhoneFormat",
+            "args": ["+1-415-555-2671"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "IBAN Validation",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a valid IBAN (example for Poland)",
+          "params": {
+            "function_name": "utils.CheckIBANFormat",
+            "args": ["PL61109010140000071219812874"]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for an IBAN with incorrect country code format",
+          "params": {
+            "function_name": "utils.CheckIBANFormat",
+            "args": ["P161109010140000071219812874"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "SWIFT/BIC Validation",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a valid 8-character SWIFT",
+          "params": {
+            "function_name": "utils.CheckSWIFTFormat",
+            "args": ["DEUTDEFF"]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a valid 11-character SWIFT",
+          "params": {
+            "function_name": "utils.CheckSWIFTFormat",
+            "args": ["DEUTDEFF500"]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a SWIFT with incorrect length",
+          "params": {
+            "function_name": "utils.CheckSWIFTFormat",
+            "args": ["DEUTDE"]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "HTTP Status Code Validation",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Should return true for a success status code (200)",
+          "params": {
+            "function_name": "utils.IsSuccessStatusCode",
+            "args": [200]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a client error status code (404)",
+          "params": {
+            "function_name": "utils.IsSuccessStatusCode",
+            "args": [404]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    }
+  ]
+}

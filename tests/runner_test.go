@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"users-service/app/models/ent"
@@ -41,16 +41,7 @@ type Step struct {
 	StoreResultAs string          `json:"store_result_as"`
 }
 
-var testType = flag.String("test_type", "", "type of test to run (unit, integration, e2e)")
-
 func TestDataDriven(t *testing.T) {
-	flag.Parse()
-
-	if *testType == "" {
-		t.Skip("Skipping data-driven tests: -test_type flag not provided")
-		return
-	}
-
 	var router *gin.Engine
 	if TestApp != nil {
 		router = TestApp.Router
@@ -59,7 +50,13 @@ func TestDataDriven(t *testing.T) {
 		router = gin.New()
 	}
 
-	testDir := filepath.Join("resources", *testType)
+	_, currentFile, _, ok := runtime.Caller(0)
+	require.True(t, ok, "Failed to get current file path")
+	basePath := filepath.Dir(currentFile)
+	testDir := filepath.Join(basePath, "resources", *TestType)
+
+	t.Logf("Scanning for test files in absolute path: %s", testDir)
+
 	var testFiles []string
 	err := filepath.Walk(testDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -76,6 +73,7 @@ func TestDataDriven(t *testing.T) {
 		t.Skipf("Skipping: No test files found in directory: %s", testDir)
 		return
 	}
+	t.Logf("Found %d test file(s) to execute.", len(testFiles))
 
 	for _, file := range testFiles {
 		t.Run(file, func(t *testing.T) {
@@ -89,7 +87,8 @@ func TestDataDriven(t *testing.T) {
 			for _, tc := range suite.TestCases {
 				t.Run(tc.Name, func(t *testing.T) {
 					var tx *ent.Tx
-					if TestDB != nil {
+					if *TestType == "integration" || *TestType == "e2e" {
+						require.NotNil(t, TestDB, "Database connection (TestDB) is nil. Ensure tests are run with integration or e2e build tags.")
 						tx, err = TestDB.Tx(context.Background())
 						require.NoError(t, err)
 						defer tx.Rollback()
@@ -114,9 +113,13 @@ func executeStep(t *testing.T, router *gin.Engine, tx *ent.Tx, step Step, depend
 	case "httpRequest":
 		handleHTTPRequest(t, router, step, dependencies)
 	case "dbRowCount":
+		require.NotNil(t, tx, "Database transaction is required for dbRowCount step, but it's nil. Use this step only for integration/e2e tests.")
 		handleDBRowCount(t, tx, step, dependencies)
 	case "dbAttributeEquals":
+		require.NotNil(t, tx, "Database transaction is required for dbAttributeEquals step, but it's nil. Use this step only for integration/e2e tests.")
 		handleDBAttributeEquals(t, tx, step, dependencies)
+	case "executeFunction":
+		handleFunctionExecution(t, step, dependencies)
 	default:
 		t.Fatalf("Unknown step type: %s", step.Type)
 	}
@@ -244,4 +247,53 @@ func resolveDependencies(t *testing.T, rawData json.RawMessage, dependencies map
 	})
 
 	return []byte(resolvedStr)
+}
+
+func handleFunctionExecution(t *testing.T, step Step, dependencies map[string]interface{}) {
+	var params struct {
+		FunctionName string        `json:"function_name"`
+		Args         []interface{} `json:"args"`
+	}
+	resolvedParams := resolveDependencies(t, step.Params, dependencies)
+	err := json.Unmarshal(resolvedParams, &params)
+	require.NoError(t, err)
+
+	targetFunc, ok := (*registry.FunctionRegistry)[params.FunctionName]
+	require.True(t, ok, "Function %s not found in FunctionRegistry", params.FunctionName)
+
+	funcValue := reflect.ValueOf(targetFunc)
+	funcType := funcValue.Type()
+
+	require.Equal(t, len(params.Args), funcType.NumIn(), "Incorrect number of arguments for function %s", params.FunctionName)
+
+	in := make([]reflect.Value, len(params.Args))
+	for i, arg := range params.Args {
+		argValue := reflect.ValueOf(arg)
+		paramType := funcType.In(i)
+
+		if argValue.Kind() == reflect.Float64 && (paramType.Kind() == reflect.Int || paramType.Kind() == reflect.Int64) {
+			argValue = reflect.ValueOf(int64(argValue.Float())).Convert(paramType)
+		} else if !argValue.Type().ConvertibleTo(paramType) {
+			t.Fatalf("Cannot convert argument %d for function %s from %T to %s", i, params.FunctionName, arg, paramType)
+		}
+		in[i] = argValue.Convert(paramType)
+	}
+
+	results := funcValue.Call(in)
+
+	var expected struct {
+		ReturnValue interface{} `json:"return_value"`
+	}
+	if len(step.Expected) > 0 {
+		err = json.Unmarshal(step.Expected, &expected)
+		require.NoError(t, err)
+		require.NotEmpty(t, results, "Function %s returned no values but expected one", params.FunctionName)
+		actualResult := results[0].Interface()
+		assert.Equal(t, expected.ReturnValue, actualResult, "Function return value mismatch")
+	}
+
+	if step.StoreResultAs != "" {
+		require.NotEmpty(t, results, "Function %s returned no values, cannot store result", params.FunctionName)
+		dependencies[step.StoreResultAs] = results[0].Interface()
+	}
 }
