@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Set up Go environment
         run: echo "GOPROXY=https://proxy.golang.org,direct" >> $GITHUB_ENV
-        
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: Run Unit tests
-        run: go test -v -tags=unit ./tests -args -test_type=unit -covermode=atomic -coverprofile=coverage.out || true
+        run: go test -v -tags=unit -covermode=atomic -coverprofile=coverage.out ./tests -args -test_type=unit || true
 
       - name: Generate JUnit report
         if: always()
