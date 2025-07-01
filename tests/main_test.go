@@ -1,4 +1,3 @@
-// tests/main_test.go
 package tests
 
 import (
