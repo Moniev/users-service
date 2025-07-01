@@ -13,4 +13,6 @@ var FunctionRegistry = &FunctionContainer{
 	"utils.CheckSWIFTFormat":    utils.CheckSWIFTFormat,
 	"utils.GenerateRandomCode":  utils.GenerateRandomCode,
 	"utils.IsSuccessStatusCode": utils.IsSuccessStatusCode,
+	"utils.Contains":            utils.Contains,
+	"utils.ValidateRoles":       utils.ValidateRoles,
 }

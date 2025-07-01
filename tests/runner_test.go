@@ -29,8 +29,10 @@ type TestSuite struct {
 }
 
 type TestCase struct {
-	Name  string `json:"name"`
-	Steps []Step `json:"steps"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty,"`
+	Author      string `json:"author,omitempty,"`
+	Steps       []Step `json:"steps"`
 }
 
 type Step struct {
@@ -279,15 +281,12 @@ func handleFunctionExecution(t *testing.T, step Step, dependencies map[string]in
 
 	in := make([]reflect.Value, len(params.Args))
 	for i, arg := range params.Args {
-		argValue := reflect.ValueOf(arg)
 		paramType := funcType.In(i)
+		argValue := reflect.ValueOf(arg)
 
-		if argValue.Kind() == reflect.Float64 && (paramType.Kind() == reflect.Int || paramType.Kind() == reflect.Int64) {
-			argValue = reflect.ValueOf(int64(argValue.Float())).Convert(paramType)
-		} else if !argValue.Type().ConvertibleTo(paramType) {
-			t.Fatalf("Cannot convert argument %d for function %s from %T to %s", i, params.FunctionName, arg, paramType)
-		}
-		in[i] = argValue.Convert(paramType)
+		convertedArg, err := convertArg(argValue, paramType)
+		require.NoError(t, err, "Argument conversion failed for function %s, arg %d", params.FunctionName, i)
+		in[i] = convertedArg
 	}
 
 	results := funcValue.Call(in)
@@ -307,4 +306,48 @@ func handleFunctionExecution(t *testing.T, step Step, dependencies map[string]in
 		require.NotEmpty(t, results, "Function %s returned no values, cannot store result", params.FunctionName)
 		dependencies[step.StoreResultAs] = results[0].Interface()
 	}
+}
+
+func convertArg(argValue reflect.Value, targetType reflect.Type) (reflect.Value, error) {
+	if argValue.Type().ConvertibleTo(targetType) {
+		return argValue.Convert(targetType), nil
+	}
+
+	if argValue.Kind() == reflect.Float64 && (targetType.Kind() == reflect.Int || targetType.Kind() == reflect.Int64) {
+		return reflect.ValueOf(int64(argValue.Float())).Convert(targetType), nil
+	}
+
+	if argValue.Kind() == reflect.Slice && targetType.Kind() == reflect.Slice {
+		targetSliceType := targetType.Elem()
+		sourceSlice := argValue.Interface().([]interface{})
+
+		newSlice := reflect.MakeSlice(targetType, len(sourceSlice), len(sourceSlice))
+
+		for i, v := range sourceSlice {
+			elemValue := reflect.ValueOf(v)
+
+			if elemValue.Kind() == reflect.Map && targetSliceType.Kind() == reflect.Struct {
+				tempJson, err := json.Marshal(v)
+				if err != nil {
+					return reflect.Value{}, fmt.Errorf("failed to re-marshal map to json: %w", err)
+				}
+
+				newElem := reflect.New(targetSliceType)
+				err = json.Unmarshal(tempJson, newElem.Interface())
+				if err != nil {
+					return reflect.Value{}, fmt.Errorf("failed to unmarshal json to target struct %s: %w", targetSliceType, err)
+				}
+				newSlice.Index(i).Set(newElem.Elem())
+
+			} else if elemValue.Type().ConvertibleTo(targetSliceType) {
+				newSlice.Index(i).Set(elemValue.Convert(targetSliceType))
+			} else {
+				return reflect.Value{}, fmt.Errorf("cannot convert slice element from %T to %s", v, targetSliceType)
+			}
+		}
+
+		return newSlice, nil
+	}
+
+	return reflect.Value{}, fmt.Errorf("cannot convert argument from %s to %s", argValue.Type(), targetType)
 }

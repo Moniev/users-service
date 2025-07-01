@@ -1,8 +1,5 @@
 # Users Service
 
-The Users Service is a central microservice responsible for user management, authorization, and security within the application ecosystem. 
-Its primary goal is to provide a robust and secure foundation for all operations related to user identity.
-
 ## Table of Contents
 - [Functionality Overview](#functionality-overview)
 - [Prerequisites](#prerequisites)
@@ -11,8 +8,8 @@ Its primary goal is to provide a robust and secure foundation for all operations
 - [Troubleshooting](#troubleshooting)
 - [Directory Structure](#directory-structure)
 - [Testing](#testing)
-- [Useful-commands](#useful-commands)
-- [Useful-addresses](#useful-addresses)
+- [Useful Commands](#useful-commands)
+- [Useful Addresses](#useful-addresses)
 - [License](#license)
 - [Notes](#notes)
 
@@ -34,16 +31,16 @@ Key features of the service include:
 - **Linux, Debian 12 preferred**: Windows k8s installation might be problematic for promtail configuration.
 - **Golang, 1.24 or newer**: As dependencies in libraries required these versions.
 - **Docker Engine 28.2.2 or newer**: Installed and running version.
-- **Docker Desktop version 28.1.1 or newer**: If decided to using UI version.
-- **Docker**: `Dockerfile` located at `./docker` for the main users service project folder.
+- **Docker Desktop version 28.1.1 or newer**: If you decide to use the UI version.
+- **Dockerfile**: Located at `./docker` for the main users service project folder.
 
 ## Installation
 1. Clone the repository:
    ```bash
-      git clone https://github.com/factory-chainline/users-service
+      git clone [https://github.com/factory-chainline/users-service](https://github.com/factory-chainline/users-service)
       cd users-service
    ```
-2. Downlaod the dependencies:
+2. Download the dependencies:
    ```bash
       go mod tidy
    ```
@@ -54,33 +51,33 @@ Key features of the service include:
       go get entgo.io/ent/cmd/ent 
    ```
 
-   - **Get all of it's dependencies**
+   - **Get all of its dependencies**
    ```bash
       go get entgo.io/ent/cmd/internal/printer@v0.14.4   
    ```
 
 ## Post-Installation
-1. Work with code
+1. Work with the code.
 
 ## Troubleshooting
-- **Continous Integration Actions Failed**:
+- **Continuous Integration Actions Failed**:
   Ensure your code passed tests locally before commit. It will be checked anyway, but don't waste our common memory.
 - **Docker not running**:
   Start Docker before running the tests.
 - **Manifest Errors**:
-  Ensure all `settings.yaml` in `tests/settings` folder are properly configurated for your local environment.
+  Ensure all `settings.yaml` in the `tests/settings` folder are properly configured for your local environment.
 
-## Manually building, tagging and pushing docker images
-- **Building docker images**
+## Manually building, tagging, and pushing Docker images
+- **Building Docker images**
    ```bash
       docker build -t ghcr.io/factory-chainline/users-service:{current-version} -f ./docker/Dockerfile .   
    ``` 
 
-- **Tagging docker image**
+- **Tagging a Docker image**
    ```bash
       
    ```   
-- **Pushing docker image**
+- **Pushing a Docker image**
    ```bash
       
    ```  
@@ -127,64 +124,145 @@ Key features of the service include:
 
 ```
 ## Testing
-- **Running unit tests**   
+- **Running unit tests**
    ```bash
       go test -v -tags=unit ./tests -args -test_type=unit
    ```
 
-- **Running integration test**   
+- **Running integration tests**
    ```bash
       go test -v -tags=integration ./tests -args -test_type=integration
    ```
 
-- **Running e2e test**   
+- **Running e2e tests**
    ```bash
       go test -v -tags=e2e ./tests -args -test_type=e2e
    ```
 
-- **Test Setup JSON structures**
-   ```bash
-      
-   ```
+### Defining Tests in JSON
 
-- **Test Step JSON structures**
-   ```bash
-      
-   ```
+The test runner is data-driven, meaning test cases are defined in `.json` files located in the `tests/resources/` directory. Each JSON file represents a test suite.
 
-## Useful commands
+#### Test Setup (`setup_data`)
+
+The `setup_data` array is used to populate the database with a specific state before a test case runs.
+
+**Example Structure:**
+```json
+"setup_data": [
+  {
+    "model": "UserRole",
+    "data": {
+      "id": 1, 
+      "name": "admin"
+    }
+  },
+  {
+    "model": "User",
+    "data": {
+      "id": 1,
+      "mail": "admin@example.com",
+      "password": "securepassword123",
+      "user_role_ids": [1] 
+    }
+  }
+]
+```
+
+**Key Conventions:**
+- **`model`**: The name of the `ent` model to create (e.g., "User", "UserRole").
+- **`data`**: A map of fields and their values for the new entity.
+- **`id`**: A **local, temporary ID** used only within this file to define relationships. It does not correspond to the actual database ID.
+- **Relationships (to-one)**: To link to a single entity, use the `_id` suffix (e.g., `"owner_id": 1`). This links to the entity that has the local ID of `1`.
+- **Relationships (to-many)**: To link to multiple entities, use the `_ids` suffix (e.g., `"user_role_ids": [1, 2]`). This links to entities with local IDs `1` and `2`.
+- **Order Matters**: Entities must be defined before they are referenced. For example, `UserRole` must be defined before a `User` can be assigned to it.
+
+#### Test Steps (`steps`)
+
+The `steps` array defines the sequence of actions and assertions for a test case.
+
+**Example Structure:**
+```json
+{
+   "setup_data": [
+         {
+            "model": "UserRole",
+            "data": {
+            "id": 1,
+            "name": "user",
+            "description": "Standard user role"
+            }
+         }
+      ],
+   "steps": [
+      {
+         "type": "executeFunction",
+         "description": "Should return true for a valid email",
+         "params": {
+            "function_name": "utils.CheckEmailFormat",
+            "args": ["test@example.com"]
+         },
+         "expected": {
+            "return_value": true
+         }
+      },
+      {
+         "type": "httpRequest",
+         "description": "Attempt to register a new user",
+         "params": {
+            "method": "POST",
+            "path": "/api/v1/auth/register",
+            "body": {
+            "mail": "new.user@example.com",
+            "password": "Password123!"
+            }
+         },
+         "expected": {
+            "statusCode": 200
+         }
+      }
+   ]
+}
+```
+**Key Fields:**
+- **`type`**: The type of action to perform. Supported types are `executeFunction`, `httpRequest`, `dbRowCount`, and `dbAttributeEquals`.
+- **`description`**: A human-readable description of the step.
+- **`params`**: The parameters for the action (e.g., function name and arguments, or HTTP method and body).
+- **`expected`**: The expected outcome (e.g., a specific return value or HTTP status code).
+- **`store_result_as`**: (Optional) A key to store the result of this step, allowing it to be used as a dependency in subsequent steps (e.g., `{{myResult.data.id}}`).
+
+## Useful Commands
 - **Generating keys for ED25519**
    Generate your private key:
    ```bash
       openssl genpkey -algorithm ED25519 -out private_key.pem
    ```
-   Then resolve public key:
+   Then resolve the public key:
    ```bash
       openssl pkey -in private_key.pem -pubout -out public_key.pem
    ```
 
-- **Generating swagger documentation**
+- **Generating Swagger documentation**
    ```bash
       swag init -g ./app/cmd/main.go -o ./docker/docs/ --parseDependency --parseInternal --dir .     
    ``` 
 
-- **Generating Ent schemas models**
+- **Generating Ent schema models**
    ```bash
       go run entgo.io/ent/cmd/ent generate ./app/models/ent/schema    
    ``` 
-
-- **hosting documentation locally**
+- **Hosting documentation locally**
    ```bash
       
    ``` 
 
-## Useful addresses
-- **forwarding users-service port without ingress**   
+## Useful Addresses
+- **Forwarding users-service port without ingress**
    ```bash
       kubectl port-forward svc/users-service -n users-service 8000:8000  
    ```
 
-- **swagger address**
+- **Swagger address**
    ```bash
       localhost:8000/swagger
    ```    
@@ -195,4 +273,3 @@ Key features of the service include:
 
 ## Notes
 - {TO DO}
-

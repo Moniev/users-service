@@ -1,0 +1,90 @@
+{
+  "setup_data": [
+    {
+      "model": "UserRole",
+      "data": {
+        "id": 1,
+        "name": "user",
+        "description": "Standard user role"
+      }
+    }
+  ],
+  "test_cases": [
+    {
+      "name": "User Registration and Verification",
+      "steps": [
+        {
+          "type": "httpRequest",
+          "description": "Attempt to register a new user with a valid email",
+          "params": {
+            "method": "POST",
+            "path": "/api/v1/auth/register",
+            "body": {
+              "mail": "test.user@example.com",
+              "password": "StrongPassword123!",
+              "device_token": "e2e-fingerprint-123",
+              "ip_address": "127.0.0.1",
+              "user_agent": "E2E Test Runner"
+            }
+          },
+          "expected": {
+            "statusCode": 200,
+            "body": {
+              "status": "success"
+            }
+          },
+          "store_result_as": "registerResponse"
+        },
+        {
+          "type": "dbRowCount",
+          "description": "Verify that one User record was created",
+          "params": {
+            "model": "User",
+            "filter_by": {
+              "mail": "test.user@example.com"
+            },
+            "expected": 1
+          }
+        },
+        {
+          "type": "dbRowCount",
+          "description": "Verify that one UserDevice record was created for the new user",
+          "params": {
+            "model": "UserDevice",
+            "filter_by": {
+              "token": "e2e-fingerprint-123"
+            },
+            "expected": 1
+          }
+        },
+        {
+          "type": "dbRowCount",
+          "description": "Verify that an ActivationCode was generated",
+          "params": {
+            "model": "ActivationCode",
+            "expected": 1
+          }
+        },
+        {
+          "type": "httpRequest",
+          "description": "Attempt to register the same user again",
+          "params": {
+            "method": "POST",
+            "path": "/api/v1/auth/register",
+            "body": {
+              "mail": "test.user@example.com",
+              "password": "AnotherPassword456!"
+            }
+          },
+          "expected": {
+            "statusCode": 422,
+            "body": {
+              "status": "failure",
+              "error": "this email is already registered"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

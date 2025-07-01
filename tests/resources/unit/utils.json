@@ -112,6 +112,17 @@
           "expected": {
             "return_value": false
           }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Should return false for a token that is from letters",
+          "params": {
+            "function_name": "utils.CheckTokenFormat",
+            "args": ["abcdef"]
+          },
+          "expected": {
+            "return_value": false
+          }
         }
       ]
     },
@@ -227,6 +238,78 @@
           "params": {
             "function_name": "utils.IsSuccessStatusCode",
             "args": [404]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slice and Collection Utilities",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Contains should return true if a string is in the slice",
+          "params": {
+            "function_name": "utils.Contains",
+            "args": [
+              ["admin", "user", "guest"],
+              "user"
+            ]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Contains should return false if a string is not in the slice",
+          "params": {
+            "function_name": "utils.Contains",
+            "args": [
+              ["admin", "user", "guest"],
+              "moderator"
+            ]
+          },
+          "expected": {
+            "return_value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "Role Validation Logic",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "ValidateRoles should return true if a required role exists",
+          "params": {
+            "function_name": "utils.ValidateRoles",
+            "args": [
+              [
+                {"name": "user", "description": "Standard user", "permissions": []},
+                {"name": "admin", "description": "Admin user", "permissions": []}
+              ],
+              ["admin", "superadmin"]
+            ]
+          },
+          "expected": {
+            "return_value": true
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "ValidateRoles should return false if no required role exists",
+          "params": {
+            "function_name": "utils.ValidateRoles",
+            "args": [
+              [
+                {"name": "user", "description": "Standard user", "permissions": []},
+                {"name": "guest", "description": "Guest user", "permissions": []}
+              ],
+              ["admin", "superadmin"]
+            ]
           },
           "expected": {
             "return_value": false
