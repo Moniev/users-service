@@ -294,6 +294,7 @@ func handleFunctionExecution(t *testing.T, step Step, dependencies map[string]in
 	var expected struct {
 		ReturnValue interface{} `json:"return_value"`
 	}
+
 	if len(step.Expected) > 0 {
 		err = json.Unmarshal(step.Expected, &expected)
 		require.NoError(t, err)

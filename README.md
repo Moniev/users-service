@@ -37,7 +37,7 @@ Key features of the service include:
 ## Installation
 1. Clone the repository:
    ```bash
-      git clone [https://github.com/factory-chainline/users-service](https://github.com/factory-chainline/users-service)
+      git clone https://github.com/factory-chainline/users-service
       cd users-service
    ```
 2. Download the dependencies:

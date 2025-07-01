@@ -27,22 +27,40 @@ jobs:
           go install github.com/axw/gocov/gocov@latest
           go install github.com/AlekSi/gocov-xml@latest
 
-      - name: Run Unit tests and generate reports
+      - name: Check for test files
         run: |
-          go test -v -tags=unit ./tests -args -test_type=unit -coverprofile=coverage.out | go-junit-report -set-exit-code > unit-tests.xml || true
-          gocov-xml < coverage.out > coverage.xml
+          if [ -z "$(find ./tests -name '*_test.go')" ]; then
+            echo "No test files found in ./tests"
+            exit 1
+          fi
+
+      - name: Run Unit tests
+        run: go test -v -tags=unit ./tests -args -test_type=unit -covermode=atomic -coverprofile=coverage.out || true
+
+      - name: Generate JUnit report
+        if: always()
+        run: go test -v -tags=unit ./tests -args -test_type=unit | go-junit-report -set-exit-code > unit-tests.xml || true
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          if [ -f coverage.out ]; then
+            gocov-xml < coverage.out > coverage.xml
+          else
+            echo "Skipping coverage report: coverage.out not found"
+          fi
 
       - name: Upload Unit Test Results (JUnit XML)
         uses: actions/upload-artifact@v4
-        if: always() 
+        if: always()
         with:
           name: unit-test-results
           path: unit-tests.xml
-          retention-days: 7 
+          retention-days: 7
 
       - name: Upload Unit Test Coverage Report (Cobertura XML)
         uses: actions/upload-artifact@v4
-        if: always() 
+        if: always()
         with:
           name: unit-coverage-report
           path: coverage.xml
