@@ -7,16 +7,39 @@ import (
 	"errors"
 	"testing"
 	"users-service/app/models/responses"
-	"users-service/tests/mocks"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
+type MockConn struct {
+	mock.Mock
+}
+
+func (m *MockConn) WriteJSON(v interface{}) error {
+	args := m.Called(v)
+	return args.Error(0)
+}
+
+func (m *MockConn) ReadMessage() (int, []byte, error) {
+	args := m.Called()
+	var p []byte
+	if args.Get(1) != nil {
+		p = args.Get(1).([]byte)
+	}
+	return args.Int(0), p, args.Error(2)
+}
+
+func (m *MockConn) Close() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestSendMessage_Success(t *testing.T) {
-	mockConn := new(mocks.MockConn)
+	mockConn := new(MockConn)
 	helper := &WebSocketHelper{Conn: mockConn, Logger: zerolog.Nop()}
 	testMsg := responses.Message{Status: "status", Message: "data"}
 
@@ -28,7 +51,7 @@ func TestSendMessage_Success(t *testing.T) {
 }
 
 func TestReadRequest_Success(t *testing.T) {
-	mockConn := new(mocks.MockConn)
+	mockConn := new(MockConn)
 	helper := &WebSocketHelper{Conn: mockConn, Logger: zerolog.Nop()}
 
 	type TestRequest struct {
@@ -49,7 +72,7 @@ func TestReadRequest_Success(t *testing.T) {
 }
 
 func TestReadRequest_ReadError(t *testing.T) {
-	mockConn := new(mocks.MockConn)
+	mockConn := new(MockConn)
 	helper := &WebSocketHelper{Conn: mockConn, Logger: zerolog.Nop()}
 	expectedError := errors.New("connection closed")
 
