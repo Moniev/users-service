@@ -7,6 +7,7 @@ import (
 	"errors"
 	"testing"
 	"users-service/app/models/responses"
+	"users-service/tests/mocks"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
@@ -15,7 +16,7 @@ import (
 )
 
 func TestSendMessage_Success(t *testing.T) {
-	mockConn := new(MockConn)
+	mockConn := new(mocks.MockConn)
 	helper := &WebSocketHelper{Conn: mockConn, Logger: zerolog.Nop()}
 	testMsg := responses.Message{Status: "status", Message: "data"}
 
@@ -27,7 +28,7 @@ func TestSendMessage_Success(t *testing.T) {
 }
 
 func TestReadRequest_Success(t *testing.T) {
-	mockConn := new(MockConn)
+	mockConn := new(mocks.MockConn)
 	helper := &WebSocketHelper{Conn: mockConn, Logger: zerolog.Nop()}
 
 	type TestRequest struct {
@@ -48,7 +49,7 @@ func TestReadRequest_Success(t *testing.T) {
 }
 
 func TestReadRequest_ReadError(t *testing.T) {
-	mockConn := new(MockConn)
+	mockConn := new(mocks.MockConn)
 	helper := &WebSocketHelper{Conn: mockConn, Logger: zerolog.Nop()}
 	expectedError := errors.New("connection closed")
 
