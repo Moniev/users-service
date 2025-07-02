@@ -6,6 +6,7 @@ import (
 )
 
 type Empty struct {
+	Device
 }
 
 type EmptyInterface interface {
@@ -13,10 +14,11 @@ type EmptyInterface interface {
 }
 
 func (r *Empty) Valid() error {
-	return nil
+	return r.Device.Valid()
 }
 
 type Details struct {
+	Device
 }
 
 type DetailsInterface interface {
@@ -24,12 +26,13 @@ type DetailsInterface interface {
 }
 
 func (r *Details) Valid() error {
-	return nil
+	return r.Device.Valid()
 }
 
 type User struct {
-	Phone string
-	Mail  string
+	Phone string `json:"phone"`
+	Mail  string `json:"mail"`
+	Device
 }
 
 type UserInterface interface {
@@ -45,14 +48,15 @@ func (r *User) Valid() error {
 		return errors.New("prvided not valid phone format")
 	}
 
-	return nil
+	return r.Device.Valid()
 }
 
 type Settings struct {
-	TwoFactor                    bool
-	NightMode                    bool
-	SecondFactorTargetID         int
-	NotificationsTargetDeviceIDs []int
+	TwoFactor                    bool  `json:"two_factor"`
+	NightMode                    bool  `json:"night_mode"`
+	SecondFactorTargetID         int   `json:"second_factor_target_id"`
+	NotificationsTargetDeviceIDs []int `json:"notifications_target_device_ids"`
+	Device
 }
 
 type SettingsInerface interface {
@@ -60,11 +64,12 @@ type SettingsInerface interface {
 }
 
 func (r *Settings) Valid() error {
-	return nil
+	return r.Device.Valid()
 }
 
 type Password struct {
-	Password string
+	Password string `json:"password"`
+	Device
 }
 
 type PasswordInterface interface {
@@ -72,5 +77,9 @@ type PasswordInterface interface {
 }
 
 func (r *Password) Valid() error {
-	return nil
+	if !utils.CheckPasswordFormat(r.Password) {
+		return errors.New("wrong password provided")
+	}
+
+	return r.Device.Valid()
 }

@@ -1,5 +1,10 @@
 package requests
 
+import (
+	"errors"
+	"users-service/app/utils"
+)
+
 type Device struct {
 	DeviceToken    string `json:"device_token" binding:"required"`
 	IPAddress      string `json:"ip_address"`
@@ -15,6 +20,26 @@ type DeviceInterface interface {
 }
 
 func (r Device) Valid() error {
+	if r.IPAddress == "" {
+		return errors.New("no ip address provided")
+	}
+
+	if r.OSName == "" {
+		return errors.New("no os name provided")
+	}
+
+	if r.OSVersion == "" {
+		return errors.New("no os version provided")
+	}
+
+	if r.BrowserName == "" {
+		return errors.New("no browser name provided")
+	}
+
+	if r.OSVersion == "" {
+		return errors.New("no browser version provided")
+	}
+
 	return nil
 }
 
@@ -26,43 +51,76 @@ type Register struct {
 }
 
 func (r *Register) Valid() error {
-	return nil
+	if !utils.CheckEmailFormat(r.Mail) {
+		return errors.New("invalid email format")
+	}
+
+	if !utils.CheckPasswordFormat(r.Password) {
+		return errors.New("password does not meet complexity requirements")
+	}
+
+	return r.Device.Valid()
 }
 
 type Login struct {
-	Mail     string
-	Password string
+	Mail     string `json:"mail"`
+	Password string `json:"password"`
 	Device
 }
 
 func (r Login) Valid() error {
-	return nil
+	if !utils.CheckEmailFormat(r.Mail) {
+		return errors.New("invalid email format provided")
+	}
+
+	if !utils.CheckPasswordFormat(r.Password) {
+		return errors.New("password does not meet complexity requirements")
+	}
+
+	return r.Device.Valid()
 }
 
 type Code struct {
-	Code string
+	Code string `json:"code"`
 	Device
 }
 
 func (r Code) Valid() error {
-	return nil
+	if !utils.CheckTokenFormat(r.Code) {
+		return errors.New("invalid code format provided")
+	}
+
+	return r.Device.Valid()
 }
 
 type Mail struct {
-	Mail string
+	Mail string `json:"mail"`
 	Device
 }
 
 func (r *Mail) Valid() error {
-	return nil
+	if !utils.CheckEmailFormat(r.Mail) {
+		return errors.New("wrong mail provided")
+	}
+
+	return r.Device.Valid()
 }
 
 type ConfirmPasswordReset struct {
-	Code     string
-	Password string
+	Code     string `json:"code"`
+	Password string `json:"password"`
 	Device
 }
 
 func (r *ConfirmPasswordReset) Valid() error {
-	return nil
+	if !utils.CheckTokenFormat(r.Code) {
+		return errors.New("wrong code provided")
+	}
+
+	if !utils.CheckPasswordFormat(r.Password) {
+		return errors.New("wrong password provided")
+	}
+
+	err := r.Device.Valid()
+	return err
 }

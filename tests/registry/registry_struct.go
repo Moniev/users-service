@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"reflect"
 	"users-service/app/controllers"
 	"users-service/app/middlewares"
 	"users-service/app/models/events"
@@ -76,4 +77,42 @@ type ModelsContainer struct {
 	JWTValidationResult utilsModels.JWTValidationResult
 	JWTResult           utilsModels.JWTResult
 	HashResult          utilsModels.HashResult
+}
+
+var ModelTypeRegistry = make(map[string]reflect.Type)
+
+func init() {
+	ModelTypeRegistry["requests.Device"] = reflect.TypeOf(&requests.Device{})
+	ModelTypeRegistry["requests.Register"] = reflect.TypeOf(&requests.Register{})
+	ModelTypeRegistry["requests.Login"] = reflect.TypeOf(&requests.Login{})
+	ModelTypeRegistry["requests.Code"] = reflect.TypeOf(&requests.Code{})
+	ModelTypeRegistry["requests.Mail"] = reflect.TypeOf(&requests.Mail{})
+	ModelTypeRegistry["requests.ConfirmPasswordReset"] = reflect.TypeOf(&requests.ConfirmPasswordReset{})
+	ModelTypeRegistry["requests.Empty"] = reflect.TypeOf(&requests.Empty{})
+	ModelTypeRegistry["requests.Details"] = reflect.TypeOf(&requests.Details{})
+	ModelTypeRegistry["requests.User"] = reflect.TypeOf(&requests.User{})
+	ModelTypeRegistry["requests.Settings"] = reflect.TypeOf(&requests.Settings{})
+	ModelTypeRegistry["requests.Password"] = reflect.TypeOf(&requests.Password{})
+
+	ModelTypeRegistry["responses.ErrorResponse"] = reflect.TypeOf(&responses.ErrorResponse{})
+	ModelTypeRegistry["responses.SuccessResponse"] = reflect.TypeOf(&responses.SuccessResponse{})
+	ModelTypeRegistry["responses.Message"] = reflect.TypeOf(&responses.Message{})
+	ModelTypeRegistry["responses.UserResponse"] = reflect.TypeOf(&responses.User{})
+	ModelTypeRegistry["responses.ProgressReporter"] = reflect.TypeOf(&responses.ProgressReporter{})
+
+	ModelTypeRegistry["events.BaseEvent"] = reflect.TypeOf(&events.BaseEvent{})
+	ModelTypeRegistry["events.RegistrationEvent"] = reflect.TypeOf(&events.RegistrationEvent{})
+	ModelTypeRegistry["events.SecondFactorEvent"] = reflect.TypeOf(&events.SecondFactorEvent{})
+	ModelTypeRegistry["events.LoginEvent"] = reflect.TypeOf(&events.LoginEvent{})
+	ModelTypeRegistry["events.VerificationEvent"] = reflect.TypeOf(&events.VerificationEvent{})
+	ModelTypeRegistry["events.NotificationEvent"] = reflect.TypeOf(&events.NotificationEvent{})
+	ModelTypeRegistry["events.UserActionEvent"] = reflect.TypeOf(&events.UserActionEvent{})
+	ModelTypeRegistry["events.ResetPasswordEvent"] = reflect.TypeOf(&events.ResetPasswordEvent{})
+
+	ModelTypeRegistry["utils.PermissionInfo"] = reflect.TypeOf(&utilsModels.PermissionInfo{})
+	ModelTypeRegistry["utils.UserRoleInfo"] = reflect.TypeOf(&utilsModels.UserRoleInfo{})
+	ModelTypeRegistry["utils.Claims"] = reflect.TypeOf(&utilsModels.Claims{})
+	ModelTypeRegistry["utils.JWTValidationResult"] = reflect.TypeOf(&utilsModels.JWTValidationResult{})
+	ModelTypeRegistry["utils.JWTResult"] = reflect.TypeOf(&utilsModels.JWTResult{})
+	ModelTypeRegistry["utils.HashResult"] = reflect.TypeOf(&utilsModels.HashResult{})
 }

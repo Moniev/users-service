@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"users-service/app/models/ent"
 	"users-service/app/models/utils"
 
@@ -16,9 +17,12 @@ func GetUserID(ctx *gin.Context) int {
 		return 0
 	}
 
-	userID, ok := userIDRaw.(int)
-	if ok {
+	if userID, ok := userIDRaw.(int); ok {
 		return userID
+	}
+
+	if userIDFloat, ok := userIDRaw.(float64); ok {
+		return int(userIDFloat)
 	}
 
 	return 0
@@ -27,14 +31,28 @@ func GetUserID(ctx *gin.Context) int {
 // BindRoles retrieves user roles from the Gin context.
 // It returns a slice of UserRoleInfo if roles are present and valid, or an empty slice if not found or invalid.
 // The roles are expected to be stored in the context under the "Roles" key by authentication middleware.
-func BindRoles(ctx *gin.Context) []utils.UserRoleInfo {
+func BindRoles(ctx *gin.Context) []utils.UserRoleInfo { // Use alias for UserRoleInfo
 	rolesRaw, exists := ctx.Get("UserRoles")
 	if !exists {
 		return []utils.UserRoleInfo{}
 	}
 
-	roles, ok := rolesRaw.([]utils.UserRoleInfo)
-	if ok {
+	if roles, ok := rolesRaw.([]utils.UserRoleInfo); ok {
+		return roles
+	}
+
+	if rolesInterfaceSlice, ok := rolesRaw.([]interface{}); ok {
+		marshaledRoles, err := json.Marshal(rolesInterfaceSlice)
+		if err != nil {
+			return []utils.UserRoleInfo{}
+		}
+
+		var roles []utils.UserRoleInfo
+		err = json.Unmarshal(marshaledRoles, &roles)
+		if err != nil {
+			return []utils.UserRoleInfo{}
+		}
+
 		return roles
 	}
 

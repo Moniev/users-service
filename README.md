@@ -84,43 +84,139 @@ Key features of the service include:
 
 ## Directory Structure
 ```bash
-.
-.
-.
-├── app/
-│   ├── backups/
-│   ├── cmd/
-│   ├── config/
-│   ├── controllers/
-│   ├── infrastructure/
-│   ├── middlewares/
-│   ├── models/
-│   ├── repositories/
-│   ├── services/
-│   ├── services/
-│   └── utils/
-│   
-├── tests/
-│   ├── registry/
-│   │   ├── config.go
-│   │   ├── function_registry.go
-│   │   ├── schema_registry.go
-│   │   └── struct_registry.go
-│   │
-│   ├── resources/
-│   │   ├── unit/*.json
-│   │   ├── integration/*.json
-│   │   └── e2e/*.json
-│   │
-│   ├── settings/
-│   │   └── settings.yaml
-│   │
-│   ├── main_test.go
-│   └── runner_test.go
-│
-└── Docker/
-    ├── certificates/
-    └── Dockerfile/
+📦users-service
+ ┣ 📂.github
+ ┃ ┗ 📂workflows
+ ┃ ┃ ┣ 📜dependabot-autocommit.yaml
+ ┃ ┃ ┣ 📜main-ci-cd.yaml
+ ┃ ┃ ┣ 📜reusable-build-push.yaml
+ ┃ ┃ ┣ 📜reusable-e2e-tests.yaml
+ ┃ ┃ ┣ 📜reusable-integration-tests.yaml
+ ┃ ┃ ┣ 📜reusable-notify-discord.yaml
+ ┃ ┃ ┣ 📜reusable-unit-tests.yaml
+ ┃ ┃ ┣ 📜reusable-update-gitops.yaml
+ ┃ ┃ ┗ 📜reusable-update-requirements.yaml
+ ┣ 📂app
+ ┃ ┣ 📂backups
+ ┃ ┣ 📂cmd
+ ┃ ┃ ┗ 📜main.go
+ ┃ ┣ 📂config
+ ┃ ┃ ┣ 📜config.go
+ ┃ ┃ ┣ 📜database.go
+ ┃ ┃ ┣ 📜kafka.go
+ ┃ ┃ ┣ 📜logger.go
+ ┃ ┃ ┣ 📜redis.go
+ ┃ ┃ ┗ 📜settings.go
+ ┃ ┣ 📂controllers
+ ┃ ┃ ┣ 📜auth_controller.go
+ ┃ ┃ ┣ 📜diagnostics_controller.go
+ ┃ ┃ ┣ 📜docs_controller.go
+ ┃ ┃ ┣ 📜handler.go
+ ┃ ┃ ┗ 📜users_controller.go
+ ┃ ┣ 📂infrastructure
+ ┃ ┃ ┣ 📜cache_store.go
+ ┃ ┃ ┣ 📜event_listener.go
+ ┃ ┃ ┗ 📜event_notifier.go
+ ┃ ┣ 📂middlewares
+ ┃ ┃ ┣ 📜auth_middleware.go
+ ┃ ┃ ┣ 📜config.go
+ ┃ ┃ ┣ 📜kafka_message_handler_middleware.go
+ ┃ ┃ ┣ 📜limit_requests_middleware.go
+ ┃ ┃ ┣ 📜logger_middleware.go
+ ┃ ┃ ┣ 📜metrics.go
+ ┃ ┃ ┣ 📜metrics_cors_middleware.go
+ ┃ ┃ ┣ 📜prometheus_middleware.go
+ ┃ ┃ ┗ 📜request_identification_middleware.go
+ ┃ ┣ 📂models
+ ┃ ┃ ┃ 📂ent     
+ ┃ ┃ ┃ ┣ 📂schema
+ ┃ ┃ ┃ ┃ ┣ 📜activation_code.go
+ ┃ ┃ ┃ ┃ ┣ 📜blacklisted_token.go
+ ┃ ┃ ┃ ┃ ┣ 📜reset_code.go
+ ┃ ┃ ┃ ┃ ┣ 📜role_permission.go
+ ┃ ┃ ┃ ┃ ┣ 📜second_factor_code.go
+ ┃ ┃ ┃ ┃ ┣ 📜user.go
+ ┃ ┃ ┃ ┃ ┣ 📜user_action.go
+ ┃ ┃ ┃ ┃ ┣ 📜user_ban.go
+ ┃ ┃ ┃ ┃ ┣ 📜user_details.go
+ ┃ ┃ ┃ ┃ ┣ 📜user_device.go
+ ┃ ┃ ┃ ┃ ┣ 📜user_role.go
+ ┃ ┃ ┃ ┃ ┣ 📜user_settings.go
+ ┃ ┃ ┃ ┃ ┗ 📜verification_code.go
+ ┃ ┃ ┣ 📂events
+ ┃ ┃ ┃ ┗ 📜events.go
+ ┃ ┃ ┣ 📂requests
+ ┃ ┃ ┃ ┣ 📜auth.go
+ ┃ ┃ ┃ ┣ 📜diagnostics.go
+ ┃ ┃ ┃ ┣ 📜users.go
+ ┃ ┃ ┃ ┗ 📜web_socket_helper.go
+ ┃ ┃ ┃ 📂responses
+ ┃ ┃ ┃ ┣ 📜error.go
+ ┃ ┃ ┃ ┣ 📜messages.go
+ ┃ ┃ ┃ ┣ 📜reporter.go
+ ┃ ┃ ┃ ┣ 📜success.go
+ ┃ ┃ ┃ ┗ 📜user.go
+ ┃ ┃ ┃  📂utils
+ ┃ ┃ ┃  ┣ 📜auth.go
+ ┃ ┃ ┃ ┗ 📜consumer_wrapper.go
+ ┃ ┣ 📂repositories
+ ┃ ┃ ┣ 📜config.go
+ ┃ ┃ ┗ 📜users_repository.go
+ ┃ ┣ 📂resources
+ ┃ ┣ 📂routes
+ ┃ ┃ ┣ 📜auth_routes.go
+ ┃ ┃ ┣ 📜diagnostics_routes.go
+ ┃ ┃ ┣ 📜docs_routes.go
+ ┃ ┃ ┣ 📜metrics_routes.go
+ ┃ ┃ ┣ 📜swagger_routes.go
+ ┃ ┃ ┗ 📜users_routes.go
+ ┃ ┣ 📂services
+ ┃ ┃ ┣ 📜auth_service.go
+ ┃ ┃ ┣ 📜diagnostics_service.go
+ ┃ ┃ ┣ 📜docs_service.go
+ ┃ ┃ ┗ 📜users_service.go
+ ┃ ┗ 📂utils
+ ┃ ┃ ┣ 📜auth_utils.go
+ ┃ ┃ ┗ 📜controller_utils.go
+ ┣ 📂docker
+ ┃ ┣ 📂certificates
+ ┃ ┣ 📂docs
+ ┃ ┃ ┣ 📜docs.go
+ ┃ ┃ ┣ 📜swagger.json
+ ┃ ┃ ┗ 📜swagger.yaml
+ ┃ ┗ 📜Dockerfile
+ ┣ 📂tests
+ ┃ ┣ 📂registry
+ ┃ ┃ ┣ 📜config.go
+ ┃ ┃ ┣ 📜mocks.go
+ ┃ ┃ ┣ 📜registry_function.go
+ ┃ ┃ ┣ 📜registry_schema.go
+ ┃ ┃ ┗ 📜registry_struct.go
+ ┃ ┣ 📂resources
+ ┃ ┃ ┣ 📂certificates
+ ┃ ┃ ┣ 📂e2e
+ ┃ ┃ ┣ 📂integration
+ ┃ ┃ ┃ ┗ 📜test.json
+ ┃ ┃ ┗ 📂unit
+ ┃ ┃ ┃ ┣ 📜backups.json
+ ┃ ┃ ┃ ┣ 📜config.json
+ ┃ ┃ ┃ ┣ 📜controllers.json
+ ┃ ┃ ┃ ┣ 📜infrastructure.json
+ ┃ ┃ ┃ ┣ 📜middlewares.json
+ ┃ ┃ ┃ ┣ 📜models.json
+ ┃ ┃ ┃ ┣ 📜repositories.json
+ ┃ ┃ ┃ ┣ 📜services.json
+ ┃ ┃ ┃ ┗ 📜utils.json
+ ┃ ┣ 📂settings
+ ┃ ┃ ┣ 📜.mockery.yml
+ ┃ ┃ ┗ 📜settings.yaml
+ ┃ ┣ 📜main_test.go
+ ┃ ┗ 📜runner_test.go
+ ┣ 📜.gitignore
+ ┣ 📜README.md
+ ┣ 📜go.mod
+ ┣ 📜go.sum
+ ┗ 📜start.sh
 
 ```
 ## Testing

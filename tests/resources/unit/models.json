@@ -1,0 +1,672 @@
+{
+  "setup_data": [],
+  "test_cases": [
+    {
+      "name": "Requests.Register Model Validation",
+      "description": "Tests the validation logic of the requests.Register model's Valid() method.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a valid Register request instance",
+          "params": {
+            "model_type": "requests.Register",
+            "data": {
+              "name": "Test User",
+              "mail": "valid.user@example.com",
+              "password": "StrongPassword!233@",
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "validRegisterRequest"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid Register request (should return nil error)",
+          "params": {
+            "function_name": "validRegisterRequest.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        },
+        {
+          "type": "createModel",
+          "description": "Create a Register request with invalid email",
+          "params": {
+            "model_type": "requests.Register",
+            "data": {
+              "name": "Test User 2",
+              "mail": "invalid-email",
+              "password": "StrongPassword!23",
+              "device_token": "dev-002"
+            }
+          },
+          "store_result_as": "invalidEmailRequest"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate request with invalid email (should return error message)",
+          "params": {
+            "function_name": "invalidEmailRequest.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": "invalid email format"
+          }
+        },
+        {
+          "type": "createModel",
+          "description": "Create a Register request with invalid password format",
+          "params": {
+            "model_type": "requests.Register",
+            "data": {
+              "name": "Test User 3",
+              "mail": "user@example.com",
+              "password": "weak",
+              "device_token": "dev-003"
+            }
+          },
+          "store_result_as": "invalidPasswordRequest"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate request with invalid password (should return error message)",
+          "params": {
+            "function_name": "invalidPasswordRequest.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": "password does not meet complexity requirements"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Device Model Validation",
+      "description": "Tests the validation logic of the requests.Device model's Valid() method.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a valid Register request instance",
+          "params": {
+            "model_type": "requests.Device",
+            "data": {
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "validDeviceRequest"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid Register request (should return nil error)",
+          "params": {
+            "function_name": "validDeviceRequest.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Device Model Properties",
+      "description": "Tests the properties of the requests.Device model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Device request instance",
+          "params": {
+            "model_type": "requests.Device",
+            "data": {
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Device"
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'user_agent' property", 
+          "params": {
+            "actual": "{{ Device.UserAgent }}",
+            "expected": "secret-agent",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'device_token' property",
+          "params": {
+            "actual": "{{ Device.DeviceToken }}", 
+            "expected": "dev-001",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'ip_address' property",
+          "params": {
+            "actual": "{{ Device.IPAddress }}", 
+            "expected": "127.0.0.1",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'os_name' property",
+          "params": {
+            "actual": "{{ Device.OSName }}", 
+            "expected": "Debian",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'os_version' property",
+          "params": {
+            "actual": "{{ Device.OSVersion }}", 
+            "expected": "12",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'browser_name' property",
+          "params": {
+            "actual": "{{ Device.BrowserName }}", 
+            "expected": "Safari",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'browser_version' property",
+          "params": {
+            "actual": "{{ Device.BrowserVersion }}", 
+            "expected": "12",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid Device request (should return nil error)",
+          "params": {
+            "function_name": "Device.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Login Model Properties",
+      "description": "Tests the properties of the requests.Login model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Login request instance",
+          "params": {
+            "model_type": "requests.Login",
+            "data": {
+              "mail": "random@mail.com",
+              "password": "StrongPassword!233@",
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Login"
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'mail' property",
+          "params": {
+            "actual": "{{ Login.Mail }}", 
+            "expected": "random@mail.com",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'password' property",
+          "params": {
+            "actual": "{{ Login.Password }}", 
+            "expected": "StrongPassword!233@",
+            "operator": "equals"
+          }
+        },
+        { 
+          "type": "executeFunction",
+          "description": "Validate the valid Login request (should return nil error)",
+          "params": {
+            "function_name": "Login.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Code Model Properties",
+      "description": "Tests the properties of the requests.Code model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Code request instance",
+          "params": {
+            "model_type": "requests.Code",
+            "data": {
+              "code": "123098",
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Code"
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'code' property",
+          "params": {
+            "actual": "{{ Code.Code }}", 
+            "expected": "123098",
+            "operator": "equals"
+          }
+        },
+          {
+          "type": "executeFunction",
+          "description": "Validate the valid Code request (should return nil error)",
+          "params": {
+            "function_name": "Code.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Mail Model Properties",
+      "description": "Tests the properties of the requests.Code model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Mail request instance",
+          "params": {
+            "model_type": "requests.Mail",
+            "data": {
+              "mail": "random@mail.com",
+              "code": "123098",
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Mail"
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'mail' property",
+          "params": {
+            "actual": "{{ Mail.Mail }}", 
+            "expected": "random@mail.com",
+            "operator": "equals"
+          }
+        },
+          {
+          "type": "executeFunction",
+          "description": "Validate the valid Mail request (should return nil error)",
+          "params": {
+            "function_name": "Mail.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.ConfirmPasswordReset Model Properties",
+      "description": "Tests the properties of the requests.Code model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a ConfirmPasswordReset request instance",
+          "params": {
+            "model_type": "requests.ConfirmPasswordReset",
+            "data": {
+              "password": "StrongPassword!233@",
+              "code": "123098",
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "ConfirmPasswordReset"
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'password' property",
+          "params": {
+            "actual": "{{ ConfirmPasswordReset.Password }}", 
+            "expected": "StrongPassword!233@",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'code' property",
+          "params": {
+            "actual": "{{ ConfirmPasswordReset.Code }}", 
+            "expected": "123098",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid ConfirmPasswordReset request (should return nil error)",
+          "params": {
+            "function_name": "ConfirmPasswordReset.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Empty Model Properties",
+      "description": "Tests the properties of the requests.Code model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Empty request instance",
+          "params": {
+            "model_type": "requests.Empty",
+            "data": {
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Empty"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid Empty request (should return nil error)",
+          "params": {
+            "function_name": "Empty.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.User Model Properties",
+      "description": "Tests the properties of the requests.Code model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a User request instance",
+          "params": {
+            "model_type": "requests.User",
+            "data": {
+              "phone": "+48123123123",
+              "mail": "random@mail.com",
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "User"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid User request (should return nil error)",
+          "params": {
+            "function_name": "User.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Details Model Properties",
+      "description": "Tests the properties of the requests.Code model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Details request instance",
+          "params": {
+            "model_type": "requests.Details",
+            "data": {
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Details"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid Details request (should return nil error)",
+          "params": {
+            "function_name": "Details.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Settings Model Properties",
+      "description": "Tests the properties of the requests.Settings model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Settings request instance",
+          "params": {
+            "model_type": "requests.Settings",
+            "data": {
+              "two_factor": true,
+              "night_mode": true,
+              "second_factor_target_id": 1,
+              "notifications_target_device_ids": [1, 2, 3],
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Settings"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid Settings request (should return nil error)",
+          "params": {
+            "function_name": "Settings.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "Models.Utils.UserRoleInfo Structure",
+      "description": "Tests the structure and nested access for utils.UserRoleInfo.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a UserRoleInfo instance with permissions",
+          "params": {
+            "model_type": "utils.UserRoleInfo",
+            "data": {
+              "name": "admin",
+              "description": "Administrator role",
+              "permissions": [
+                {"name": "user:read", "view": true, "add": false, "edit": false, "delete": false},
+                {"name": "user:write", "view": false, "add": true, "edit": true, "delete": true}
+              ]
+            }
+          },
+          "store_result_as": "adminUserRole"
+        },
+        {
+          "type": "assert",
+          "description": "Verify role name",
+          "params": {
+            "actual": "{{ adminUserRole.Name }}", 
+            "expected": "admin",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify description",
+          "params": {
+            "actual": "{{ adminUserRole.Description }}", 
+            "expected": "Administrator role",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the length of permissions slice",
+          "params": {
+            "actual": "{{ adminUserRole.Permissions }}", 
+            "expected": "2", 
+            "operator": "length"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the name of the first permission",
+          "params": {
+            "actual": "{{ adminUserRole.Permissions.0.Name }}", 
+            "expected": "user:read",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'add' flag of the second permission",
+          "params": {
+            "actual": "{{ adminUserRole.Permissions.1.Add }}",
+            "expected": true,
+            "operator": "equals"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests.Password Model Properties",
+      "description": "Tests the properties of the requests.Password model after creation.",
+      "steps": [
+        {
+          "type": "createModel",
+          "description": "Create a Password request instance",
+          "params": {
+            "model_type": "requests.Password",
+            "data": {
+              "password": "StrongPassword!233@",
+              "device_token": "dev-001",
+              "ip_address": "127.0.0.1",
+              "user_agent": "secret-agent",
+              "os_name": "Debian",
+              "os_version": "12",
+              "browser_name": "Safari",
+              "browser_version": "12"
+            }
+          },
+          "store_result_as": "Password"
+        },
+        {
+          "type": "assert",
+          "description": "Verify the 'password' flag of the second permission",
+          "params": {
+            "actual": "{{ Password.Password }}",
+            "expected": "StrongPassword!233@",
+            "operator": "equals"
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Validate the valid Password request (should return nil error)",
+          "params": {
+            "function_name": "Password.Valid",
+            "args": []
+          },
+          "expected": {
+            "return_value": null
+          }
+        }
+      ]
+    }
+  ]
+}

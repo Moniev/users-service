@@ -316,6 +316,265 @@
           }
         }
       ]
+    },
+    {
+      "name": "GenerateRandomCode",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Generate should return true if a int inside", 
+          "params": {
+            "function_name": "utils.GenerateRandomCode",
+            "args": []
+          },
+          "store_result_as": "randomCode" 
+        },
+        {
+          "type": "assert",
+          "description": "Result should be true", 
+          "params": {
+            "actual": "{{ randomCode }}",
+            "expected": "99999",
+            "operator": "greaterThan" 
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify generated code is a 6-digit number (i.e., <= 999999)",
+          "params": {
+            "actual": "{{ randomCode }}",
+            "expected": "1000000",
+            "operator": "lessThan" 
+          }
+        }
+      ]
+    },
+    {
+      "name": "GenerateRandomCodes",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Generate a list of random codes",
+          "params": {
+            "function_name": "utils.GenerateRandomCodes",
+            "args": [3]
+          },
+          "store_result_as": "randomCodes"
+        },
+        {
+          "type": "assert",
+          "description": "Verify generated codes are not nil",
+          "params": {
+            "actual": "{{ randomCodes }}", 
+            "operator": "notNil"
+          }
+        },
+        {
+          "type": "assert",
+          "description": "Verify generated codes length is 3",
+          "params": {
+            "actual": "{{ randomCodes }}",
+            "expected": 3,               
+            "operator": "length"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GetUserID Function",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Create context with UserID",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{"UserID": 123}]
+          },
+          "store_result_as": "ctxWithUserID"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Get UserID from context",
+          "params": {
+            "function_name": "utils.GetUserID",
+            "args": ["{{ ctxWithUserID }}"]
+          },
+          "expected": {
+            "return_value": 123
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Create context without UserID",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{}]
+          },
+          "store_result_as": "ctxWithoutUserID"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Get UserID from empty context",
+          "params": {
+            "function_name": "utils.GetUserID",
+            "args": ["{{ ctxWithoutUserID }}"]
+          },
+          "expected": {
+            "return_value": 0
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Create context with invalid UserID type",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{"UserID": "not-an-int"}]
+          },
+          "store_result_as": "ctxWithInvalidUserID"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Get UserID from context with invalid type",
+          "params": {
+            "function_name": "utils.GetUserID",
+            "args": ["{{ ctxWithInvalidUserID }}"]
+          },
+          "expected": {
+            "return_value": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BindRoles Function",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Create context with user roles",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{"UserRoles": [{"name": "admin", "description": "Admin User", "permissions": []}, {"name": "user", "description": "Standard User", "permissions": []}]}]
+          },
+          "store_result_as": "ctxWithRoles"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Bind roles from context",
+          "params": {
+            "function_name": "utils.BindRoles",
+            "args": ["{{ ctxWithRoles }}"]
+          },
+          "expected": {
+            "return_value": [
+              {"name": "admin", "description": "Admin User", "permissions": []},
+              {"name": "user", "description": "Standard User", "permissions": []}
+            ]
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Create context without user roles",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{}]
+          },
+          "store_result_as": "ctxWithoutRoles"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Bind roles from empty context",
+          "params": {
+            "function_name": "utils.BindRoles",
+            "args": ["{{ ctxWithoutRoles }}"]
+          },
+          "return_value": []
+        },
+        {
+          "type": "executeFunction",
+          "description": "Create context with invalid UserRoles type",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{"UserRoles": "not-an-array"}]
+          },
+          "store_result_as": "ctxWithInvalidRoles"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Bind roles from context with invalid type",
+          "params": {
+            "function_name": "utils.BindRoles",
+            "args": ["{{ ctxWithInvalidRoles }}"]
+          },
+          "expected": {
+            "return_value": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "GetToken Function",
+      "steps": [
+        {
+          "type": "executeFunction",
+          "description": "Create context with Token",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{"Token": "Bearer eyJhbGciOiJIUzI1NiJ9..."}]
+          },
+          "store_result_as": "ctxWithToken"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Get Token from context",
+          "params": {
+            "function_name": "utils.GetToken",
+            "args": ["{{ ctxWithToken }}"]
+          },
+          "expected": {
+            "return_value": "Bearer eyJhbGciOiJIUzI1NiJ9..."
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Create context without Token",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{}]
+          },
+          "store_result_as": "ctxWithoutToken"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Get Token from empty context",
+          "params": {
+            "function_name": "utils.GetToken",
+            "args": ["{{ ctxWithoutToken }}"]
+          },
+          "expected": {
+            "return_value": ""
+          }
+        },
+        {
+          "type": "executeFunction",
+          "description": "Create context with invalid Token type",
+          "params": {
+            "function_name": "tests.GinContextWithData",
+            "args": [{"Token": 123}]
+          },
+          "store_result_as": "ctxWithInvalidToken"
+        },
+        {
+          "type": "executeFunction",
+          "description": "Get Token from context with invalid type",
+          "params": {
+            "function_name": "utils.GetToken",
+            "args": ["{{ ctxWithInvalidToken }}"]
+          },
+          "expected": {
+            "return_value": ""
+          }
+        }
+      ]
     }
   ]
 }

@@ -1,7 +1,7 @@
 package responses
 
 type ProgressReporter struct {
-	channel chan<- Message
+	channel chan<- Message `json:"channel"`
 }
 
 type Reporter interface {
