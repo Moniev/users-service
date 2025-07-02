@@ -19,6 +19,14 @@ type Conn interface {
 	Close() error
 }
 
+type WebSocketHelperInterface interface {
+	ForwardProgress(progressChan <-chan responses.Message)
+	SendMessage(msg responses.Message)
+	RespondFailure(message, errorDetail string)
+	RespondSuccess(message, requestID string, data interface{})
+	ReadRequest(v interface{}) error
+}
+
 func (h *WebSocketHelper) ForwardProgress(progressChan <-chan responses.Message) {
 	go func() {
 		for msg := range progressChan {

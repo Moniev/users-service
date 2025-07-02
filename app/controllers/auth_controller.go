@@ -113,7 +113,7 @@ func (c *AuthController) InitWebSocketHelper(ctx *gin.Context) (*requests.WebSoc
 // @Router       /api/v1/auth/register [post]
 func (c *AuthController) Register(ctx *gin.Context) {
 	handleWebSocketRequest(ctx, c,
-		func(reqCtx context.Context, req *requests.Register, reporter *responses.ProgressReporter) (*ent.User, error) {
+		func(reqCtx context.Context, req *requests.Register, reporter responses.Reporter) (*ent.User, error) {
 			return c.AuthService.Register(reqCtx, req, reporter)
 		},
 	)
@@ -217,7 +217,7 @@ func (c *AuthController) ResendVerificationCode(ctx *gin.Context) {
 // @Router       /api/v1/auth/login [post]
 func (c *AuthController) Login(ctx *gin.Context) {
 	handleWebSocketRequest(ctx, c,
-		func(reqCtx context.Context, req *requests.Login, reporter *responses.ProgressReporter) (*responses.User, error) {
+		func(reqCtx context.Context, req *requests.Login, reporter responses.Reporter) (*responses.User, error) {
 			user, token, err := c.AuthService.Login(reqCtx, req, reporter)
 			if err != nil {
 				return nil, err
