@@ -576,6 +576,7 @@ func resolveDependencies(t *testing.T, rawData json.RawMessage, dependencies map
 				} else {
 					currentVal = field.Interface()
 				}
+
 			} else if v.Kind() == reflect.Map {
 				nestedValue := v.MapIndex(reflect.ValueOf(keys[i]))
 				require.True(t, nestedValue.IsValid(), "Key '%s' not found in map %T for dependency '%s'", keys[i], currentVal, strings.Join(keys[:i+1], "."))

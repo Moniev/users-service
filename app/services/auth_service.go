@@ -2,11 +2,15 @@ package services
 
 import (
 	"context"
+	"crypto"
+	"crypto/ed25519"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"strings"
@@ -28,11 +32,10 @@ type AuthService struct {
 	UsersRepository repositories.UsersRepositoryInterface
 	EventNotifier   infrastructure.EventNotifierInterface
 	Logger          zerolog.Logger
-	PublicKey       string
-	PrivateKey      string
+	PublicKey       crypto.PublicKey
+	PrivateKey      ed25519.PrivateKey
 	HashingPepper   []byte
 	TokenDuration   time.Duration
-	JWTPool         chan func()
 	HashPool        chan func()
 }
 
@@ -65,8 +68,32 @@ func NewAuthService(
 	usersRepository repositories.UsersRepositoryInterface,
 	eventNotifier infrastructure.EventNotifierInterface,
 	logger zerolog.Logger,
-	publicKey, privateKey string,
+	publicKeyPEM, privateKeyPEM string,
 	poolSize int) *AuthService {
+
+	privBlock, _ := pem.Decode([]byte(privateKeyPEM))
+	if privBlock == nil {
+		logger.Fatal().Msg("failed to decode PEM block containing private key")
+	}
+
+	parsedPrivKey, err := x509.ParsePKCS8PrivateKey(privBlock.Bytes)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to parse private key")
+	}
+
+	privateKey, ok := parsedPrivKey.(ed25519.PrivateKey)
+	if !ok {
+		logger.Fatal().Msg("private key is not of type Ed25519")
+	}
+
+	pubBlock, _ := pem.Decode([]byte(publicKeyPEM))
+	if pubBlock == nil {
+		logger.Fatal().Msg("failed to decode PEM block containing public key")
+	}
+	publicKey, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to parse public key")
+	}
 
 	authService := &AuthService{
 		UsersRepository: usersRepository,
@@ -113,7 +140,6 @@ func (s *AuthService) GenerateJWT(ctx context.Context, userID int, deviceID int,
 	}
 
 	token := jwt.NewWithClaims(&jwt.SigningMethodEd25519{}, claims)
-
 	resultChan := make(chan models.JWTResult, 1)
 
 	go func() {
@@ -130,7 +156,7 @@ func (s *AuthService) GenerateJWT(ctx context.Context, userID int, deviceID int,
 	select {
 	case result := <-resultChan:
 		if result.Err != nil {
-			return "", errors.New("failed to generate JWT token")
+			return "", result.Err
 		}
 		return result.Token, nil
 	case <-ctx.Done():
@@ -193,7 +219,7 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 	select {
 	case result := <-resultChan:
 		if result.Err != nil {
-			return nil, errors.New("failed to validate JWT")
+			return nil, result.Err
 		}
 		return result.Claims, nil
 	case <-ctx.Done():
@@ -390,7 +416,7 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login, reporter r
 	userRoles := utils.MarshalUserRoles(user.Edges.UserRoles)
 	token, err := s.GenerateJWT(ctx, user.ID, device.ID, userRoles)
 	if err != nil {
-		return nil, "", errors.New("failed to create Bearer for user")
+		return nil, "", err
 	}
 
 	if err := s.EventNotifier.CreateLoginEvent(user.Edges.UserSettings, "password"); err != nil {

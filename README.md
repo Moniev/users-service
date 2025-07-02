@@ -196,7 +196,6 @@ Key features of the service include:
  ┃ ┃ ┣ 📂certificates
  ┃ ┃ ┣ 📂e2e
  ┃ ┃ ┣ 📂integration
- ┃ ┃ ┃ ┗ 📜test.json
  ┃ ┃ ┗ 📂unit
  ┃ ┃ ┃ ┣ 📜backups.json
  ┃ ┃ ┃ ┣ 📜config.json

@@ -18,8 +18,14 @@ import (
 
 type CacheStore struct {
 	CipherKey   []byte
-	RedisClient *redis.Client
+	RedisClient CacheClient
 	Logger      zerolog.Logger
+}
+
+type CacheClient interface {
+	Get(ctx context.Context, key string) *redis.StringCmd
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	Del(ctx context.Context, keys ...string) *redis.IntCmd
 }
 
 type CacheStoreInterface interface {
@@ -39,23 +45,20 @@ type CacheStoreInterface interface {
 
 var _ CacheStoreInterface = (*CacheStore)(nil)
 
-func NewCacheStore(redisClient *redis.Client, logger zerolog.Logger, encryptionSecretKey string) *CacheStore {
+func NewCacheStore(redisClient CacheClient, logger zerolog.Logger, encryptionSecretKey string) *CacheStore {
 	key := []byte(encryptionSecretKey)
 	if len(key) == 0 {
 		logger.Fatal().Msg("ENCRYPTION_SECRET_KEY in settings is not set")
 	}
-
 	if len(key) != chacha20poly1305.KeySize {
 		logger.Fatal().
 			Int("expectedLength", chacha20poly1305.KeySize).
 			Int("actualLength", len(key)).
 			Msg("Key length does not match chacha20poly1305 requirements")
 	}
-
 	logger.Info().
 		Int("KeyLength", len(key)).
 		Msg("Successfully initialized Utils with encryption key")
-
 	return &CacheStore{
 		CipherKey:   key,
 		RedisClient: redisClient,

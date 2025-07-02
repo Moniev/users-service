@@ -9,8 +9,14 @@ import (
 )
 
 type WebSocketHelper struct {
-	Conn   *websocket.Conn
+	Conn   Conn
 	Logger zerolog.Logger
+}
+
+type Conn interface {
+	WriteJSON(v interface{}) error
+	ReadMessage() (messageType int, p []byte, err error)
+	Close() error
 }
 
 func (h *WebSocketHelper) ForwardProgress(progressChan <-chan responses.Message) {

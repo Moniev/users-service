@@ -13,9 +13,13 @@ import (
 )
 
 type EventNotifier struct {
-	KafkaProducer *kafka.Producer
+	KafkaProducer KafkaProducerInterface
 	Topic         string
 	Logger        zerolog.Logger
+}
+
+type KafkaProducerInterface interface {
+	Produce(msg *kafka.Message, deliveryChan chan kafka.Event) error
 }
 
 type EventNotifierInterface interface {
@@ -34,7 +38,7 @@ type EventNotifierInterface interface {
 
 var _ EventNotifierInterface = (*EventNotifier)(nil)
 
-func NewEventNotifier(kafkaProducer *kafka.Producer, logger zerolog.Logger, topic string) *EventNotifier {
+func NewEventNotifier(kafkaProducer KafkaProducerInterface, logger zerolog.Logger, topic string) *EventNotifier {
 	return &EventNotifier{
 		KafkaProducer: kafkaProducer,
 		Topic:         topic,
@@ -61,7 +65,6 @@ func (n *EventNotifier) Produce(key []byte, value []byte) error {
 
 func (n *EventNotifier) createAndProduceEvent(event interface{}, settings *ent.UserSettings, eventType string) error {
 	if settings.Edges.Owner == nil {
-		n.Logger.Error().Str("event_type", eventType).Msg("Cannot create event: UserSettings.Edges.Owner is not loaded.")
 		return errors.New("user settings owner not loaded")
 	}
 
@@ -106,6 +109,10 @@ func (n *EventNotifier) CreateSecondFactorEvent(settings *ent.UserSettings, seco
 		return errors.New("2fa target device not loaded")
 	}
 
+	if settings.Edges.Owner == nil {
+		return errors.New("user settings owner not loaded")
+	}
+
 	event := events.SecondFactorEvent{
 		BaseEvent: events.BaseEvent{
 			EventID:   uuid.New().String(),
@@ -122,6 +129,10 @@ func (n *EventNotifier) CreateSecondFactorEvent(settings *ent.UserSettings, seco
 }
 
 func (n *EventNotifier) CreateLoginEvent(settings *ent.UserSettings, loginMethod string) error {
+	if settings.Edges.Owner == nil {
+		return errors.New("user settings owner not loaded")
+	}
+
 	event := events.LoginEvent{
 		BaseEvent: events.BaseEvent{
 			EventID:   uuid.New().String(),
@@ -136,6 +147,10 @@ func (n *EventNotifier) CreateLoginEvent(settings *ent.UserSettings, loginMethod
 }
 
 func (n *EventNotifier) CreateVerificationEvent(settings *ent.UserSettings, phone string, verificationCode *ent.VerificationCode) error {
+	if settings.Edges.Owner == nil {
+		return errors.New("user settings owner not loaded")
+	}
+
 	event := events.VerificationEvent{
 		BaseEvent: events.BaseEvent{
 			EventID:   uuid.New().String(),
@@ -152,6 +167,10 @@ func (n *EventNotifier) CreateVerificationEvent(settings *ent.UserSettings, phon
 }
 
 func (n *EventNotifier) CreateNotificationEvent(settings *ent.UserSettings, devices []*ent.UserDevice) error {
+	if settings.Edges.Owner == nil {
+		return errors.New("user settings owner not loaded")
+	}
+
 	deviceTokens := make([]string, len(devices))
 	for i, d := range devices {
 		deviceTokens[i] = d.Token
@@ -171,6 +190,10 @@ func (n *EventNotifier) CreateNotificationEvent(settings *ent.UserSettings, devi
 }
 
 func (n *EventNotifier) CreateUserActionEvent(settings *ent.UserSettings, action *ent.UserAction) error {
+	if settings.Edges.Owner == nil {
+		return errors.New("user settings owner not loaded")
+	}
+
 	event := events.UserActionEvent{
 		BaseEvent: events.BaseEvent{
 			EventID:   uuid.New().String(),
@@ -186,6 +209,10 @@ func (n *EventNotifier) CreateUserActionEvent(settings *ent.UserSettings, action
 }
 
 func (n *EventNotifier) CreateResetPasswordEvent(settings *ent.UserSettings, resetCode *ent.ResetCode) error {
+	if settings.Edges.Owner == nil {
+		return errors.New("user settings owner not loaded")
+	}
+
 	if settings.Edges.SecondFactorTarget == nil {
 		n.Logger.Error().Int("user_id", settings.Edges.Owner.ID).Msg("Cannot create reset password event: UserSettings.Edges.SecondFactorTarget is not loaded.")
 		return errors.New("target device for reset not loaded")

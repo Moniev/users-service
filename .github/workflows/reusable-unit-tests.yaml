@@ -60,4 +60,4 @@ jobs:
 
       - name: Generate JUnit report
         if: always()
-        run: go test -v -tags=unit ./tests -args -
+        run: go test -v -tags=unit ./... -args -test_type=unit

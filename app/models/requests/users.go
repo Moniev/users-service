@@ -18,6 +18,8 @@ func (r *Empty) Valid() error {
 }
 
 type Details struct {
+	FirstName string
+	LastName  string
 	Device
 }
 
