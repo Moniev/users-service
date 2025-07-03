@@ -157,7 +157,7 @@ func TestUsersController_UpdateUser(t *testing.T) {
 			c.Set("requestID", "")
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/users/1", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/users/update", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 			c.Params = []gin.Param{{Key: "id", Value: "1"}}
@@ -598,7 +598,7 @@ func TestUsersController_RemoveAccount(t *testing.T) {
 			c.Set("RequestID", "")
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/users/settings/update", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodDelete, "/api/v1/users/remove", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
