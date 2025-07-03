@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"errors"
 	"time"
 	"users-service/app/models/ent"
 	"users-service/app/models/utils"
@@ -12,6 +13,13 @@ import (
 
 type MockRedisClient struct {
 	mock.Mock
+}
+
+func CreateMockStatusCmd(val string, err error) *redis.StatusCmd {
+	cmd := redis.NewStatusCmd(context.TODO())
+	cmd.SetVal(val)
+	cmd.SetErr(err)
+	return cmd
 }
 
 func (m *MockRedisClient) Get(ctx context.Context, key string) *redis.StringCmd {
@@ -36,6 +44,30 @@ func (m *MockRedisClient) Del(ctx context.Context, keys ...string) *redis.IntCmd
 		return ret.(*redis.IntCmd)
 	}
 	return nil
+}
+
+func (m *MockRedisClient) Ping(ctx context.Context) *redis.StatusCmd {
+	args := m.Called(ctx)
+
+	if len(args) > 0 && args.Get(0) != nil {
+		if statusCmd, ok := args.Get(0).(*redis.StatusCmd); ok {
+			return statusCmd
+		}
+	}
+
+	var err error
+	if len(args) > 0 {
+		err = args.Error(0)
+	} else {
+		err = errors.New("mock Ping not configured or returned no arguments")
+	}
+
+	cmd := redis.NewStatusCmd(context.TODO())
+	cmd.SetErr(err)
+	if err == nil {
+		cmd.SetVal("PONG")
+	}
+	return cmd
 }
 
 type MockCacheStore struct {
@@ -103,4 +135,8 @@ func (m *MockCacheStore) Decrypt(cipherPhrase string, nonceBase64 string) ([]byt
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]byte), args.Error(1)
+}
+
+func (m *MockCacheStore) Ping(ctx context.Context) *redis.StatusCmd {
+	return CreateMockStatusCmd("PONG", nil)
 }

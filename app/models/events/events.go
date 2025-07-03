@@ -32,6 +32,14 @@ type LoginEvent struct {
 	TargetDevices []string `json:"target_devices,omitempty"`
 }
 
+type LogoutEvent struct {
+	BaseEvent
+	LoginMethod   string   `json:"login_method"`
+	OriginDevice  string   `json:"origin_device,omitempty"`
+	TargetDevices []string `json:"target_devices,omitempty"`
+	LogoutMethod  string   `json:"logout_method,omitempty"`
+}
+
 type VerificationEvent struct {
 	BaseEvent
 	PhoneNumber      string    `json:"phone_number"`

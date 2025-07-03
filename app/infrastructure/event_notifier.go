@@ -13,18 +13,21 @@ import (
 )
 
 type EventNotifier struct {
-	KafkaProducer KafkaProducerInterface
-	Topic         string
-	Logger        zerolog.Logger
+	KafkaProducer    KafkaProducerInterface
+	Topic            string
+	Logger           zerolog.Logger
+	KafkaPingTimeout time.Duration
 }
 
 type KafkaProducerInterface interface {
 	Produce(msg *kafka.Message, deliveryChan chan kafka.Event) error
+	GetMetadata(topic *string, allTopics bool, timeoutMs int) (*kafka.Metadata, error)
 }
 
 type EventNotifierInterface interface {
 	CreateRegistrationEvent(user *ent.User, activationCode *ent.ActivationCode) error
 	CreateLoginEvent(settings *ent.UserSettings, loginMethod string) error
+	CreateLogoutEvent(settings *ent.UserSettings, logoutMethod string) error
 
 	CreateSecondFactorEvent(settings *ent.UserSettings, secondFactor *ent.SecondFactorCode) error
 	CreateVerificationEvent(settings *ent.UserSettings, phone string, verificationCode *ent.VerificationCode) error
@@ -34,15 +37,21 @@ type EventNotifierInterface interface {
 	CreateUserActionEvent(settings *ent.UserSettings, action *ent.UserAction) error
 
 	Produce(key []byte, value []byte) error
+	Ping() error
 }
 
 var _ EventNotifierInterface = (*EventNotifier)(nil)
 
-func NewEventNotifier(kafkaProducer KafkaProducerInterface, logger zerolog.Logger, topic string) *EventNotifier {
+func NewEventNotifier(
+	kafkaProducer KafkaProducerInterface,
+	logger zerolog.Logger,
+	topic string,
+	timeout time.Duration) *EventNotifier {
 	return &EventNotifier{
-		KafkaProducer: kafkaProducer,
-		Topic:         topic,
-		Logger:        logger,
+		KafkaProducer:    kafkaProducer,
+		Topic:            topic,
+		Logger:           logger,
+		KafkaPingTimeout: timeout,
 	}
 }
 
@@ -236,4 +245,47 @@ func (n *EventNotifier) CreateResetPasswordEvent(settings *ent.UserSettings, res
 	}
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
+}
+
+func (n *EventNotifier) CreateLogoutEvent(settings *ent.UserSettings, logoutMethod string) error {
+	if settings.Edges.Owner == nil {
+		return errors.New("user settings owner not loaded")
+	}
+
+	event := events.LogoutEvent{
+		BaseEvent: events.BaseEvent{
+			EventID:   uuid.New().String(),
+			EventType: "user.logout.success",
+			Timestamp: time.Now().UTC(),
+			UserID:    settings.Edges.Owner.ID,
+		},
+		LogoutMethod: logoutMethod,
+	}
+
+	return n.createAndProduceEvent(event, settings, event.EventType)
+}
+
+func (n *EventNotifier) Ping() error {
+	timeoutMs := int(n.KafkaPingTimeout / time.Millisecond)
+
+	_, err := n.KafkaProducer.GetMetadata(nil, true, timeoutMs)
+
+	if err != nil {
+		if kafkaErr, ok := err.(kafka.Error); ok {
+			if kafkaErr.IsTimeout() {
+				n.Logger.Warn().Err(err).Msg("Kafka producer connection check returned a timeout error. Still considered healthy for now.")
+				return nil
+			}
+
+			if kafkaErr.IsRetriable() {
+				n.Logger.Warn().Err(err).Msg("Kafka producer connection check returned a retriable error. Still considered healthy for now.")
+				return nil
+			}
+		}
+
+		n.Logger.Error().Err(err).Msg("Kafka producer failed to get metadata during health check (connection issue)")
+		return errors.New("kafka producer not connected or unhealthy: " + err.Error())
+	}
+
+	return nil
 }

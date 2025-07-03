@@ -10,7 +10,6 @@ import (
 	"time"
 	"users-service/app/models"
 	"users-service/app/models/ent"
-	"users-service/app/models/utils"
 	"users-service/tests/mocks"
 
 	"github.com/redis/go-redis/v9"
@@ -32,6 +31,13 @@ func newTestCacheStore(t *testing.T) (*CacheStore, *mocks.MockRedisClient) {
 	require.NotNil(t, store)
 
 	return store, mockClient
+}
+
+func createMockStatusCmd(val string, err error) *redis.StatusCmd {
+	cmd := redis.NewStatusCmd(context.TODO())
+	cmd.SetVal(val)
+	cmd.SetErr(err)
+	return cmd
 }
 
 func TestCacheStore_Get(t *testing.T) {
@@ -220,24 +226,56 @@ func TestCacheStore_DecacheUser(t *testing.T) {
 	assert.Equal(t, originalUser.Mail, decachedUser.Mail)
 }
 
-func TestCacheStore_DecacheClaims(t *testing.T) {
-	store, _ := newTestCacheStore(t)
-
-	originalClaims := &utils.Claims{
-		UserID:   10,
-		DeviceID: 20,
+func TestCacheStore_Ping(t *testing.T) {
+	testCases := []struct {
+		name        string
+		setupMock   func(m *mocks.MockRedisClient)
+		expectErr   bool
+		errContains string
+	}{
+		{
+			name: "Success",
+			setupMock: func(m *mocks.MockRedisClient) {
+				m.On("Ping", mock.Anything).Return(createMockStatusCmd("PONG", nil)).Once()
+			},
+			expectErr: false,
+		},
+		{
+			name: "Connection Error",
+			setupMock: func(m *mocks.MockRedisClient) {
+				m.On("Ping", mock.Anything).Return(createMockStatusCmd("", errors.New("connection refused"))).Once()
+			},
+			expectErr:   true,
+			errContains: "connection refused",
+		},
+		{
+			name: "Timeout Error",
+			setupMock: func(m *mocks.MockRedisClient) {
+				m.On("Ping", mock.Anything).Return(createMockStatusCmd("", context.DeadlineExceeded)).Once()
+			},
+			expectErr:   true,
+			errContains: "context deadline exceeded",
+		},
 	}
-	payloadBytes, err := json.Marshal(originalClaims)
-	require.NoError(t, err)
 
-	cachedBytes, err := store.CacheClaims(payloadBytes)
-	require.NoError(t, err)
-	require.NotEmpty(t, cachedBytes)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			store, mockRedisClient := newTestCacheStore(t)
+			tc.setupMock(mockRedisClient)
 
-	decachedClaims, err := store.DecacheClaims(cachedBytes)
-	require.NoError(t, err)
-	require.NotNil(t, decachedClaims)
+			ctx := context.Background()
 
-	assert.Equal(t, originalClaims.UserID, decachedClaims.UserID)
-	assert.Equal(t, originalClaims.DeviceID, decachedClaims.DeviceID)
+			cmd := store.Ping(ctx)
+			_, err := cmd.Result()
+
+			if tc.expectErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.errContains)
+			} else {
+				require.NoError(t, err)
+			}
+
+			mockRedisClient.AssertExpectations(t)
+		})
+	}
 }

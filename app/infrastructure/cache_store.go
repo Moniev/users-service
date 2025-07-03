@@ -26,6 +26,7 @@ type CacheClient interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
+	Ping(ctx context.Context) *redis.StatusCmd
 }
 
 type CacheStoreInterface interface {
@@ -41,6 +42,7 @@ type CacheStoreInterface interface {
 
 	Encrypt(phrase []byte) (string, string, error)
 	Decrypt(cipherPhrase string, nonceBase64 string) ([]byte, error)
+	Ping(ctx context.Context) *redis.StatusCmd
 }
 
 var _ CacheStoreInterface = (*CacheStore)(nil)
@@ -333,4 +335,8 @@ func (s *CacheStore) GenerateNonce() ([]byte, error) {
 	}
 
 	return nonce, nil
+}
+
+func (s *CacheStore) Ping(ctx context.Context) *redis.StatusCmd {
+	return s.RedisClient.Ping(ctx)
 }

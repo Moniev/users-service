@@ -50,6 +50,8 @@ type UsersRepositoryInterface interface {
 	RemoveResetCode(ctx context.Context, user *ent.User) (*ent.User, error)
 	RemoveSecondFactorCode(ctx context.Context, user *ent.User) (*ent.User, error)
 	RemoveAccount(ctx context.Context, user *ent.User) error
+
+	Ping() error
 }
 
 var _ UsersRepositoryInterface = (*UsersRepository)(nil)
@@ -647,4 +649,8 @@ func (r *UsersRepository) FindOrCreateDevice(ctx context.Context, userID int, re
 	}
 
 	return device, nil
+}
+
+func (r *UsersRepository) Ping() error {
+	return r.Driver.DB().Ping()
 }

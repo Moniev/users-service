@@ -186,3 +186,8 @@ func (m *MockUsersRepository) RemoveAccount(ctx context.Context, user *ent.User)
 	args := m.Called(ctx, user)
 	return args.Error(0)
 }
+
+func (m *MockUsersRepository) Ping() error {
+	args := m.Called()
+	return args.Error(0)
+}

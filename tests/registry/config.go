@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"log"
+	"time"
 	"users-service/app/config"
 	"users-service/app/controllers"
 	"users-service/app/infrastructure"
@@ -29,7 +30,7 @@ func NewTestAppContainer(
 
 	cache := infrastructure.NewCacheStore(redis, logger, "a-32-byte-long-test-secret-key!!")
 	repo := repositories.NewUsersRepository(cache, db, nil, logger)
-	notifier := infrastructure.NewEventNotifier(kafkaProducer, logger, "notifications")
+	notifier := infrastructure.NewEventNotifier(kafkaProducer, logger, "notifications", time.Second*10)
 
 	privBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
 	if err != nil {

@@ -35,17 +35,18 @@ func InitApp(settings *Settings) *gin.Engine {
 		logger.Fatal().Err(err).Msg("failed to initialize kafka producer")
 	}
 
-	eventNotifier := infrastructure.NewEventNotifier(kafkaProducer, logger, settings.KafkaNotifierTopic)
+	eventNotifier := infrastructure.NewEventNotifier(kafkaProducer, logger, settings.KafkaNotifierTopic, time.Second*15)
+	eventListener := infrastructure.NewEventListener(nil, logger, "", time.Minute, time.Second*15)
 
 	cacheStore := infrastructure.NewCacheStore(redisClient, logger, settings.EncryptionSecretKey)
 	usersRepo := repositories.NewUsersRepository(cacheStore, entClient, driver, logger)
 
 	authService := services.NewAuthService(usersRepo, eventNotifier, logger, settings.JwtPrivateKeyBase64, settings.JwtPublicKeyBase64, 10)
-	diagnosticsService := services.NewDiagnosticsService(usersRepo, logger)
+	diagnosticsService := services.NewDiagnosticsService(usersRepo, cacheStore, eventListener, eventNotifier, logger)
 	usersService := services.NewUsersService(usersRepo, eventNotifier, logger)
 
 	authController := controllers.NewAuthController(authService, usersService, logger)
-	diagnosticsController := controllers.NewDiagnosticsController(authService, usersService, diagnosticsService, logger)
+	diagnosticsController := controllers.NewDiagnosticsController(diagnosticsService, logger)
 	usersController := controllers.NewUsersController(usersService, logger)
 
 	middlewaresStore := middlewares.NewMiddlewares(cacheStore, logger, settings.ApiVersion, settings.Environment)

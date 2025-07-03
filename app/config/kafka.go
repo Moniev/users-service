@@ -21,7 +21,7 @@ func CreateTopics(logger zerolog.Logger, settings *Settings, topics []string) er
 	}
 
 	if settings.KafkaSslCertPath != "" && settings.KafkaSslKeyPath != "" {
-		logger.Info().Msg("Znaleziono certyfikat i klucz klienta. Aplikowanie konfiguracji mTLS.")
+		logger.Info().Msg("Found certificate and client key.")
 		if err := config.SetKey("ssl.certificate.location", settings.KafkaSslCertPath); err != nil {
 			return err
 		}
@@ -29,7 +29,7 @@ func CreateTopics(logger zerolog.Logger, settings *Settings, topics []string) er
 			return err
 		}
 		if settings.KafkaClientKeyPassword != "" {
-			logger.Info().Msg("Znaleziono hasło do klucza klienta. Aplikowanie hasła.")
+			logger.Info().Msg("Found client's key")
 			if err := config.SetKey("ssl.key.password", settings.KafkaClientKeyPassword); err != nil {
 				return err
 			}
@@ -38,7 +38,7 @@ func CreateTopics(logger zerolog.Logger, settings *Settings, topics []string) er
 
 	adminClient, err := kafka.NewAdminClient(config)
 	if err != nil {
-		return fmt.Errorf("nie udało się utworzyć klienta administracyjnego Kafka: %w", err)
+		return fmt.Errorf("failed to create kafka admin klient: %w", err)
 	}
 	defer adminClient.Close()
 
