@@ -31,6 +31,7 @@ func RegisterDiagnosticsRoutes(prefix string,
 	tracker *middlewares.RequestTracker,
 	middlewares middlewares.MiddlewaresInterface,
 	logger zerolog.Logger) {
+
 	api := router.Group(prefix).
 		Use(middlewares.Log(logger, "diagnostics-controller")).
 		Use(middlewares.LimitRequestsMiddleware(tracker))

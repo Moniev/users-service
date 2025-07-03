@@ -1,3 +1,4 @@
+basePath: /api/v1
 definitions:
   users-service_app_models_ent.ActivationCode:
     properties:
@@ -700,8 +701,19 @@ definitions:
       user:
         $ref: '#/definitions/users-service_app_models_ent.User'
     type: object
+externalDocs:
+  description: OpenAPI
+  url: https://not-yet-hosted.com/
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: m0ni3v@gmail.com
+    name: API Support
+    url: https://github.com/Moniev
+  description: Microservice delegated toward user's schema management and it's business
+    logic.
+  title: Factory-Chainline Users-Service API
+  version: 1.0.0
 paths:
   /api/v1/auth/activation/account:
     patch:
@@ -1128,6 +1140,62 @@ paths:
       summary: Resend verification code
       tags:
       - auth
+  /api/v1/diagnostics/health:
+    get:
+      description: |-
+        Checks if the application is alive and running. This is typically a lightweight check
+        to ensure the process is active and responsive.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Service is healthy
+          schema:
+            allOf:
+            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - properties:
+                data:
+                  properties:
+                    message:
+                      type: string
+                  type: object
+              type: object
+        "503":
+          description: Service Unavailable - Service unhealthy
+          schema:
+            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+      summary: Health Probe
+      tags:
+      - diagnostics
+      - health
+  /api/v1/diagnostics/readiness:
+    get:
+      description: |-
+        Checks if the application is ready to serve traffic. This typically involves
+        verifying connections to critical dependencies like databases or message queues.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Service is ready
+          schema:
+            allOf:
+            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - properties:
+                data:
+                  properties:
+                    message:
+                      type: string
+                  type: object
+              type: object
+        "503":
+          description: Service Unavailable - Service not ready
+          schema:
+            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+      summary: Readiness Probe
+      tags:
+      - diagnostics
+      - health
   /api/v1/users/details/update:
     patch:
       consumes:
@@ -1297,4 +1365,7 @@ paths:
       summary: Update user's basic information
       tags:
       - users
+securityDefinitions:
+  BearerApi:
+    type: basic
 swagger: "2.0"

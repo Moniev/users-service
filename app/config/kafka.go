@@ -51,6 +51,11 @@ func CreateTopics(logger zerolog.Logger, settings *Settings, topics []string) er
 		})
 	}
 
+	if len(topicSpecs) == 0 {
+		logger.Info().Msg("No Kafka topics specified for creation, skipping.")
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

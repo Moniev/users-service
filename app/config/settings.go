@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/spf13/viper"
@@ -51,27 +52,19 @@ type Settings struct {
 	RedisSslCertPath string `mapstructure:"REDIS_SSL_CERT_PATH"`
 	RedisSslKeyPath  string `mapstructure:"REDIS_SSL_KEY_PATH"`
 
-	KafkaBootstrapServers  string   `mapstructure:"KAFKA_BOOTSTRAP_SERVERS"`
-	KafkaClientID          string   `mapstructure:"KAFKA_CLIENT_ID"`
-	KafkaSecurityProtocol  string   `mapstructure:"KAFKA_SECURITY_PROTOCOL"`
-	KafkaSaslMechanism     string   `mapstructure:"KAFKA_SASL_MECHANISM"`
-	KafkaSaslUsername      string   `mapstructure:"KAFKA_SASL_USERNAME"`
-	KafkaSaslPassword      string   `mapstructure:"KAFKA_SASL_PASSWORD"`
-	KafkaSslCaPath         string   `mapstructure:"KAFKA_SSL_CA_PATH"`
-	KafkaSslCertPath       string   `mapstructure:"KAFKA_SSL_CERT_PATH"`
-	KafkaSslKeyPath        string   `mapstructure:"KAFKA_SSL_KEY_PATH"`
-	KafkaClientKeyPassword string   `mapstructure:"KAFKA_CLIENT_KEY_PASSWORD"`
-	KafkaTopics            []string `mapstructure:"KAFKA_TOPICS"`
-	KafkaBrokerID          string   `mapstructure:"KAFKA_BROKER_ID"`
-	KafkaNotifierTopic     string   `mapstructure:"KAFKA_NOTFIER_TOPIC"`
-
-	GoogleApplicationCredentialsPath string `mapstructure:"GOOGLE_APPLICATION_CREDENTIALS_PATH"`
-	GoogleClientID                   string `mapstructure:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret               string `mapstructure:"GOOGLE_CLIENT_SECRET"`
-
-	TwilioID       string `mapstructure:"TWILIO_ID"`
-	TwilioPassword string `mapstructure:"TWILIO_PASSWORD"`
-	StripeAPIKey   string `mapstructure:"STRIPE_API_KEY"`
+	KafkaBootstrapServers  string `mapstructure:"KAFKA_BOOTSTRAP_SERVERS"`
+	KafkaClientID          string `mapstructure:"KAFKA_CLIENT_ID"`
+	KafkaSecurityProtocol  string `mapstructure:"KAFKA_SECURITY_PROTOCOL"`
+	KafkaSaslMechanism     string `mapstructure:"KAFKA_SASL_MECHANISM"`
+	KafkaSaslUsername      string `mapstructure:"KAFKA_SASL_USERNAME"`
+	KafkaSaslPassword      string `mapstructure:"KAFKA_SASL_PASSWORD"`
+	KafkaSslCaPath         string `mapstructure:"KAFKA_SSL_CA_PATH"`
+	KafkaSslCertPath       string `mapstructure:"KAFKA_SSL_CERT_PATH"`
+	KafkaSslKeyPath        string `mapstructure:"KAFKA_SSL_KEY_PATH"`
+	KafkaClientKeyPassword string `mapstructure:"KAFKA_CLIENT_KEY_PASSWORD"`
+	KafkaTopics            string `mapstructure:"KAFKA_TOPICS"`
+	KafkaBrokerID          string `mapstructure:"KAFKA_BROKER_ID"`
+	KafkaNotifierTopic     string `mapstructure:"KAFKA_NOTIFIER_TOPIC"`
 }
 
 func (s *Settings) DatabaseURI() string {
@@ -109,9 +102,17 @@ func GetSettings() *Settings {
 		v.SetDefault("API_PORT", ":8000")
 		v.SetDefault("ENVIRONMENT", "development")
 		v.SetDefault("LOG_LEVEL", "info")
-		v.SetDefault("ENCRYPTION_SECRET_KEY", "d644069bf1be3d82d432925ae9a9c4c2c94ad0dd27a65c9abb81482586c9404a")
+		v.SetDefault("ENCRYPTION_SECRET_KEY", "")
+
 		v.SetDefault("DB_HOST", "postgres.postgres.svc.cluster.local")
+		v.SetDefault("DB_NAME", "user_db")
 		v.SetDefault("DB_PORT", 5432)
+		v.SetDefault("DB_USER", "users_service")
+		v.SetDefault("DB_PASSWORD", "")
+		v.SetDefault("DB_SSL_CA_PATH", "")
+		v.SetDefault("DB_SSL_CERT_PATH", "")
+		v.SetDefault("DB_SSL_KEY_PATH", "")
+
 		v.SetDefault("KAFKA_BOOTSTRAP_SERVERS", "kafka.kafka.svc.cluster.local:9093")
 		v.SetDefault("KAFKA_CLIENT_ID", "users-service")
 		v.SetDefault("KAFKA_SECURITY_PROTOCOL", "SSL")
@@ -119,6 +120,9 @@ func GetSettings() *Settings {
 		v.SetDefault("KAFKA_SSL_CERT_PATH", "/etc/users-service-tls/kafka/tls.crt")
 		v.SetDefault("KAFKA_SSL_KEY_PATH", "/etc/users-service-tls/kafka/tls.key")
 		v.SetDefault("KAFKA_NOTIFIER_TOPIC", "notifications")
+		v.SetDefault("KAFKA_CLIENT_KEY_PASSWORD", "")
+		v.SetDefault("KAFKA_TOPICS", "")
+
 		v.SetDefault("REDIS_HOST", "redis.redis.svc.cluster.local")
 		v.SetDefault("REDIS_PORT", 6379)
 		v.SetDefault("REDIS_DB", 0)
@@ -126,23 +130,11 @@ func GetSettings() *Settings {
 		v.SetDefault("REDIS_SSL_CA_PATH", "/etc/users-service-tls/redis/ca.crt")
 		v.SetDefault("REDIS_SSL_CERT_PATH", "/etc/users-service-tls/redis/tls.crt")
 		v.SetDefault("REDIS_SSL_KEY_PATH", "/etc/users-service-tls/redis/tls.key")
+		v.SetDefault("REDIS_PASSWORD", "")
 
 		v.SetDefault("TEST_MODE", "")
 		v.SetDefault("JWT_PRIVATE_KEY_PATH", "")
 		v.SetDefault("JWT_PUBLIC_KEY_PATH", "")
-		v.SetDefault("DB_USER", "")
-		v.SetDefault("DB_PASSWORD", "")
-		v.SetDefault("DB_SSL_CA_PATH", "")
-		v.SetDefault("DB_SSL_CERT_PATH", "")
-		v.SetDefault("DB_SSL_KEY_PATH", "")
-		v.SetDefault("REDIS_PASSWORD", "")
-		v.SetDefault("KAFKA_CLIENT_KEY_PASSWORD", "")
-		v.SetDefault("GOOGLE_APPLICATION_CREDENTIALS_PATH", "")
-		v.SetDefault("GOOGLE_CLIENT_ID", "")
-		v.SetDefault("GOOGLE_CLIENT_SECRET", "")
-		v.SetDefault("TWILIO_ID", "")
-		v.SetDefault("TWILIO_PASSWORD", "")
-		v.SetDefault("STRIPE_API_KEY", "")
 
 		if err := v.ReadInConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -159,11 +151,15 @@ func GetSettings() *Settings {
 }
 
 func LoadJWTSigningKeys(settings *Settings) (crypto.PrivateKey, crypto.PublicKey, error) {
+	if settings.JwtPrivateKeyPath != "" && settings.JwtPublicKeyPath != "" {
+		return loadKeysFromPaths(settings.JwtPrivateKeyPath, settings.JwtPublicKeyPath)
+	}
+
 	if settings.JwtPrivateKeyBase64 != "" && settings.JwtPublicKeyBase64 != "" {
 		return loadKeysFromBase64(settings.JwtPrivateKeyBase64, settings.JwtPublicKeyBase64)
 	}
 
-	return nil, nil, errors.New("no JWT key configuration provided (neither Base64 secrets nor file paths)")
+	return nil, nil, errors.New("no JWT key configuration provided (neither file paths nor Base64 secrets)")
 }
 
 func loadKeysFromBase64(privateKeyB64, publicKeyB64 string) (crypto.PrivateKey, crypto.PublicKey, error) {
@@ -176,6 +172,7 @@ func loadKeysFromBase64(privateKeyB64, publicKeyB64 string) (crypto.PrivateKey, 
 	if privateBlock == nil {
 		return nil, nil, errors.New("failed to decode PEM block from base64 private key")
 	}
+
 	if privateBlock.Type != "PRIVATE KEY" {
 		return nil, nil, fmt.Errorf("unexpected type for private key PEM block: %s", privateBlock.Type)
 	}
@@ -199,6 +196,7 @@ func loadKeysFromBase64(privateKeyB64, publicKeyB64 string) (crypto.PrivateKey, 
 	if publicBlock == nil {
 		return nil, nil, errors.New("failed to decode PEM block from base64 public key")
 	}
+
 	if publicBlock.Type != "PUBLIC KEY" {
 		return nil, nil, fmt.Errorf("unexpected type for public key PEM block: %s", publicBlock.Type)
 	}
@@ -211,6 +209,58 @@ func loadKeysFromBase64(privateKeyB64, publicKeyB64 string) (crypto.PrivateKey, 
 	ed25519PublicKey, ok := publicKey.(ed25519.PublicKey)
 	if !ok {
 		return nil, nil, errors.New("public key from base64 is not of type Ed25519")
+	}
+
+	return ed25519PrivateKey, ed25519PublicKey, nil
+}
+
+func loadKeysFromPaths(privateKeyPath, publicKeyPath string) (crypto.PrivateKey, crypto.PublicKey, error) {
+	privatePEM, err := os.ReadFile(privateKeyPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read private key from path %s: %w", privateKeyPath, err)
+	}
+
+	privateBlock, _ := pem.Decode(privatePEM)
+	if privateBlock == nil {
+		return nil, nil, fmt.Errorf("failed to decode PEM block from private key file: %s", privateKeyPath)
+	}
+
+	if privateBlock.Type != "PRIVATE KEY" {
+		return nil, nil, fmt.Errorf("unexpected type for private key PEM block: %s", privateBlock.Type)
+	}
+
+	privateKey, err := x509.ParsePKCS8PrivateKey(privateBlock.Bytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse PKCS8 private key from file: %w", err)
+	}
+
+	publicPEM, err := os.ReadFile(publicKeyPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read public key from path %s: %w", publicKeyPath, err)
+	}
+
+	publicBlock, _ := pem.Decode(publicPEM)
+	if publicBlock == nil {
+		return nil, nil, fmt.Errorf("failed to decode PEM block from public key file: %s", publicKeyPath)
+	}
+
+	if publicBlock.Type != "PUBLIC KEY" {
+		return nil, nil, fmt.Errorf("unexpected type for public key PEM block: %s", publicBlock.Type)
+	}
+
+	publicKey, err := x509.ParsePKIXPublicKey(publicBlock.Bytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse PKIX public key from file: %w", err)
+	}
+
+	ed25519PrivateKey, ok := privateKey.(ed25519.PrivateKey)
+	if !ok {
+		return nil, nil, errors.New("private key from file is not of type Ed25519")
+	}
+
+	ed25519PublicKey, ok := publicKey.(ed25519.PublicKey)
+	if !ok {
+		return nil, nil, errors.New("public key from file is not of type Ed25519")
 	}
 
 	return ed25519PrivateKey, ed25519PublicKey, nil

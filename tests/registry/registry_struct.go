@@ -24,17 +24,15 @@ type AppContainer struct {
 }
 
 type ServiceContainer struct {
-	AuthService          services.AuthServiceInterface
-	UsersService         services.UsersServiceInterface
-	DiagnosticsService   services.DiagnosticsServiceInterface
-	DocumentationService services.DocumentationServiceInterface
+	AuthService        services.AuthServiceInterface
+	UsersService       services.UsersServiceInterface
+	DiagnosticsService services.DiagnosticsServiceInterface
 }
 
 type ControllerContainer struct {
-	AuthController          controllers.AuthControllerInterface
-	UsersController         controllers.UsersControllerInterface
-	DiagnosticsController   controllers.DiagnosticsControllerInterface
-	DocumentationController controllers.DocumentationControllerInterface
+	AuthController        controllers.AuthControllerInterface
+	UsersController       controllers.UsersControllerInterface
+	DiagnosticsController controllers.DiagnosticsControllerInterface
 }
 
 type RepositoryContainer struct {

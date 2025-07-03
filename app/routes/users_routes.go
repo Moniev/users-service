@@ -38,5 +38,8 @@ func RegisterUserRoutes(
 		Use(middlewares.LimitRequestsMiddleware(tracker)).
 		Use(middlewares.UserAuthenticationMiddleware(authService))
 
-	api.GET("/fullfill-data")
+	api.PATCH("/update", usersController.UpdateUser)
+	api.PATCH("/details/update", usersController.UpdateDetails)
+	api.PATCH("/settings/update", usersController.UpdateSettings)
+	api.DELETE("/remove", usersController.RemoveAccount)
 }

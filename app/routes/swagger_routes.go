@@ -22,7 +22,13 @@ import (
 //
 // The endpoint is protected by request rate limiting middleware.
 // Uses ginSwagger and swaggerFiles to serve embedded Swagger documentation.
-func RegisterSwaggerRoutes(prefix string, router *gin.RouterGroup, tracker *middlewares.RequestTracker, middlewares *middlewares.Middlewares, logger zerolog.Logger) {
+func RegisterSwaggerRoutes(
+	prefix string,
+	router *gin.RouterGroup,
+	tracker *middlewares.RequestTracker,
+	middlewares middlewares.MiddlewaresInterface,
+	logger zerolog.Logger) {
+
 	api := router.Group(prefix).
 		Use(middlewares.Log(logger, "swagger")).
 		Use(middlewares.LimitRequestsMiddleware(tracker))

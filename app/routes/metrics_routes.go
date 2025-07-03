@@ -24,7 +24,13 @@ import (
 //   - Request rate limiting middleware
 //
 // Uses promhttp.Handler() from the Prometheus client library to serve metrics.
-func RegisterMonitoringRoutes(prefix string, router *gin.RouterGroup, tracker *middlewares.RequestTracker, middlewares *middlewares.Middlewares, logger zerolog.Logger) {
+func RegisterMonitoringRoutes(
+	prefix string,
+	router *gin.RouterGroup,
+	tracker *middlewares.RequestTracker,
+	middlewares middlewares.MiddlewaresInterface,
+	logger zerolog.Logger) {
+
 	api := router.Group(prefix).
 		Use(middlewares.Log(logger, "monitoring")).
 		Use(middlewares.MetricsCORS()).

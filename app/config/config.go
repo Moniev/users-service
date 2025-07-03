@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"strings"
 	"time"
 	"users-service/app/controllers"
 	"users-service/app/infrastructure"
@@ -14,10 +15,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitApp(settings *Settings) *gin.Engine {
+func NewApp(settings *Settings) *gin.Engine {
 	ctx := context.Background()
-
 	logger := NewLogger(settings)
+
+	privateKey, publicKey, err := LoadJWTSigningKeys(settings)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to load JWT signing keys")
+	}
 
 	entClient, driver, err := NewEntClient(ctx, logger, settings)
 	if err != nil {
@@ -26,7 +31,12 @@ func InitApp(settings *Settings) *gin.Engine {
 
 	redisClient := NewRedisClient(ctx, logger, settings)
 
-	if err := CreateTopics(logger, settings, settings.KafkaTopics); err != nil {
+	var topics []string
+	if settings.KafkaTopics != "" {
+		topics = strings.Split(settings.KafkaTopics, ",")
+	}
+
+	if err := CreateTopics(logger, settings, topics); err != nil {
 		logger.Fatal().Msg("failed to initialize create kafka topics")
 	}
 
@@ -35,13 +45,25 @@ func InitApp(settings *Settings) *gin.Engine {
 		logger.Fatal().Err(err).Msg("failed to initialize kafka producer")
 	}
 
+	kafkaConsumerWrapper, err := NewKafkaConsumer(
+		"users-service-readiness-group",
+		topics[0],
+		nil,
+		nil,
+		logger,
+		settings,
+	)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to initialize kafka consumer")
+	}
+
 	eventNotifier := infrastructure.NewEventNotifier(kafkaProducer, logger, settings.KafkaNotifierTopic, time.Second*15)
-	eventListener := infrastructure.NewEventListener(nil, logger, "", time.Minute, time.Second*15)
+	eventListener := infrastructure.NewEventListener(kafkaConsumerWrapper.Consumer, logger, "", time.Minute, time.Second*15)
 
 	cacheStore := infrastructure.NewCacheStore(redisClient, logger, settings.EncryptionSecretKey)
 	usersRepo := repositories.NewUsersRepository(cacheStore, entClient, driver, logger)
 
-	authService := services.NewAuthService(usersRepo, eventNotifier, logger, settings.JwtPrivateKeyBase64, settings.JwtPublicKeyBase64, 10)
+	authService := services.NewAuthService(usersRepo, eventNotifier, logger, privateKey, publicKey, 10)
 	diagnosticsService := services.NewDiagnosticsService(usersRepo, cacheStore, eventListener, eventNotifier, logger)
 	usersService := services.NewUsersService(usersRepo, eventNotifier, logger)
 
@@ -76,6 +98,9 @@ func InitApp(settings *Settings) *gin.Engine {
 	routes.RegisterAuthRoutes("/auth", api, authController, tracker, middlewaresStore, logger)
 	routes.RegisterUserRoutes("/users", api, usersController, authService, tracker, middlewaresStore, logger)
 	routes.RegisterDiagnosticsRoutes("/diagnostics", api, diagnosticsController, tracker, middlewaresStore, logger)
+	routes.RegisterMonitoringRoutes("/monitoring", api, tracker, middlewaresStore, logger)
+	routes.RegisterDocumentationRoutes("/docs", api, authService, tracker, middlewaresStore, logger)
+	routes.RegisterSwaggerRoutes("/swagger", api, tracker, middlewaresStore, logger)
 
 	return router
 }

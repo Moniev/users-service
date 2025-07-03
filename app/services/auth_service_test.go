@@ -5,8 +5,6 @@ package services
 import (
 	"context"
 	"crypto/ed25519"
-	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"testing"
 	"time"
@@ -27,20 +25,12 @@ func newTestAuthService(t *testing.T) (*AuthService, *mocks.MockUsersRepository,
 	pubKey, privKey, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 
-	privBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
-	require.NoError(t, err)
-	privPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
-
-	pubBytes, err := x509.MarshalPKIXPublicKey(pubKey)
-	require.NoError(t, err)
-	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
-
 	authService := NewAuthService(
 		mockRepo,
 		mockNotifier,
 		zerolog.Nop(),
-		string(pubPEM),
-		string(privPEM),
+		pubKey,
+		privKey,
 		1,
 	)
 	require.NotNil(t, authService)

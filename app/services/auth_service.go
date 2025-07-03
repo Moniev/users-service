@@ -3,14 +3,11 @@ package services
 import (
 	"context"
 	"crypto"
-	"crypto/ed25519"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
-	"crypto/x509"
 	"encoding/base64"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"strings"
@@ -32,7 +29,7 @@ type AuthService struct {
 	EventNotifier   infrastructure.EventNotifierInterface
 	Logger          zerolog.Logger
 	PublicKey       crypto.PublicKey
-	PrivateKey      ed25519.PrivateKey
+	PrivateKey      crypto.PrivateKey
 	HashingPepper   []byte
 	TokenDuration   time.Duration
 	HashPool        chan func()
@@ -67,32 +64,9 @@ func NewAuthService(
 	usersRepository repositories.UsersRepositoryInterface,
 	eventNotifier infrastructure.EventNotifierInterface,
 	logger zerolog.Logger,
-	publicKeyPEM, privateKeyPEM string,
+	publicKey crypto.PublicKey,
+	privateKey crypto.PrivateKey,
 	poolSize int) *AuthService {
-
-	privBlock, _ := pem.Decode([]byte(privateKeyPEM))
-	if privBlock == nil {
-		logger.Fatal().Msg("failed to decode PEM block containing private key")
-	}
-
-	parsedPrivKey, err := x509.ParsePKCS8PrivateKey(privBlock.Bytes)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to parse private key")
-	}
-
-	privateKey, ok := parsedPrivKey.(ed25519.PrivateKey)
-	if !ok {
-		logger.Fatal().Msg("private key is not of type Ed25519")
-	}
-
-	pubBlock, _ := pem.Decode([]byte(publicKeyPEM))
-	if pubBlock == nil {
-		logger.Fatal().Msg("failed to decode PEM block containing public key")
-	}
-	publicKey, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to parse public key")
-	}
 
 	authService := &AuthService{
 		UsersRepository: usersRepository,
