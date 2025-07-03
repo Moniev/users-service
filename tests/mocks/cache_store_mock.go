@@ -138,5 +138,12 @@ func (m *MockCacheStore) Decrypt(cipherPhrase string, nonceBase64 string) ([]byt
 }
 
 func (m *MockCacheStore) Ping(ctx context.Context) *redis.StatusCmd {
-	return CreateMockStatusCmd("PONG", nil)
+	args := m.Called(ctx)
+	return args.Get(0).(*redis.StatusCmd)
+}
+
+type MockStatusCmd struct {
+	*redis.StatusCmd
+	Result string
+	Err    error
 }

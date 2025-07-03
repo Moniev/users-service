@@ -60,6 +60,7 @@ func (s *DiagnosticsService) CheckReadiness(ctx context.Context) error {
 
 	if _, err := s.CacheStore.Ping(ctx).Result(); err != nil {
 		s.Logger.Error().Err(err).Msg("Readiness check failed: CacheStore ping failed")
+		s.Logger.Debug().Msgf("CacheStore.Ping Result error: %v", err)
 		return fmt.Errorf("cache store not ready: %w", err)
 	}
 
