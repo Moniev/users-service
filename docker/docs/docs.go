@@ -523,6 +523,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/second-factor/verification/code": {
+            "post": {
+                "description": "Requests a new second factor code to be sent to the user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Resend second factor code",
+                "parameters": [
+                    {
+                        "description": "User's email address",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users-service_app_models_requests.Code"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Successfully requested a new 2FA code",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/users-service_app_models_responses.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/users-service_app_models_responses.User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input data",
+                        "schema": {
+                            "$ref": "#/definitions/users-service_app_models_responses.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Service failed to process the request",
+                        "schema": {
+                            "$ref": "#/definitions/users-service_app_models_responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/verification/account": {
             "patch": {
                 "description": "Verifies a user's account with a provided code, returning the user and a JWT.",
@@ -1152,6 +1210,13 @@ const docTemplate = `{
                     "description": "Mail holds the value of the \"mail\" field.",
                     "type": "string"
                 },
+                "organization_ids": {
+                    "description": "OrganizationIds holds the value of the \"organization_ids\" field.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "password": {
                     "description": "Password holds the value of the \"password\" field.",
                     "type": "string"
@@ -1163,6 +1228,20 @@ const docTemplate = `{
                 "removed": {
                     "description": "Removed holds the value of the \"removed\" field.",
                     "type": "boolean"
+                },
+                "subscription_ids": {
+                    "description": "SubscriptionIds holds the value of the \"subscription_ids\" field.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "team_ids": {
+                    "description": "TeamIds holds the value of the \"team_ids\" field.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "updated_at": {
                     "description": "UpdatedAt holds the value of the \"updated_at\" field.",
@@ -1672,7 +1751,39 @@ const docTemplate = `{
             }
         },
         "users-service_app_models_requests.Details": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "device_token"
+            ],
+            "properties": {
+                "browser_name": {
+                    "type": "string"
+                },
+                "browser_version": {
+                    "type": "string"
+                },
+                "device_token": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "os_name": {
+                    "type": "string"
+                },
+                "os_version": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string"
+                }
+            }
         },
         "users-service_app_models_requests.Login": {
             "type": "object",
@@ -1784,31 +1895,79 @@ const docTemplate = `{
         },
         "users-service_app_models_requests.Settings": {
             "type": "object",
+            "required": [
+                "device_token"
+            ],
             "properties": {
-                "nightMode": {
+                "browser_name": {
+                    "type": "string"
+                },
+                "browser_version": {
+                    "type": "string"
+                },
+                "device_token": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "night_mode": {
                     "type": "boolean"
                 },
-                "notificationsTargetDeviceIDs": {
+                "notifications_target_device_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
-                "secondFactorTargetID": {
+                "os_name": {
+                    "type": "string"
+                },
+                "os_version": {
+                    "type": "string"
+                },
+                "second_factor_target_id": {
                     "type": "integer"
                 },
-                "twoFactor": {
+                "two_factor": {
                     "type": "boolean"
+                },
+                "user_agent": {
+                    "type": "string"
                 }
             }
         },
         "users-service_app_models_requests.User": {
             "type": "object",
+            "required": [
+                "device_token"
+            ],
             "properties": {
+                "browser_name": {
+                    "type": "string"
+                },
+                "browser_version": {
+                    "type": "string"
+                },
+                "device_token": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
                 "mail": {
                     "type": "string"
                 },
+                "os_name": {
+                    "type": "string"
+                },
+                "os_version": {
+                    "type": "string"
+                },
                 "phone": {
+                    "type": "string"
+                },
+                "user_agent": {
                     "type": "string"
                 }
             }
@@ -1819,7 +1978,7 @@ const docTemplate = `{
                 "error": {
                     "type": "string"
                 },
-                "requestID": {
+                "request_id": {
                     "type": "string"
                 },
                 "status": {
@@ -1831,7 +1990,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {},
-                "requestID": {
+                "request_id": {
                     "type": "string"
                 },
                 "status": {
@@ -1863,6 +2022,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

@@ -126,6 +126,18 @@ func init() {
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userDescSubscriptionIds is the schema descriptor for subscription_ids field.
+	userDescSubscriptionIds := userFields[10].Descriptor()
+	// user.DefaultSubscriptionIds holds the default value on creation for the subscription_ids field.
+	user.DefaultSubscriptionIds = userDescSubscriptionIds.Default.([]int)
+	// userDescTeamIds is the schema descriptor for team_ids field.
+	userDescTeamIds := userFields[11].Descriptor()
+	// user.DefaultTeamIds holds the default value on creation for the team_ids field.
+	user.DefaultTeamIds = userDescTeamIds.Default.([]int)
+	// userDescOrganizationIds is the schema descriptor for organization_ids field.
+	userDescOrganizationIds := userFields[12].Descriptor()
+	// user.DefaultOrganizationIds holds the default value on creation for the organization_ids field.
+	user.DefaultOrganizationIds = userDescOrganizationIds.Default.([]int)
 	useractionFields := schema.UserAction{}.Fields()
 	_ = useractionFields
 	// useractionDescCreatedAt is the schema descriptor for created_at field.

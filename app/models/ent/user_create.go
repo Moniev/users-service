@@ -139,6 +139,24 @@ func (uc *UserCreate) SetNillableUpdatedAt(t *time.Time) *UserCreate {
 	return uc
 }
 
+// SetSubscriptionIds sets the "subscription_ids" field.
+func (uc *UserCreate) SetSubscriptionIds(i []int) *UserCreate {
+	uc.mutation.SetSubscriptionIds(i)
+	return uc
+}
+
+// SetTeamIds sets the "team_ids" field.
+func (uc *UserCreate) SetTeamIds(i []int) *UserCreate {
+	uc.mutation.SetTeamIds(i)
+	return uc
+}
+
+// SetOrganizationIds sets the "organization_ids" field.
+func (uc *UserCreate) SetOrganizationIds(i []int) *UserCreate {
+	uc.mutation.SetOrganizationIds(i)
+	return uc
+}
+
 // SetID sets the "id" field.
 func (uc *UserCreate) SetID(i int) *UserCreate {
 	uc.mutation.SetID(i)
@@ -363,6 +381,18 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultUpdatedAt()
 		uc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := uc.mutation.SubscriptionIds(); !ok {
+		v := user.DefaultSubscriptionIds
+		uc.mutation.SetSubscriptionIds(v)
+	}
+	if _, ok := uc.mutation.TeamIds(); !ok {
+		v := user.DefaultTeamIds
+		uc.mutation.SetTeamIds(v)
+	}
+	if _, ok := uc.mutation.OrganizationIds(); !ok {
+		v := user.DefaultOrganizationIds
+		uc.mutation.SetOrganizationIds(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -400,6 +430,15 @@ func (uc *UserCreate) check() error {
 	}
 	if _, ok := uc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "User.updated_at"`)}
+	}
+	if _, ok := uc.mutation.SubscriptionIds(); !ok {
+		return &ValidationError{Name: "subscription_ids", err: errors.New(`ent: missing required field "User.subscription_ids"`)}
+	}
+	if _, ok := uc.mutation.TeamIds(); !ok {
+		return &ValidationError{Name: "team_ids", err: errors.New(`ent: missing required field "User.team_ids"`)}
+	}
+	if _, ok := uc.mutation.OrganizationIds(); !ok {
+		return &ValidationError{Name: "organization_ids", err: errors.New(`ent: missing required field "User.organization_ids"`)}
 	}
 	return nil
 }
@@ -468,6 +507,18 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := uc.mutation.SubscriptionIds(); ok {
+		_spec.SetField(user.FieldSubscriptionIds, field.TypeJSON, value)
+		_node.SubscriptionIds = value
+	}
+	if value, ok := uc.mutation.TeamIds(); ok {
+		_spec.SetField(user.FieldTeamIds, field.TypeJSON, value)
+		_node.TeamIds = value
+	}
+	if value, ok := uc.mutation.OrganizationIds(); ok {
+		_spec.SetField(user.FieldOrganizationIds, field.TypeJSON, value)
+		_node.OrganizationIds = value
 	}
 	if nodes := uc.mutation.UserDetailsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

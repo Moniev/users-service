@@ -166,6 +166,11 @@ definitions:
       mail:
         description: Mail holds the value of the "mail" field.
         type: string
+      organization_ids:
+        description: OrganizationIds holds the value of the "organization_ids" field.
+        items:
+          type: integer
+        type: array
       password:
         description: Password holds the value of the "password" field.
         type: string
@@ -175,6 +180,16 @@ definitions:
       removed:
         description: Removed holds the value of the "removed" field.
         type: boolean
+      subscription_ids:
+        description: SubscriptionIds holds the value of the "subscription_ids" field.
+        items:
+          type: integer
+        type: array
+      team_ids:
+        description: TeamIds holds the value of the "team_ids" field.
+        items:
+          type: integer
+        type: array
       updated_at:
         description: UpdatedAt holds the value of the "updated_at" field.
         type: string
@@ -515,6 +530,27 @@ definitions:
     - device_token
     type: object
   users-service_app_models_requests.Details:
+    properties:
+      browser_name:
+        type: string
+      browser_version:
+        type: string
+      device_token:
+        type: string
+      firstName:
+        type: string
+      ip_address:
+        type: string
+      lastName:
+        type: string
+      os_name:
+        type: string
+      os_version:
+        type: string
+      user_agent:
+        type: string
+    required:
+    - device_token
     type: object
   users-service_app_models_requests.Login:
     properties:
@@ -590,29 +626,61 @@ definitions:
     type: object
   users-service_app_models_requests.Settings:
     properties:
-      nightMode:
+      browser_name:
+        type: string
+      browser_version:
+        type: string
+      device_token:
+        type: string
+      ip_address:
+        type: string
+      night_mode:
         type: boolean
-      notificationsTargetDeviceIDs:
+      notifications_target_device_ids:
         items:
           type: integer
         type: array
-      secondFactorTargetID:
+      os_name:
+        type: string
+      os_version:
+        type: string
+      second_factor_target_id:
         type: integer
-      twoFactor:
+      two_factor:
         type: boolean
+      user_agent:
+        type: string
+    required:
+    - device_token
     type: object
   users-service_app_models_requests.User:
     properties:
+      browser_name:
+        type: string
+      browser_version:
+        type: string
+      device_token:
+        type: string
+      ip_address:
+        type: string
       mail:
+        type: string
+      os_name:
+        type: string
+      os_version:
         type: string
       phone:
         type: string
+      user_agent:
+        type: string
+    required:
+    - device_token
     type: object
   users-service_app_models_responses.ErrorResponse:
     properties:
       error:
         type: string
-      requestID:
+      request_id:
         type: string
       status:
         type: string
@@ -620,7 +688,7 @@ definitions:
   users-service_app_models_responses.SuccessResponse:
     properties:
       data: {}
-      requestID:
+      request_id:
         type: string
       status:
         type: string
@@ -942,6 +1010,41 @@ paths:
             - properties:
                 data:
                   type: string
+              type: object
+        "400":
+          description: Bad Request - Invalid input data
+          schema:
+            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - Service failed to process the request
+          schema:
+            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+      summary: Resend second factor code
+      tags:
+      - auth
+  /api/v1/auth/second-factor/verification/code:
+    post:
+      consumes:
+      - application/json
+      description: Requests a new second factor code to be sent to the user.
+      parameters:
+      - description: User's email address
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/users-service_app_models_requests.Code'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Successfully requested a new 2FA code
+          schema:
+            allOf:
+            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/users-service_app_models_responses.User'
               type: object
         "400":
           description: Bad Request - Invalid input data

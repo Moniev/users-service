@@ -2661,6 +2661,12 @@ type UserMutation struct {
 	removed                   *bool
 	created_at                *time.Time
 	updated_at                *time.Time
+	subscription_ids          *[]int
+	appendsubscription_ids    []int
+	team_ids                  *[]int
+	appendteam_ids            []int
+	organization_ids          *[]int
+	appendorganization_ids    []int
 	clearedFields             map[string]struct{}
 	user_details              *int
 	cleareduser_details       bool
@@ -3129,6 +3135,159 @@ func (m *UserMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetSubscriptionIds sets the "subscription_ids" field.
+func (m *UserMutation) SetSubscriptionIds(i []int) {
+	m.subscription_ids = &i
+	m.appendsubscription_ids = nil
+}
+
+// SubscriptionIds returns the value of the "subscription_ids" field in the mutation.
+func (m *UserMutation) SubscriptionIds() (r []int, exists bool) {
+	v := m.subscription_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscriptionIds returns the old "subscription_ids" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldSubscriptionIds(ctx context.Context) (v []int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscriptionIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscriptionIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscriptionIds: %w", err)
+	}
+	return oldValue.SubscriptionIds, nil
+}
+
+// AppendSubscriptionIds adds i to the "subscription_ids" field.
+func (m *UserMutation) AppendSubscriptionIds(i []int) {
+	m.appendsubscription_ids = append(m.appendsubscription_ids, i...)
+}
+
+// AppendedSubscriptionIds returns the list of values that were appended to the "subscription_ids" field in this mutation.
+func (m *UserMutation) AppendedSubscriptionIds() ([]int, bool) {
+	if len(m.appendsubscription_ids) == 0 {
+		return nil, false
+	}
+	return m.appendsubscription_ids, true
+}
+
+// ResetSubscriptionIds resets all changes to the "subscription_ids" field.
+func (m *UserMutation) ResetSubscriptionIds() {
+	m.subscription_ids = nil
+	m.appendsubscription_ids = nil
+}
+
+// SetTeamIds sets the "team_ids" field.
+func (m *UserMutation) SetTeamIds(i []int) {
+	m.team_ids = &i
+	m.appendteam_ids = nil
+}
+
+// TeamIds returns the value of the "team_ids" field in the mutation.
+func (m *UserMutation) TeamIds() (r []int, exists bool) {
+	v := m.team_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTeamIds returns the old "team_ids" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldTeamIds(ctx context.Context) (v []int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTeamIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTeamIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTeamIds: %w", err)
+	}
+	return oldValue.TeamIds, nil
+}
+
+// AppendTeamIds adds i to the "team_ids" field.
+func (m *UserMutation) AppendTeamIds(i []int) {
+	m.appendteam_ids = append(m.appendteam_ids, i...)
+}
+
+// AppendedTeamIds returns the list of values that were appended to the "team_ids" field in this mutation.
+func (m *UserMutation) AppendedTeamIds() ([]int, bool) {
+	if len(m.appendteam_ids) == 0 {
+		return nil, false
+	}
+	return m.appendteam_ids, true
+}
+
+// ResetTeamIds resets all changes to the "team_ids" field.
+func (m *UserMutation) ResetTeamIds() {
+	m.team_ids = nil
+	m.appendteam_ids = nil
+}
+
+// SetOrganizationIds sets the "organization_ids" field.
+func (m *UserMutation) SetOrganizationIds(i []int) {
+	m.organization_ids = &i
+	m.appendorganization_ids = nil
+}
+
+// OrganizationIds returns the value of the "organization_ids" field in the mutation.
+func (m *UserMutation) OrganizationIds() (r []int, exists bool) {
+	v := m.organization_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrganizationIds returns the old "organization_ids" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldOrganizationIds(ctx context.Context) (v []int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrganizationIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrganizationIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrganizationIds: %w", err)
+	}
+	return oldValue.OrganizationIds, nil
+}
+
+// AppendOrganizationIds adds i to the "organization_ids" field.
+func (m *UserMutation) AppendOrganizationIds(i []int) {
+	m.appendorganization_ids = append(m.appendorganization_ids, i...)
+}
+
+// AppendedOrganizationIds returns the list of values that were appended to the "organization_ids" field in this mutation.
+func (m *UserMutation) AppendedOrganizationIds() ([]int, bool) {
+	if len(m.appendorganization_ids) == 0 {
+		return nil, false
+	}
+	return m.appendorganization_ids, true
+}
+
+// ResetOrganizationIds resets all changes to the "organization_ids" field.
+func (m *UserMutation) ResetOrganizationIds() {
+	m.organization_ids = nil
+	m.appendorganization_ids = nil
+}
+
 // SetUserDetailsID sets the "user_details" edge to the UserDetails entity by id.
 func (m *UserMutation) SetUserDetailsID(id int) {
 	m.user_details = &id
@@ -3559,7 +3718,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 12)
 	if m.mail != nil {
 		fields = append(fields, user.FieldMail)
 	}
@@ -3587,6 +3746,15 @@ func (m *UserMutation) Fields() []string {
 	if m.updated_at != nil {
 		fields = append(fields, user.FieldUpdatedAt)
 	}
+	if m.subscription_ids != nil {
+		fields = append(fields, user.FieldSubscriptionIds)
+	}
+	if m.team_ids != nil {
+		fields = append(fields, user.FieldTeamIds)
+	}
+	if m.organization_ids != nil {
+		fields = append(fields, user.FieldOrganizationIds)
+	}
 	return fields
 }
 
@@ -3613,6 +3781,12 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case user.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case user.FieldSubscriptionIds:
+		return m.SubscriptionIds()
+	case user.FieldTeamIds:
+		return m.TeamIds()
+	case user.FieldOrganizationIds:
+		return m.OrganizationIds()
 	}
 	return nil, false
 }
@@ -3640,6 +3814,12 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case user.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case user.FieldSubscriptionIds:
+		return m.OldSubscriptionIds(ctx)
+	case user.FieldTeamIds:
+		return m.OldTeamIds(ctx)
+	case user.FieldOrganizationIds:
+		return m.OldOrganizationIds(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -3711,6 +3891,27 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case user.FieldSubscriptionIds:
+		v, ok := value.([]int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscriptionIds(v)
+		return nil
+	case user.FieldTeamIds:
+		v, ok := value.([]int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTeamIds(v)
+		return nil
+	case user.FieldOrganizationIds:
+		v, ok := value.([]int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrganizationIds(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -3796,6 +3997,15 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case user.FieldSubscriptionIds:
+		m.ResetSubscriptionIds()
+		return nil
+	case user.FieldTeamIds:
+		m.ResetTeamIds()
+		return nil
+	case user.FieldOrganizationIds:
+		m.ResetOrganizationIds()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

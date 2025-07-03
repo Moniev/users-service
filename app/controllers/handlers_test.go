@@ -1,5 +1,3 @@
-//go:build unit
-
 package controllers
 
 import (
@@ -125,7 +123,7 @@ func TestHandleAuthenticatedRequest(t *testing.T) {
 			setUserID: false,
 			setupMocks: func(m *mocks.MockStandardController) {
 				m.On("Log").Return(&zerolog.Logger{}).Once()
-				m.On("RespondFailure", mock.Anything, http.StatusUnauthorized, "invalid authentication context").Once()
+				m.On("RespondFailure", mock.Anything, http.StatusUnauthorized, "Unauthorized - Invalid or missing token").Once()
 			},
 			expectedStatusCode: http.StatusUnauthorized,
 		},
@@ -194,6 +192,7 @@ func TestHandleWebSocketRequest(t *testing.T) {
 			name: "Failure - Upgrade Fails",
 			setupMocks: func(m *mocks.MockWebSocketController, conn *mocks.MockConn) {
 				m.On("InitWebSocketHelper", mock.Anything).Return(nil, errors.New("upgrade failed")).Once()
+				m.On("Log").Return(&zerolog.Logger{}).Once()
 			},
 			serviceCall: func(reqCtx context.Context, req *TestWSRequest, reporter responses.Reporter) (string, error) {
 				t.Fail()
@@ -206,7 +205,11 @@ func TestHandleWebSocketRequest(t *testing.T) {
 				wsHelper := &requests.WebSocketHelper{Conn: conn, Logger: zerolog.Nop()}
 				m.On("InitWebSocketHelper", mock.Anything).Return(wsHelper, nil).Once()
 				conn.On("ReadMessage").Return(0, nil, errors.New("read error")).Once()
+				conn.On("WriteJSON", mock.MatchedBy(func(msg responses.Message) bool {
+					return msg.Status == "failure" && msg.Message == "Invalid credentials provided" && msg.Error == "read error"
+				})).Return(nil).Once()
 				conn.On("Close").Return(nil).Once()
+				m.On("Log").Return(&zerolog.Logger{}).Maybe()
 			},
 			serviceCall: func(reqCtx context.Context, req *TestWSRequest, reporter responses.Reporter) (string, error) {
 				t.Fail()

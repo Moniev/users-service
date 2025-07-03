@@ -4,7 +4,6 @@ import (
 	"context"
 	"users-service/app/models/ent"
 	"users-service/app/models/requests"
-	"users-service/app/models/responses"
 	"users-service/app/models/utils"
 
 	"github.com/stretchr/testify/mock"
@@ -37,16 +36,16 @@ func (m *MockAuthService) CompareHashes(storedHash, password string) error {
 	return args.Error(0)
 }
 
-func (m *MockAuthService) Register(ctx context.Context, req *requests.Register, reporter responses.Reporter) (*ent.User, error) {
-	args := m.Called(ctx, req, reporter)
+func (m *MockAuthService) Register(ctx context.Context, req *requests.Register) (*ent.User, error) {
+	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*ent.User), args.Error(1)
 }
 
-func (m *MockAuthService) Login(ctx context.Context, req *requests.Login, reporter responses.Reporter) (*ent.User, string, error) {
-	args := m.Called(ctx, req, reporter)
+func (m *MockAuthService) Login(ctx context.Context, req *requests.Login) (*ent.User, string, error) {
+	args := m.Called(ctx, req)
 	var r0 *ent.User
 	if args.Get(0) != nil {
 		r0 = args.Get(0).(*ent.User)

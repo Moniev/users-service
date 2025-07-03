@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -41,6 +42,12 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at"`
+	// SubscriptionIds holds the value of the "subscription_ids" field.
+	SubscriptionIds []int `json:"subscription_ids"`
+	// TeamIds holds the value of the "team_ids" field.
+	TeamIds []int `json:"team_ids"`
+	// OrganizationIds holds the value of the "organization_ids" field.
+	OrganizationIds []int `json:"organization_ids"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -170,6 +177,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldSubscriptionIds, user.FieldTeamIds, user.FieldOrganizationIds:
+			values[i] = new([]byte)
 		case user.FieldActive, user.FieldVerified, user.FieldBlacklisted, user.FieldRemoved:
 			values[i] = new(sql.NullBool)
 		case user.FieldID:
@@ -252,6 +261,30 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				u.UpdatedAt = value.Time
+			}
+		case user.FieldSubscriptionIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field subscription_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &u.SubscriptionIds); err != nil {
+					return fmt.Errorf("unmarshal field subscription_ids: %w", err)
+				}
+			}
+		case user.FieldTeamIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field team_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &u.TeamIds); err != nil {
+					return fmt.Errorf("unmarshal field team_ids: %w", err)
+				}
+			}
+		case user.FieldOrganizationIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field organization_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &u.OrganizationIds); err != nil {
+					return fmt.Errorf("unmarshal field organization_ids: %w", err)
+				}
 			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
@@ -360,6 +393,15 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(u.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("subscription_ids=")
+	builder.WriteString(fmt.Sprintf("%v", u.SubscriptionIds))
+	builder.WriteString(", ")
+	builder.WriteString("team_ids=")
+	builder.WriteString(fmt.Sprintf("%v", u.TeamIds))
+	builder.WriteString(", ")
+	builder.WriteString("organization_ids=")
+	builder.WriteString(fmt.Sprintf("%v", u.OrganizationIds))
 	builder.WriteByte(')')
 	return builder.String()
 }

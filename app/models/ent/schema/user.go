@@ -48,6 +48,16 @@ func (User) Fields() []ent.Field {
 			StructTag(`json:"updated_at"`).
 			Default(time.Now).
 			UpdateDefault(time.Now),
+
+		field.JSON("subscription_ids", []int{}).
+			Default([]int{}).
+			StructTag(`json:"subscription_ids"`),
+		field.JSON("team_ids", []int{}).
+			Default([]int{}).
+			StructTag(`json:"team_ids"`),
+		field.JSON("organization_ids", []int{}).
+			Default([]int{}).
+			StructTag(`json:"organization_ids"`),
 	}
 }
 

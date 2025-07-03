@@ -18,7 +18,6 @@ import (
 	"users-service/app/infrastructure"
 	"users-service/app/models/ent"
 	requests "users-service/app/models/requests"
-	"users-service/app/models/responses"
 	models "users-service/app/models/utils"
 	"users-service/app/repositories"
 	"users-service/app/utils"
@@ -45,8 +44,8 @@ type AuthServiceInterface interface {
 	HashPassword(password string) (string, error)
 	CompareHashes(storedHash, password string) error
 
-	Register(ctx context.Context, req *requests.Register, reporter responses.Reporter) (*ent.User, error)
-	Login(ctx context.Context, req *requests.Login, reporter responses.Reporter) (*ent.User, string, error)
+	Register(ctx context.Context, req *requests.Register) (*ent.User, error)
+	Login(ctx context.Context, req *requests.Login) (*ent.User, string, error)
 
 	ActivateAccount(ctx context.Context, req *requests.Code) (*ent.User, error)
 	VerifyAccount(ctx context.Context, req *requests.Code) (*ent.User, string, error)
@@ -230,15 +229,12 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 
 func (s *AuthService) Register(
 	ctx context.Context,
-	req *requests.Register,
-	reporter responses.Reporter) (*ent.User, error) {
+	req *requests.Register) (*ent.User, error) {
 
-	reporter.Processing("Checking for already exisiting mail")
 	if user, _ := s.UsersRepository.GetUserByMail(ctx, req.Mail); user != nil {
 		return nil, errors.New("this email is already registered")
 	}
 
-	reporter.Processing("Creating user account")
 	hashedPassword, err := s.HashPassword(req.Password)
 	if err != nil {
 		return nil, errors.New("failed to hash user's password")
@@ -249,13 +245,9 @@ func (s *AuthService) Register(
 		return nil, errors.New("failed to create new user")
 	}
 
-	reporter.Success("Registration completed successfully", newUser)
-
 	if err := s.EventNotifier.CreateRegistrationEvent(newUser, activationCode); err != nil {
 		s.Logger.Error().Err(err).Int("userID", newUser.ID).Msg("Failed to produce registration event")
 	}
-
-	reporter.Success("Sending activation token", newUser)
 
 	return newUser, nil
 }
@@ -370,8 +362,7 @@ func (s *AuthService) CompareHashes(storedHash, password string) error {
 	return <-resultChan
 }
 
-func (s *AuthService) Login(ctx context.Context, req *requests.Login, reporter responses.Reporter) (*ent.User, string, error) {
-	reporter.Processing("Authenticating user")
+func (s *AuthService) Login(ctx context.Context, req *requests.Login) (*ent.User, string, error) {
 	user, err := s.UsersRepository.GetUserByMail(ctx, req.Mail)
 	if err != nil {
 		return nil, "", err
@@ -389,7 +380,6 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login, reporter r
 		return nil, "", errors.New("provided wrong password")
 	}
 
-	reporter.Processing("Verifying device")
 	device, err := s.UsersRepository.FindOrCreateDevice(ctx, user.ID, &req.Device)
 	if err != nil {
 		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to find or create device")
@@ -397,7 +387,6 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login, reporter r
 	}
 
 	if user.Edges.UserSettings.TwoFactor {
-		reporter.Processing("Handling two-factor authentication")
 
 		userWithCode, secondFactor, err := s.UsersRepository.CreateSecondFactorCode(ctx, user, device)
 		if err != nil {
@@ -408,11 +397,10 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login, reporter r
 			s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce second factor event")
 			return nil, "", errors.New("failed to send second factor code")
 		}
-		reporter.Success("Two-factor authentication required", nil)
+
 		return nil, "2fa_required", nil
 	}
 
-	reporter.Processing("Generating access token")
 	userRoles := utils.MarshalUserRoles(user.Edges.UserRoles)
 	token, err := s.GenerateJWT(ctx, user.ID, device.ID, userRoles)
 	if err != nil {
@@ -423,7 +411,6 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login, reporter r
 		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce login event")
 	}
 
-	reporter.Success("Login successful", user)
 	return user, token, nil
 }
 

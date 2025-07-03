@@ -65,14 +65,14 @@ func handleAuthenticatedRequest[T any, R any](
 	var req T
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		c.Log().Error().Err(err).Msg("Failed to bind JSON request")
-		c.RespondFailure(ctx, http.StatusBadRequest, "invalid body request")
+		c.RespondFailure(ctx, http.StatusBadRequest, "Bad Request - Invalid input data")
 		return
 	}
 
 	userID, err := getUserIDFromContext(ctx)
 	if err != nil {
 		c.Log().Error().Err(err).Msg("Failed to get UserID from context")
-		c.RespondFailure(ctx, http.StatusUnauthorized, "invalid authentication context")
+		c.RespondFailure(ctx, http.StatusUnauthorized, "Unauthorized - Invalid or missing token")
 		return
 	}
 
@@ -82,7 +82,7 @@ func handleAuthenticatedRequest[T any, R any](
 	if v, ok := any(&req).(validatable); ok {
 		if err := v.Valid(); err != nil {
 			c.Log().Warn().Err(err).Msg("Invalid request data")
-			c.RespondFailure(ctx, http.StatusBadRequest, "invalid request data: "+err.Error())
+			c.RespondFailure(ctx, http.StatusBadRequest, "Bad Request - Invalid input data")
 			return
 		}
 	}
@@ -90,7 +90,7 @@ func handleAuthenticatedRequest[T any, R any](
 	result, err := serviceCall(ctx.Request.Context(), userID, &req)
 	if err != nil {
 		c.Log().Error().Err(err).Msg("Service call failed")
-		c.RespondFailure(ctx, http.StatusUnprocessableEntity, err.Error())
+		c.RespondFailure(ctx, http.StatusUnprocessableEntity, "Unprocessable Entity - Update failed")
 		return
 	}
 
@@ -104,12 +104,15 @@ func handleWebSocketRequest[T any, R any](
 ) {
 	ws, err := c.InitWebSocketHelper(ctx)
 	if err != nil {
+		c.Log().Error().Err(err).Msg("Failed to initialize WebSocket")
 		return
 	}
 	defer ws.Conn.Close()
 
 	var req T
 	if err := ws.ReadRequest(&req); err != nil {
+		ws.RespondFailure("Invalid credentials provided", err.Error())
+		c.Log().Warn().Err(err).Msg("Failed to read WebSocket request")
 		return
 	}
 
@@ -137,6 +140,7 @@ func handleWebSocketRequest[T any, R any](
 
 	result, err := serviceCall(ctx.Request.Context(), &req, reporter)
 	if err != nil {
+		ws.RespondFailure("Service call failed", err.Error())
 		c.Log().Error().Err(err).Msg("WebSocket process finished with an error")
 	} else {
 		c.Log().Info().Interface("result", result).Msg("WebSocket process completed successfully")

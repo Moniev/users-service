@@ -36,6 +36,10 @@ func (r Device) Valid() error {
 		return errors.New("no browser name provided")
 	}
 
+	if r.BrowserVersion == "" {
+		return errors.New("no browser name provided")
+	}
+
 	if r.OSVersion == "" {
 		return errors.New("no browser version provided")
 	}

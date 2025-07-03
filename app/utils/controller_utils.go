@@ -70,6 +70,7 @@ func LoadKeys(jwtPrivateKeyPath, jwtPublicKeyPath string) (crypto.PrivateKey, cr
 	if privateBlock == nil {
 		return nil, nil, errors.New("failed to decode PEM block containing private key")
 	}
+
 	privateKey, err := x509.ParsePKCS8PrivateKey(privateBlock.Bytes)
 	if err != nil {
 		return nil, nil, err
@@ -90,6 +91,7 @@ func LoadKeys(jwtPrivateKeyPath, jwtPublicKeyPath string) (crypto.PrivateKey, cr
 	if publicBlock == nil {
 		return nil, nil, errors.New("failed to decode PEM block containing public key")
 	}
+
 	publicKey, err := x509.ParsePKIXPublicKey(publicBlock.Bytes)
 	if err != nil {
 		return nil, nil, err

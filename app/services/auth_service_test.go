@@ -12,7 +12,6 @@ import (
 	"time"
 	"users-service/app/models/ent"
 	"users-service/app/models/requests"
-	"users-service/app/models/responses"
 	"users-service/tests/mocks"
 
 	"github.com/rs/zerolog"
@@ -101,10 +100,7 @@ func TestAuthService_Register(t *testing.T) {
 			authService, mockRepo, mockNotifier := newTestAuthService(t)
 			tc.setupMocks(mockRepo, mockNotifier)
 
-			progressChan := make(chan responses.Message, 10)
-			reporter := responses.NewProgressReporter(progressChan)
-
-			user, err := authService.Register(context.Background(), req, reporter)
+			user, err := authService.Register(context.Background(), req)
 
 			if tc.expectErr {
 				require.Error(t, err)
@@ -198,9 +194,7 @@ func TestAuthService_Login(t *testing.T) {
 			mockNotifier.Mock = mock.Mock{}
 			tc.setupMocks()
 
-			reporter := responses.NewProgressReporter(make(chan responses.Message, 10))
-
-			_, token, err := authService.Login(context.Background(), req, reporter)
+			_, token, err := authService.Login(context.Background(), req)
 
 			if tc.expectErr {
 				require.Error(t, err)

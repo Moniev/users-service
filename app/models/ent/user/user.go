@@ -32,6 +32,12 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldSubscriptionIds holds the string denoting the subscription_ids field in the database.
+	FieldSubscriptionIds = "subscription_ids"
+	// FieldTeamIds holds the string denoting the team_ids field in the database.
+	FieldTeamIds = "team_ids"
+	// FieldOrganizationIds holds the string denoting the organization_ids field in the database.
+	FieldOrganizationIds = "organization_ids"
 	// EdgeUserDetails holds the string denoting the user_details edge name in mutations.
 	EdgeUserDetails = "user_details"
 	// EdgeUserSettings holds the string denoting the user_settings edge name in mutations.
@@ -125,6 +131,9 @@ var Columns = []string{
 	FieldRemoved,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldSubscriptionIds,
+	FieldTeamIds,
+	FieldOrganizationIds,
 }
 
 var (
@@ -165,6 +174,12 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultSubscriptionIds holds the default value on creation for the "subscription_ids" field.
+	DefaultSubscriptionIds []int
+	// DefaultTeamIds holds the default value on creation for the "team_ids" field.
+	DefaultTeamIds []int
+	// DefaultOrganizationIds holds the default value on creation for the "organization_ids" field.
+	DefaultOrganizationIds []int
 )
 
 // OrderOption defines the ordering options for the User queries.

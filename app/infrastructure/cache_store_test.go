@@ -206,7 +206,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	assert.Equal(t, originalText, string(decryptedText))
 }
 
-func TestCacheUser_DecacheUser(t *testing.T) {
+func TestCacheStore_DecacheUser(t *testing.T) {
 	store, _ := newTestCacheStore(t)
 
 	originalUser := &ent.User{ID: 1, Mail: "test@example.com", Active: true}
@@ -220,7 +220,7 @@ func TestCacheUser_DecacheUser(t *testing.T) {
 	assert.Equal(t, originalUser.Mail, decachedUser.Mail)
 }
 
-func TestCacheClaims_DecacheClaims(t *testing.T) {
+func TestCacheStore_DecacheClaims(t *testing.T) {
 	store, _ := newTestCacheStore(t)
 
 	originalClaims := &utils.Claims{

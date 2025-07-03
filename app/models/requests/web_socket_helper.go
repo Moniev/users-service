@@ -43,7 +43,7 @@ func (h *WebSocketHelper) SendMessage(msg responses.Message) {
 
 func (ws *WebSocketHelper) RespondFailure(message, errorDetail string) {
 	ws.SendMessage(responses.Message{
-		Status:  "error",
+		Status:  "failure",
 		Message: message,
 		Error:   errorDetail,
 	})

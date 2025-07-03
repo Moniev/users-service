@@ -91,6 +91,14 @@ func (c *AuthController) RespondSuccess(ctx *gin.Context, statusCode int, data i
 }
 
 func (c *AuthController) InitWebSocketHelper(ctx *gin.Context) (*requests.WebSocketHelper, error) {
+	c.Upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+
 	conn, err := c.Upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		c.Logger.Error().Err(err).Msg("Failed to upgrade connection to WebSocket")
@@ -112,9 +120,9 @@ func (c *AuthController) InitWebSocketHelper(ctx *gin.Context) (*requests.WebSoc
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Router       /api/v1/auth/register [post]
 func (c *AuthController) Register(ctx *gin.Context) {
-	handleWebSocketRequest(ctx, c,
-		func(reqCtx context.Context, req *requests.Register, reporter responses.Reporter) (*ent.User, error) {
-			return c.AuthService.Register(reqCtx, req, reporter)
+	handleStandardRequest(ctx, c,
+		func(reqCtx context.Context, req *requests.Register) (*ent.User, error) {
+			return c.AuthService.Register(reqCtx, req)
 		},
 	)
 }
@@ -216,9 +224,9 @@ func (c *AuthController) ResendVerificationCode(ctx *gin.Context) {
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Router       /api/v1/auth/login [post]
 func (c *AuthController) Login(ctx *gin.Context) {
-	handleWebSocketRequest(ctx, c,
-		func(reqCtx context.Context, req *requests.Login, reporter responses.Reporter) (*responses.User, error) {
-			user, token, err := c.AuthService.Login(reqCtx, req, reporter)
+	handleStandardRequest(ctx, c,
+		func(reqCtx context.Context, req *requests.Login) (*responses.User, error) {
+			user, token, err := c.AuthService.Login(reqCtx, req)
 			if err != nil {
 				return nil, err
 			}
@@ -246,6 +254,28 @@ func (c *AuthController) ResendSecondFactorCode(ctx *gin.Context) {
 		}
 
 		return "requested verification code resend", nil
+	})
+}
+
+// VerifySecondFactorCode godoc
+// @Summary      Resend second factor code
+// @Description  Requests a new second factor code to be sent to the user.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      requests.Code      true  "User's email address"
+// @Success      200   {object}  responses.SuccessResponse{data=responses.User}  "OK - Successfully requested a new 2FA code"
+// @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
+// @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Service failed to process the request"
+// @Router       /api/v1/auth/second-factor/verification/code [post]
+func (c *AuthController) VerifySecondFactorCode(ctx *gin.Context) {
+	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.User, error) {
+		user, token, err := c.AuthService.VerifySecondFactor(reqCtx, req)
+		if err != nil {
+			return &responses.User{User: nil, Token: ""}, err
+		}
+
+		return &responses.User{User: user, Token: token}, nil
 	})
 }
 
@@ -312,7 +342,7 @@ func (c *AuthController) CancelPasswordReset(ctx *gin.Context) {
 func (c *AuthController) ConfirmPasswordReset(ctx *gin.Context) {
 	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.ConfirmPasswordReset) (string, error) {
 		if err := c.AuthService.ConfirmPasswordReset(reqCtx, req); err != nil {
-			return "", nil
+			return "", err
 		}
 
 		return "confirmed password reset", nil
@@ -333,7 +363,7 @@ func (c *AuthController) ConfirmPasswordReset(ctx *gin.Context) {
 func (c *AuthController) ResendResetCode(ctx *gin.Context) {
 	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Mail) (string, error) {
 		if err := c.AuthService.ResendResetCode(reqCtx, req); err != nil {
-			return "", nil
+			return "", err
 		}
 
 		return "requested reset code resent", nil

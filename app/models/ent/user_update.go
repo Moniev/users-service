@@ -21,6 +21,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 )
 
@@ -158,6 +159,42 @@ func (uu *UserUpdate) SetNillableCreatedAt(t *time.Time) *UserUpdate {
 // SetUpdatedAt sets the "updated_at" field.
 func (uu *UserUpdate) SetUpdatedAt(t time.Time) *UserUpdate {
 	uu.mutation.SetUpdatedAt(t)
+	return uu
+}
+
+// SetSubscriptionIds sets the "subscription_ids" field.
+func (uu *UserUpdate) SetSubscriptionIds(i []int) *UserUpdate {
+	uu.mutation.SetSubscriptionIds(i)
+	return uu
+}
+
+// AppendSubscriptionIds appends i to the "subscription_ids" field.
+func (uu *UserUpdate) AppendSubscriptionIds(i []int) *UserUpdate {
+	uu.mutation.AppendSubscriptionIds(i)
+	return uu
+}
+
+// SetTeamIds sets the "team_ids" field.
+func (uu *UserUpdate) SetTeamIds(i []int) *UserUpdate {
+	uu.mutation.SetTeamIds(i)
+	return uu
+}
+
+// AppendTeamIds appends i to the "team_ids" field.
+func (uu *UserUpdate) AppendTeamIds(i []int) *UserUpdate {
+	uu.mutation.AppendTeamIds(i)
+	return uu
+}
+
+// SetOrganizationIds sets the "organization_ids" field.
+func (uu *UserUpdate) SetOrganizationIds(i []int) *UserUpdate {
+	uu.mutation.SetOrganizationIds(i)
+	return uu
+}
+
+// AppendOrganizationIds appends i to the "organization_ids" field.
+func (uu *UserUpdate) AppendOrganizationIds(i []int) *UserUpdate {
+	uu.mutation.AppendOrganizationIds(i)
 	return uu
 }
 
@@ -516,6 +553,30 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := uu.mutation.SubscriptionIds(); ok {
+		_spec.SetField(user.FieldSubscriptionIds, field.TypeJSON, value)
+	}
+	if value, ok := uu.mutation.AppendedSubscriptionIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldSubscriptionIds, value)
+		})
+	}
+	if value, ok := uu.mutation.TeamIds(); ok {
+		_spec.SetField(user.FieldTeamIds, field.TypeJSON, value)
+	}
+	if value, ok := uu.mutation.AppendedTeamIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldTeamIds, value)
+		})
+	}
+	if value, ok := uu.mutation.OrganizationIds(); ok {
+		_spec.SetField(user.FieldOrganizationIds, field.TypeJSON, value)
+	}
+	if value, ok := uu.mutation.AppendedOrganizationIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldOrganizationIds, value)
+		})
 	}
 	if uu.mutation.UserDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -970,6 +1031,42 @@ func (uuo *UserUpdateOne) SetUpdatedAt(t time.Time) *UserUpdateOne {
 	return uuo
 }
 
+// SetSubscriptionIds sets the "subscription_ids" field.
+func (uuo *UserUpdateOne) SetSubscriptionIds(i []int) *UserUpdateOne {
+	uuo.mutation.SetSubscriptionIds(i)
+	return uuo
+}
+
+// AppendSubscriptionIds appends i to the "subscription_ids" field.
+func (uuo *UserUpdateOne) AppendSubscriptionIds(i []int) *UserUpdateOne {
+	uuo.mutation.AppendSubscriptionIds(i)
+	return uuo
+}
+
+// SetTeamIds sets the "team_ids" field.
+func (uuo *UserUpdateOne) SetTeamIds(i []int) *UserUpdateOne {
+	uuo.mutation.SetTeamIds(i)
+	return uuo
+}
+
+// AppendTeamIds appends i to the "team_ids" field.
+func (uuo *UserUpdateOne) AppendTeamIds(i []int) *UserUpdateOne {
+	uuo.mutation.AppendTeamIds(i)
+	return uuo
+}
+
+// SetOrganizationIds sets the "organization_ids" field.
+func (uuo *UserUpdateOne) SetOrganizationIds(i []int) *UserUpdateOne {
+	uuo.mutation.SetOrganizationIds(i)
+	return uuo
+}
+
+// AppendOrganizationIds appends i to the "organization_ids" field.
+func (uuo *UserUpdateOne) AppendOrganizationIds(i []int) *UserUpdateOne {
+	uuo.mutation.AppendOrganizationIds(i)
+	return uuo
+}
+
 // SetUserDetailsID sets the "user_details" edge to the UserDetails entity by ID.
 func (uuo *UserUpdateOne) SetUserDetailsID(id int) *UserUpdateOne {
 	uuo.mutation.SetUserDetailsID(id)
@@ -1355,6 +1452,30 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := uuo.mutation.SubscriptionIds(); ok {
+		_spec.SetField(user.FieldSubscriptionIds, field.TypeJSON, value)
+	}
+	if value, ok := uuo.mutation.AppendedSubscriptionIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldSubscriptionIds, value)
+		})
+	}
+	if value, ok := uuo.mutation.TeamIds(); ok {
+		_spec.SetField(user.FieldTeamIds, field.TypeJSON, value)
+	}
+	if value, ok := uuo.mutation.AppendedTeamIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldTeamIds, value)
+		})
+	}
+	if value, ok := uuo.mutation.OrganizationIds(); ok {
+		_spec.SetField(user.FieldOrganizationIds, field.TypeJSON, value)
+	}
+	if value, ok := uuo.mutation.AppendedOrganizationIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldOrganizationIds, value)
+		})
 	}
 	if uuo.mutation.UserDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{

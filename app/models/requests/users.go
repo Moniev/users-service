@@ -28,6 +28,10 @@ type DetailsInterface interface {
 }
 
 func (r *Details) Valid() error {
+	if r.FirstName == "" || r.LastName == "" {
+		return errors.New("")
+	}
+
 	return r.Device.Valid()
 }
 
@@ -43,11 +47,11 @@ type UserInterface interface {
 
 func (r *User) Valid() error {
 	if valid := utils.CheckEmailFormat(r.Mail); !valid {
-		return errors.New("prvided not valid email format")
+		return errors.New("provided not valid email format")
 	}
 
 	if valid := utils.CheckPhoneFormat(r.Phone); !valid {
-		return errors.New("prvided not valid phone format")
+		return errors.New("provided not valid phone format")
 	}
 
 	return r.Device.Valid()
@@ -66,6 +70,16 @@ type SettingsInerface interface {
 }
 
 func (r *Settings) Valid() error {
+	if r.SecondFactorTargetID <= 0 {
+		return errors.New("wrong second factor device ID provided")
+	}
+
+	for _, id := range r.NotificationsTargetDeviceIDs {
+		if id <= 0 {
+			return errors.New("wrong notification device ID provided")
+		}
+	}
+
 	return r.Device.Valid()
 }
 
