@@ -25,6 +25,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/redis v0.37.0
+	go.uber.org/mock v0.4.0
 	golang.org/x/crypto v0.39.0
 )
 

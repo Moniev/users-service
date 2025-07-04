@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-	"users-service/app/middlewares"
-	"users-service/app/models/utils"
+	"users-service/app/models/handlers"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rs/zerolog"
@@ -85,10 +84,9 @@ func CreateTopics(logger zerolog.Logger, settings *Settings, topics []string) er
 func NewKafkaConsumer(
 	groupID,
 	topic string,
-	handler middlewares.MessageHandler,
-	handlers []middlewares.KafkaMiddleware,
+	handler handlers.MessageHandler,
 	logger zerolog.Logger,
-	settings *Settings) (*utils.ConsumerWrapper, error) {
+	settings *Settings) (*handlers.ConsumerWrapper, error) {
 
 	config := &kafka.ConfigMap{
 		"bootstrap.servers":  settings.KafkaBootstrapServers,
@@ -113,7 +111,6 @@ func NewKafkaConsumer(
 
 	logger.Info().Str("topic", topic).Str("groupID", groupID).Msg("Kafka consumer initialized and subscribed successfully")
 
-	chainedHandler := middlewares.ChainMiddleware(handler, handlers...)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -135,9 +132,11 @@ func NewKafkaConsumer(
 					continue
 				}
 
-				if err := chainedHandler(ctx, msg, logger); err != nil {
-					logger.Error().Err(err).Str("topic", *msg.TopicPartition.Topic).Msg("Failed to process message")
-					continue
+				if handler != nil {
+					if err := handler.Handle(ctx, msg); err != nil {
+						logger.Error().Err(err).Str("topic", *msg.TopicPartition.Topic).Msg("Failed to process message")
+						continue
+					}
 				}
 
 				_, err = consumer.CommitMessage(msg)
@@ -154,7 +153,7 @@ func NewKafkaConsumer(
 		}
 	}()
 
-	return &utils.ConsumerWrapper{
+	return &handlers.ConsumerWrapper{
 		Consumer: consumer,
 		Cancel:   cancel,
 	}, nil

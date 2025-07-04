@@ -2,11 +2,13 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 	"users-service/app/controllers"
 	"users-service/app/infrastructure"
 	"users-service/app/middlewares"
+	"users-service/app/models/handlers"
 	"users-service/app/repositories"
 	"users-service/app/routes"
 	"users-service/app/services"
@@ -45,26 +47,36 @@ func NewApp(settings *Settings) *gin.Engine {
 		logger.Fatal().Err(err).Msg("failed to initialize kafka producer")
 	}
 
-	kafkaConsumerWrapper, err := NewKafkaConsumer(
-		"users-service-readiness-group",
-		topics[0],
-		nil,
-		nil,
-		logger,
-		settings,
-	)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to initialize kafka consumer")
+	cacheStore := infrastructure.NewCacheStore(redisClient, logger, settings.EncryptionSecretKey)
+	usersRepo := repositories.NewUsersRepository(cacheStore, entClient, driver, logger)
+	userActionHandler := services.NewUserActionHandler(usersRepo, logger)
+	consumerManager := infrastructure.NewConsumerManager(logger)
+
+	for _, topic := range topics {
+		groupID := fmt.Sprintf("users-service-%s-group", topic)
+		var handler handlers.MessageHandler
+
+		switch topic {
+		case "user.events", "user.actions":
+			handler = userActionHandler
+		case "notifications":
+		default:
+			logger.Warn().Str("topic", topic).Msg("No handler registered for topic")
+		}
+
+		if handler != nil {
+			consumerWrapper, err := NewKafkaConsumer(groupID, topic, handler, logger, settings)
+			if err != nil {
+				logger.Fatal().Err(err).Str("topic", topic).Msg("Failed to create consumer")
+			}
+			consumerManager.Register(topic, consumerWrapper)
+		}
 	}
 
 	eventNotifier := infrastructure.NewEventNotifier(kafkaProducer, logger, settings.KafkaNotifierTopic, time.Second*15)
-	eventListener := infrastructure.NewEventListener(kafkaConsumerWrapper.Consumer, logger, "", time.Minute, time.Second*15)
-
-	cacheStore := infrastructure.NewCacheStore(redisClient, logger, settings.EncryptionSecretKey)
-	usersRepo := repositories.NewUsersRepository(cacheStore, entClient, driver, logger)
 
 	authService := services.NewAuthService(usersRepo, eventNotifier, logger, privateKey, publicKey, 10)
-	diagnosticsService := services.NewDiagnosticsService(usersRepo, cacheStore, eventListener, eventNotifier, logger)
+	diagnosticsService := services.NewDiagnosticsService(usersRepo, cacheStore, eventNotifier, consumerManager, logger)
 	usersService := services.NewUsersService(usersRepo, eventNotifier, logger)
 
 	authController := controllers.NewAuthController(authService, usersService, logger)

@@ -36,6 +36,7 @@ func TestCreateRegistrationEvent(t *testing.T) {
 			},
 		},
 	}
+
 	baseCode := &ent.ActivationCode{Code: "123456"}
 
 	testCases := []struct {

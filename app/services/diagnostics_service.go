@@ -12,8 +12,8 @@ import (
 type DiagnosticsService struct {
 	UsersRepository repositories.UsersRepositoryInterface
 	CacheStore      infrastructure.CacheStoreInterface
-	EventListener   infrastructure.EventListenerInterface
 	EventNotifier   infrastructure.EventNotifierInterface
+	ConsumerManager infrastructure.ConsumerManagerInterface
 	Logger          zerolog.Logger
 }
 
@@ -27,15 +27,15 @@ var _ DiagnosticsServiceInterface = (*DiagnosticsService)(nil)
 func NewDiagnosticsService(
 	usersRepo repositories.UsersRepositoryInterface,
 	cacheStore infrastructure.CacheStoreInterface,
-	eventListener infrastructure.EventListenerInterface,
 	eventNotifier infrastructure.EventNotifierInterface,
+	consumerManager infrastructure.ConsumerManagerInterface,
 	logger zerolog.Logger) *DiagnosticsService {
 
 	return &DiagnosticsService{
 		UsersRepository: usersRepo,
 		CacheStore:      cacheStore,
-		EventListener:   eventListener,
 		EventNotifier:   eventNotifier,
+		ConsumerManager: consumerManager,
 		Logger:          logger,
 	}
 }
@@ -60,13 +60,12 @@ func (s *DiagnosticsService) CheckReadiness(ctx context.Context) error {
 
 	if _, err := s.CacheStore.Ping(ctx).Result(); err != nil {
 		s.Logger.Error().Err(err).Msg("Readiness check failed: CacheStore ping failed")
-		s.Logger.Debug().Msgf("CacheStore.Ping Result error: %v", err)
 		return fmt.Errorf("cache store not ready: %w", err)
 	}
 
-	if err := s.EventListener.Ping(); err != nil {
-		s.Logger.Error().Err(err).Msg("Readiness check failed: EventListener ping failed")
-		return fmt.Errorf("event listener not ready: %w", err)
+	if err := s.ConsumerManager.PingAll(); err != nil {
+		s.Logger.Error().Err(err).Msg("Readiness check failed: EventNotifier ping failed")
+		return fmt.Errorf("consumers not ready: %w", err)
 	}
 
 	if err := s.EventNotifier.Ping(); err != nil {

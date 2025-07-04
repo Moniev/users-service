@@ -15,25 +15,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestDiagnosticsService(t *testing.T) (*DiagnosticsService, *mocks.MockUsersRepository, *mocks.MockEventNotifier) {
+func newTestDiagnosticsService(t *testing.T) (
+	*DiagnosticsService,
+	*mocks.MockUsersRepository,
+	*mocks.MockEventNotifier,
+	*mocks.MockConsumerManager,
+) {
 	mockRepo := new(mocks.MockUsersRepository)
 	eventNotifier := new(mocks.MockEventNotifier)
-
 	cacheStore := new(mocks.MockCacheStore)
-
-	eventListener := new(mocks.MockEventListener)
+	consumerManager := new(mocks.MockConsumerManager)
 
 	logger := zerolog.Nop()
 
-	authService := NewDiagnosticsService(
+	service := NewDiagnosticsService(
 		mockRepo,
 		cacheStore,
-		eventListener,
 		eventNotifier,
+		consumerManager,
 		logger,
 	)
-	require.NotNil(t, authService)
-	return authService, mockRepo, eventNotifier
+	require.NotNil(t, service)
+	return service, mockRepo, eventNotifier, consumerManager
 }
 
 func TestDiagnosticsService_CheckHealth(t *testing.T) {
@@ -62,7 +65,7 @@ func TestDiagnosticsService_CheckHealth(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			service, mockRepo, _ := newTestDiagnosticsService(t)
+			service, mockRepo, _, _ := newTestDiagnosticsService(t)
 			tc.setupMock(mockRepo)
 
 			err := service.CheckHealth(context.Background())
@@ -82,26 +85,26 @@ func TestDiagnosticsService_CheckHealth(t *testing.T) {
 func TestDiagnosticsService_CheckReadiness(t *testing.T) {
 	testCases := []struct {
 		name        string
-		setupMocks  func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, listener *mocks.MockEventListener, notifier *mocks.MockEventNotifier)
+		setupMocks  func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, manager *mocks.MockConsumerManager, notifier *mocks.MockEventNotifier)
 		expectErr   bool
 		errContains string
 	}{
 		{
 			name: "Success - All Components Ready",
-			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, listener *mocks.MockEventListener, notifier *mocks.MockEventNotifier) {
+			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, manager *mocks.MockConsumerManager, notifier *mocks.MockEventNotifier) {
 				repo.On("Ping").Return(nil).Once()
 				cache.On("Ping", mock.Anything).Return(&redis.StatusCmd{}, nil).Once()
-				listener.On("Ping").Return(nil).Once()
+				manager.On("PingAll").Return(nil).Once()
 				notifier.On("Ping").Return(nil).Once()
 			},
 			expectErr: false,
 		},
 		{
 			name: "Failure - UsersRepository Not Ready",
-			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, listener *mocks.MockEventListener, notifier *mocks.MockEventNotifier) {
+			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, manager *mocks.MockConsumerManager, notifier *mocks.MockEventNotifier) {
 				repo.On("Ping").Return(errors.New("database connection failed")).Once()
 				cache.On("Ping", mock.Anything).Return(&redis.StatusCmd{}, nil).Maybe()
-				listener.On("Ping").Return(nil).Maybe()
+				manager.On("PingAll").Return(nil).Maybe()
 				notifier.On("Ping").Return(nil).Maybe()
 			},
 			expectErr:   true,
@@ -109,34 +112,34 @@ func TestDiagnosticsService_CheckReadiness(t *testing.T) {
 		},
 		{
 			name: "Failure - CacheStore Not Ready",
-			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, listener *mocks.MockEventListener, notifier *mocks.MockEventNotifier) {
+			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, manager *mocks.MockConsumerManager, notifier *mocks.MockEventNotifier) {
 				repo.On("Ping").Return(nil).Once()
 				cmd := redis.NewStatusCmd(context.Background())
 				cmd.SetErr(errors.New("redis connection failed"))
 				cache.On("Ping", mock.Anything).Return(cmd).Once()
-				listener.On("Ping").Return(nil).Maybe()
+				manager.On("PingAll").Return(nil).Maybe()
 				notifier.On("Ping").Return(nil).Maybe()
 			},
 			expectErr:   true,
 			errContains: "cache store not ready: redis connection failed",
 		},
 		{
-			name: "Failure - EventListener Not Ready",
-			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, listener *mocks.MockEventListener, notifier *mocks.MockEventNotifier) {
+			name: "Failure - ConsumerManager Not Ready",
+			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, manager *mocks.MockConsumerManager, notifier *mocks.MockEventNotifier) {
 				repo.On("Ping").Return(nil).Once()
 				cache.On("Ping", mock.Anything).Return(&redis.StatusCmd{}, nil).Once()
-				listener.On("Ping").Return(errors.New("kafka consumer not connected")).Once()
+				manager.On("PingAll").Return(errors.New("kafka consumers not connected")).Once()
 				notifier.On("Ping").Return(nil).Maybe()
 			},
 			expectErr:   true,
-			errContains: "event listener not ready: kafka consumer not connected",
+			errContains: "consumers not ready: kafka consumers not connected",
 		},
 		{
 			name: "Failure - EventNotifier Not Ready",
-			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, listener *mocks.MockEventListener, notifier *mocks.MockEventNotifier) {
+			setupMocks: func(repo *mocks.MockUsersRepository, cache *mocks.MockCacheStore, manager *mocks.MockConsumerManager, notifier *mocks.MockEventNotifier) {
 				repo.On("Ping").Return(nil).Once()
 				cache.On("Ping", mock.Anything).Return(&redis.StatusCmd{}, nil).Once()
-				listener.On("Ping").Return(nil).Once()
+				manager.On("PingAll").Return(nil).Once()
 				notifier.On("Ping").Return(errors.New("kafka producer not connected")).Once()
 			},
 			expectErr:   true,
@@ -146,10 +149,10 @@ func TestDiagnosticsService_CheckReadiness(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			service, mockRepo, mockNotifier := newTestDiagnosticsService(t)
+			service, mockRepo, mockNotifier, mockManager := newTestDiagnosticsService(t)
 			mockCache := service.CacheStore.(*mocks.MockCacheStore)
-			mockListener := service.EventListener.(*mocks.MockEventListener)
-			tc.setupMocks(mockRepo, mockCache, mockListener, mockNotifier)
+
+			tc.setupMocks(mockRepo, mockCache, mockManager, mockNotifier)
 
 			err := service.CheckReadiness(context.Background())
 
@@ -162,7 +165,7 @@ func TestDiagnosticsService_CheckReadiness(t *testing.T) {
 
 			mockRepo.AssertExpectations(t)
 			mockCache.AssertExpectations(t)
-			mockListener.AssertExpectations(t)
+			mockManager.AssertExpectations(t)
 			mockNotifier.AssertExpectations(t)
 		})
 	}
