@@ -89,24 +89,46 @@ func NewKafkaConsumer(
 	settings *Settings) (*handlers.ConsumerWrapper, error) {
 
 	config := &kafka.ConfigMap{
-		"bootstrap.servers":  settings.KafkaBootstrapServers,
-		"security.protocol":  settings.KafkaSecurityProtocol,
-		"ssl.ca.location":    settings.KafkaSslCaPath,
-		"group.id":           groupID,
-		"auto.offset.reset":  "earliest",
-		"enable.auto.commit": false,
+		"bootstrap.servers":                     settings.KafkaBootstrapServers,
+		"security.protocol":                     settings.KafkaSecurityProtocol,
+		"ssl.ca.location":                       settings.KafkaSslCaPath,
+		"ssl.endpoint.identification.algorithm": "https",
+		"group.id":                              groupID,
+		"auto.offset.reset":                     "earliest",
+		"enable.auto.commit":                    false,
+	}
+
+	if settings.KafkaSslCertPath != "" && settings.KafkaSslKeyPath != "" {
+		logger.Info().Msg("Client certificate and key found. Applying mTLS configuration.")
+		if err := config.SetKey("ssl.certificate.location", settings.KafkaSslCertPath); err != nil {
+			return nil, fmt.Errorf("failed to set ssl.certificate.location: %w", err)
+		}
+
+		if err := config.SetKey("ssl.key.location", settings.KafkaSslKeyPath); err != nil {
+			return nil, fmt.Errorf("failed to set ssl.key.location: %w", err)
+		}
+
+		if settings.KafkaClientKeyPassword != "" {
+			logger.Info().Msg("Found client's key password.")
+			if err := config.SetKey("ssl.key.password", settings.KafkaClientKeyPassword); err != nil {
+				return nil, fmt.Errorf("failed to set ssl.key.password: %w", err)
+			}
+		}
+	} else {
+		logger.Warn().Msg("Client certificate or key not found. mTLS may fail if required by broker.")
 	}
 
 	consumer, err := kafka.NewConsumer(config)
 	if err != nil {
-		return nil, err
+		logger.Error().Err(err).Msg("Failed to create Kafka consumer")
+		return nil, fmt.Errorf("failed to create consumer: %w", err)
 	}
 
 	err = consumer.Subscribe(topic, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to subscribe to Kafka topic")
 		consumer.Close()
-		return nil, err
+		return nil, fmt.Errorf("failed to subscribe to topic %s: %w", topic, err)
 	}
 
 	logger.Info().Str("topic", topic).Str("groupID", groupID).Msg("Kafka consumer initialized and subscribed successfully")
@@ -127,7 +149,6 @@ func NewKafkaConsumer(
 					if kafkaErr, ok := err.(kafka.Error); ok && kafkaErr.Code() == kafka.ErrTimedOut {
 						continue
 					}
-
 					logger.Error().Err(err).Msg("Consumer error while reading message")
 					continue
 				}
