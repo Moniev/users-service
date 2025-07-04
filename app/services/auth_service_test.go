@@ -273,7 +273,6 @@ func TestAuthService_VerifyAccount(t *testing.T) {
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
 				repo.On("VerifyAccount", mock.Anything, req.Code).Return(userFromDB, nil).Once()
 				repo.On("FindOrCreateDevice", mock.Anything, userFromDB.ID, &req.Device).Return(&ent.UserDevice{ID: 2}, nil).Once()
-				notifier.On("CreateVerificationEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 			},
 			expectErr: false,
 		},

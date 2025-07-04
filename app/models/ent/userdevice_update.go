@@ -45,6 +45,12 @@ func (udu *UserDeviceUpdate) SetNillableName(s *string) *UserDeviceUpdate {
 	return udu
 }
 
+// ClearName clears the value of the "name" field.
+func (udu *UserDeviceUpdate) ClearName() *UserDeviceUpdate {
+	udu.mutation.ClearName()
+	return udu
+}
+
 // SetType sets the "type" field.
 func (udu *UserDeviceUpdate) SetType(s string) *UserDeviceUpdate {
 	udu.mutation.SetType(s)
@@ -56,6 +62,12 @@ func (udu *UserDeviceUpdate) SetNillableType(s *string) *UserDeviceUpdate {
 	if s != nil {
 		udu.SetType(*s)
 	}
+	return udu
+}
+
+// ClearType clears the value of the "type" field.
+func (udu *UserDeviceUpdate) ClearType() *UserDeviceUpdate {
+	udu.mutation.ClearType()
 	return udu
 }
 
@@ -333,6 +345,11 @@ func (udu *UserDeviceUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (udu *UserDeviceUpdate) check() error {
+	if v, ok := udu.mutation.Token(); ok {
+		if err := userdevice.TokenValidator(v); err != nil {
+			return &ValidationError{Name: "token", err: fmt.Errorf(`ent: validator failed for field "UserDevice.token": %w`, err)}
+		}
+	}
 	if udu.mutation.OwnerCleared() && len(udu.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserDevice.owner"`)
 	}
@@ -354,8 +371,14 @@ func (udu *UserDeviceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := udu.mutation.Name(); ok {
 		_spec.SetField(userdevice.FieldName, field.TypeString, value)
 	}
+	if udu.mutation.NameCleared() {
+		_spec.ClearField(userdevice.FieldName, field.TypeString)
+	}
 	if value, ok := udu.mutation.GetType(); ok {
 		_spec.SetField(userdevice.FieldType, field.TypeString, value)
+	}
+	if udu.mutation.TypeCleared() {
+		_spec.ClearField(userdevice.FieldType, field.TypeString)
 	}
 	if value, ok := udu.mutation.Token(); ok {
 		_spec.SetField(userdevice.FieldToken, field.TypeString, value)
@@ -526,6 +549,12 @@ func (uduo *UserDeviceUpdateOne) SetNillableName(s *string) *UserDeviceUpdateOne
 	return uduo
 }
 
+// ClearName clears the value of the "name" field.
+func (uduo *UserDeviceUpdateOne) ClearName() *UserDeviceUpdateOne {
+	uduo.mutation.ClearName()
+	return uduo
+}
+
 // SetType sets the "type" field.
 func (uduo *UserDeviceUpdateOne) SetType(s string) *UserDeviceUpdateOne {
 	uduo.mutation.SetType(s)
@@ -537,6 +566,12 @@ func (uduo *UserDeviceUpdateOne) SetNillableType(s *string) *UserDeviceUpdateOne
 	if s != nil {
 		uduo.SetType(*s)
 	}
+	return uduo
+}
+
+// ClearType clears the value of the "type" field.
+func (uduo *UserDeviceUpdateOne) ClearType() *UserDeviceUpdateOne {
+	uduo.mutation.ClearType()
 	return uduo
 }
 
@@ -827,6 +862,11 @@ func (uduo *UserDeviceUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (uduo *UserDeviceUpdateOne) check() error {
+	if v, ok := uduo.mutation.Token(); ok {
+		if err := userdevice.TokenValidator(v); err != nil {
+			return &ValidationError{Name: "token", err: fmt.Errorf(`ent: validator failed for field "UserDevice.token": %w`, err)}
+		}
+	}
 	if uduo.mutation.OwnerCleared() && len(uduo.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserDevice.owner"`)
 	}
@@ -865,8 +905,14 @@ func (uduo *UserDeviceUpdateOne) sqlSave(ctx context.Context) (_node *UserDevice
 	if value, ok := uduo.mutation.Name(); ok {
 		_spec.SetField(userdevice.FieldName, field.TypeString, value)
 	}
+	if uduo.mutation.NameCleared() {
+		_spec.ClearField(userdevice.FieldName, field.TypeString)
+	}
 	if value, ok := uduo.mutation.GetType(); ok {
 		_spec.SetField(userdevice.FieldType, field.TypeString, value)
+	}
+	if uduo.mutation.TypeCleared() {
+		_spec.ClearField(userdevice.FieldType, field.TypeString)
 	}
 	if value, ok := uduo.mutation.Token(); ok {
 		_spec.SetField(userdevice.FieldToken, field.TypeString, value)

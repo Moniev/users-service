@@ -11,7 +11,7 @@ import "users-service/app/config"
 // @contact.url    https://github.com/Moniev
 // @contact.email  m0ni3v@gmail.com
 
-// @host      localhost:8080
+// @host      localhost:8000
 // @BasePath  /api/v1
 
 // @securityDefinitions.basic  BearerApi

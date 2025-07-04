@@ -151,6 +151,11 @@ func (acu *ActivationCodeUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (acu *ActivationCodeUpdate) check() error {
+	if v, ok := acu.mutation.Code(); ok {
+		if err := activationcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ActivationCode.code": %w`, err)}
+		}
+	}
 	if acu.mutation.OwnerCleared() && len(acu.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ActivationCode.owner"`)
 	}
@@ -368,6 +373,11 @@ func (acuo *ActivationCodeUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (acuo *ActivationCodeUpdateOne) check() error {
+	if v, ok := acuo.mutation.Code(); ok {
+		if err := activationcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ActivationCode.code": %w`, err)}
+		}
+	}
 	if acuo.mutation.OwnerCleared() && len(acuo.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ActivationCode.owner"`)
 	}

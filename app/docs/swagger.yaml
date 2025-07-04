@@ -1,71 +1,6 @@
 basePath: /api/v1
 definitions:
-  users-service_app_models_ent.ActivationCode:
-    properties:
-      code:
-        description: Code holds the value of the "code" field.
-        type: string
-      created_at:
-        description: CreatedAt holds the value of the "created_at" field.
-        type: string
-      edges:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.ActivationCodeEdges'
-        description: |-
-          Edges holds the relations/edges for other nodes in the graph.
-          The values are being populated by the ActivationCodeQuery when eager-loading is set.
-      expires_at:
-        description: ExpiresAt holds the value of the "expires_at" field.
-        type: string
-      id:
-        description: ID of the ent.
-        type: integer
-      updated_at:
-        description: UpdatedAt holds the value of the "updated_at" field.
-        type: string
-      used:
-        description: Used holds the value of the "used" field.
-        type: boolean
-    type: object
-  users-service_app_models_ent.ActivationCodeEdges:
-    properties:
-      owner:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.User'
-        description: Owner holds the value of the owner edge.
-    type: object
-  users-service_app_models_ent.ResetCode:
-    properties:
-      code:
-        description: Code holds the value of the "code" field.
-        type: string
-      created_at:
-        description: CreatedAt holds the value of the "created_at" field.
-        type: string
-      edges:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.ResetCodeEdges'
-        description: |-
-          Edges holds the relations/edges for other nodes in the graph.
-          The values are being populated by the ResetCodeQuery when eager-loading is set.
-      expires_at:
-        description: ExpiresAt holds the value of the "expires_at" field.
-        type: string
-      id:
-        description: ID of the ent.
-        type: integer
-      updated_at:
-        description: UpdatedAt holds the value of the "updated_at" field.
-        type: string
-    type: object
-  users-service_app_models_ent.ResetCodeEdges:
-    properties:
-      owner:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.User'
-        description: Owner holds the value of the owner edge.
-    type: object
-  users-service_app_models_ent.RolePermission:
+  ent.RolePermission:
     properties:
       add:
         description: Add holds the value of the "add" field.
@@ -78,7 +13,7 @@ definitions:
         type: boolean
       edges:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.RolePermissionEdges'
+        - $ref: '#/definitions/ent.RolePermissionEdges'
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the RolePermissionQuery when eager-loading is set.
@@ -98,15 +33,15 @@ definitions:
         description: View holds the value of the "view" field.
         type: boolean
     type: object
-  users-service_app_models_ent.RolePermissionEdges:
+  ent.RolePermissionEdges:
     properties:
       user_role:
         description: UserRole holds the value of the user_role edge.
         items:
-          $ref: '#/definitions/users-service_app_models_ent.UserRole'
+          $ref: '#/definitions/ent.UserRole'
         type: array
     type: object
-  users-service_app_models_ent.SecondFactorCode:
+  ent.SecondFactorCode:
     properties:
       code:
         description: Code holds the value of the "code" field.
@@ -116,7 +51,7 @@ definitions:
         type: string
       edges:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.SecondFactorCodeEdges'
+        - $ref: '#/definitions/ent.SecondFactorCodeEdges'
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the SecondFactorCodeQuery when eager-loading is set.
@@ -133,18 +68,18 @@ definitions:
         description: Used holds the value of the "used" field.
         type: boolean
     type: object
-  users-service_app_models_ent.SecondFactorCodeEdges:
+  ent.SecondFactorCodeEdges:
     properties:
       owner:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.User'
+        - $ref: '#/definitions/ent.User'
         description: Owner holds the value of the owner edge.
       target_user_device:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserDevice'
+        - $ref: '#/definitions/ent.UserDevice'
         description: TargetUserDevice holds the value of the target_user_device edge.
     type: object
-  users-service_app_models_ent.User:
+  ent.User:
     properties:
       active:
         description: Active holds the value of the "active" field.
@@ -157,7 +92,7 @@ definitions:
         type: string
       edges:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserEdges'
+        - $ref: '#/definitions/ent.UserEdges'
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the UserQuery when eager-loading is set.
@@ -172,9 +107,6 @@ definitions:
         items:
           type: integer
         type: array
-      password:
-        description: Password holds the value of the "password" field.
-        type: string
       phone:
         description: Phone holds the value of the "phone" field.
         type: string
@@ -198,49 +130,14 @@ definitions:
         description: Verified holds the value of the "verified" field.
         type: boolean
     type: object
-  users-service_app_models_ent.UserAction:
-    properties:
-      action:
-        description: Action holds the value of the "action" field.
-        type: string
-      created_at:
-        description: CreatedAt holds the value of the "created_at" field.
-        type: string
-      details:
-        description: Details holds the value of the "details" field.
-        type: string
-      edges:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserActionEdges'
-        description: |-
-          Edges holds the relations/edges for other nodes in the graph.
-          The values are being populated by the UserActionQuery when eager-loading is set.
-      id:
-        description: ID of the ent.
-        type: integer
-      type:
-        description: Type holds the value of the "type" field.
-        type: string
-      updated_at:
-        description: UpdatedAt holds the value of the "updated_at" field.
-        type: string
-    type: object
-  users-service_app_models_ent.UserActionEdges:
-    properties:
-      author:
-        description: Author holds the value of the author edge.
-        items:
-          $ref: '#/definitions/users-service_app_models_ent.User'
-        type: array
-    type: object
-  users-service_app_models_ent.UserDetails:
+  ent.UserDetails:
     properties:
       created_at:
         description: CreatedAt holds the value of the "created_at" field.
         type: string
       edges:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserDetailsEdges'
+        - $ref: '#/definitions/ent.UserDetailsEdges'
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the UserDetailsQuery when eager-loading is set.
@@ -260,14 +157,14 @@ definitions:
         description: UpdatedAt holds the value of the "updated_at" field.
         type: string
     type: object
-  users-service_app_models_ent.UserDetailsEdges:
+  ent.UserDetailsEdges:
     properties:
       owner:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.User'
+        - $ref: '#/definitions/ent.User'
         description: Owner holds the value of the owner edge.
     type: object
-  users-service_app_models_ent.UserDevice:
+  ent.UserDevice:
     properties:
       browser_name:
         description: Browser name (e.g., Chrome, Firefox).
@@ -280,7 +177,7 @@ definitions:
         type: string
       edges:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserDeviceEdges'
+        - $ref: '#/definitions/ent.UserDeviceEdges'
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the UserDeviceQuery when eager-loading is set.
@@ -315,65 +212,44 @@ definitions:
         description: The full User-Agent string from the last request.
         type: string
     type: object
-  users-service_app_models_ent.UserDeviceEdges:
+  ent.UserDeviceEdges:
     properties:
       owner:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.User'
+        - $ref: '#/definitions/ent.User'
         description: Owner holds the value of the owner edge.
       second_factor_codes:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.SecondFactorCode'
+        - $ref: '#/definitions/ent.SecondFactorCode'
         description: SecondFactorCodes holds the value of the second_factor_codes
           edge.
       user_settings_2fa:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserSettings'
+        - $ref: '#/definitions/ent.UserSettings'
         description: UserSettings2fa holds the value of the user_settings_2fa edge.
     type: object
-  users-service_app_models_ent.UserEdges:
+  ent.UserEdges:
     properties:
-      activation_code:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.ActivationCode'
-        description: ActivationCode holds the value of the activation_code edge.
-      reset_code:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.ResetCode'
-        description: ResetCode holds the value of the reset_code edge.
-      second_factor_code:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.SecondFactorCode'
-        description: SecondFactorCode holds the value of the second_factor_code edge.
-      user_actions:
-        description: UserActions holds the value of the user_actions edge.
-        items:
-          $ref: '#/definitions/users-service_app_models_ent.UserAction'
-        type: array
       user_details:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserDetails'
+        - $ref: '#/definitions/ent.UserDetails'
         description: UserDetails holds the value of the user_details edge.
       user_devices:
         description: UserDevices holds the value of the user_devices edge.
         items:
-          $ref: '#/definitions/users-service_app_models_ent.UserDevice'
+          $ref: '#/definitions/ent.UserDevice'
         type: array
       user_roles:
         description: UserRoles holds the value of the user_roles edge.
         items:
-          $ref: '#/definitions/users-service_app_models_ent.UserRole'
+          $ref: '#/definitions/ent.UserRole'
         type: array
       user_settings:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserSettings'
+        - $ref: '#/definitions/ent.UserSettings'
         description: UserSettings holds the value of the user_settings edge.
-      verification_code:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.VerificationCode'
-        description: VerificationCode holds the value of the verification_code edge.
     type: object
-  users-service_app_models_ent.UserRole:
+  ent.UserRole:
     properties:
       created_at:
         description: CreatedAt holds the value of the "created_at" field.
@@ -383,7 +259,7 @@ definitions:
         type: string
       edges:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserRoleEdges'
+        - $ref: '#/definitions/ent.UserRoleEdges'
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the UserRoleQuery when eager-loading is set.
@@ -397,27 +273,27 @@ definitions:
         description: UpdatedAt holds the value of the "updated_at" field.
         type: string
     type: object
-  users-service_app_models_ent.UserRoleEdges:
+  ent.UserRoleEdges:
     properties:
       owner:
         description: Owner holds the value of the owner edge.
         items:
-          $ref: '#/definitions/users-service_app_models_ent.User'
+          $ref: '#/definitions/ent.User'
         type: array
       permissions:
         description: Permissions holds the value of the permissions edge.
         items:
-          $ref: '#/definitions/users-service_app_models_ent.RolePermission'
+          $ref: '#/definitions/ent.RolePermission'
         type: array
     type: object
-  users-service_app_models_ent.UserSettings:
+  ent.UserSettings:
     properties:
       created_at:
         description: CreatedAt holds the value of the "created_at" field.
         type: string
       edges:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserSettingsEdges'
+        - $ref: '#/definitions/ent.UserSettingsEdges'
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the UserSettingsQuery when eager-loading is set.
@@ -437,56 +313,25 @@ definitions:
         description: UUID holds the value of the "UUID" field.
         type: string
     type: object
-  users-service_app_models_ent.UserSettingsEdges:
+  ent.UserSettingsEdges:
     properties:
       notification_target_devices:
         description: NotificationTargetDevices holds the value of the notification_target_devices
           edge.
         items:
-          $ref: '#/definitions/users-service_app_models_ent.UserDevice'
+          $ref: '#/definitions/ent.UserDevice'
         type: array
       owner:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.User'
+        - $ref: '#/definitions/ent.User'
         description: Owner holds the value of the owner edge.
       second_factor_target:
         allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.UserDevice'
+        - $ref: '#/definitions/ent.UserDevice'
         description: SecondFactorTarget holds the value of the second_factor_target
           edge.
     type: object
-  users-service_app_models_ent.VerificationCode:
-    properties:
-      code:
-        description: Code holds the value of the "code" field.
-        type: string
-      created_at:
-        description: CreatedAt holds the value of the "created_at" field.
-        type: string
-      edges:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.VerificationCodeEdges'
-        description: |-
-          Edges holds the relations/edges for other nodes in the graph.
-          The values are being populated by the VerificationCodeQuery when eager-loading is set.
-      expires_at:
-        description: ExpiresAt holds the value of the "expires_at" field.
-        type: string
-      id:
-        description: ID of the ent.
-        type: integer
-      updated_at:
-        description: UpdatedAt holds the value of the "updated_at" field.
-        type: string
-    type: object
-  users-service_app_models_ent.VerificationCodeEdges:
-    properties:
-      owner:
-        allOf:
-        - $ref: '#/definitions/users-service_app_models_ent.User'
-        description: Owner holds the value of the owner edge.
-    type: object
-  users-service_app_models_requests.Code:
+  requests.Code:
     properties:
       browser_name:
         type: string
@@ -507,7 +352,7 @@ definitions:
     required:
     - device_token
     type: object
-  users-service_app_models_requests.ConfirmPasswordReset:
+  requests.ConfirmPasswordReset:
     properties:
       browser_name:
         type: string
@@ -530,7 +375,7 @@ definitions:
     required:
     - device_token
     type: object
-  users-service_app_models_requests.Details:
+  requests.Details:
     properties:
       browser_name:
         type: string
@@ -553,7 +398,7 @@ definitions:
     required:
     - device_token
     type: object
-  users-service_app_models_requests.Login:
+  requests.Login:
     properties:
       browser_name:
         type: string
@@ -576,7 +421,7 @@ definitions:
     required:
     - device_token
     type: object
-  users-service_app_models_requests.Mail:
+  requests.Mail:
     properties:
       browser_name:
         type: string
@@ -597,7 +442,7 @@ definitions:
     required:
     - device_token
     type: object
-  users-service_app_models_requests.Register:
+  requests.Register:
     properties:
       browser_name:
         type: string
@@ -625,7 +470,7 @@ definitions:
     - mail
     - password
     type: object
-  users-service_app_models_requests.Settings:
+  requests.Settings:
     properties:
       browser_name:
         type: string
@@ -654,7 +499,7 @@ definitions:
     required:
     - device_token
     type: object
-  users-service_app_models_requests.User:
+  requests.User:
     properties:
       browser_name:
         type: string
@@ -677,7 +522,7 @@ definitions:
     required:
     - device_token
     type: object
-  users-service_app_models_responses.ErrorResponse:
+  responses.ErrorResponse:
     properties:
       error:
         type: string
@@ -686,7 +531,7 @@ definitions:
       status:
         type: string
     type: object
-  users-service_app_models_responses.SuccessResponse:
+  responses.SuccessResponse:
     properties:
       data: {}
       request_id:
@@ -694,17 +539,17 @@ definitions:
       status:
         type: string
     type: object
-  users-service_app_models_responses.User:
+  responses.User:
     properties:
       token:
         type: string
       user:
-        $ref: '#/definitions/users-service_app_models_ent.User'
+        $ref: '#/definitions/ent.User'
     type: object
 externalDocs:
   description: OpenAPI
   url: https://not-yet-hosted.com/
-host: localhost:8080
+host: localhost:8000
 info:
   contact:
     email: m0ni3v@gmail.com
@@ -726,7 +571,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Code'
+          $ref: '#/definitions/requests.Code'
       produces:
       - application/json
       responses:
@@ -734,19 +579,19 @@ paths:
           description: OK - Account activated successfully
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/users-service_app_models_responses.User'
+                  $ref: '#/definitions/responses.User'
               type: object
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Invalid or expired code
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Activate user account
       tags:
       - auth
@@ -761,7 +606,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Mail'
+          $ref: '#/definitions/requests.Mail'
       produces:
       - application/json
       responses:
@@ -769,7 +614,7 @@ paths:
           description: OK - Successfully requested a new activation code
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   type: string
@@ -777,11 +622,11 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Service failed to process the request
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Resend activation code
       tags:
       - auth
@@ -797,7 +642,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Login'
+          $ref: '#/definitions/requests.Login'
       produces:
       - application/json
       responses:
@@ -808,7 +653,7 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Login a user
       tags:
       - auth
@@ -821,7 +666,7 @@ paths:
         "501":
           description: Not Implemented
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Login a user via an external provider
       tags:
       - auth
@@ -834,7 +679,7 @@ paths:
         "501":
           description: Not Implemented
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Logout a user
       tags:
       - auth
@@ -850,7 +695,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Mail'
+          $ref: '#/definitions/requests.Mail'
       produces:
       - application/json
       responses:
@@ -858,7 +703,7 @@ paths:
           description: OK - Password reset email sent
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   type: string
@@ -866,11 +711,11 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Service failed to process the request
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Request password reset
       tags:
       - auth
@@ -883,7 +728,7 @@ paths:
         "501":
           description: Not Implemented
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Cancel password reset
       tags:
       - auth
@@ -898,7 +743,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.ConfirmPasswordReset'
+          $ref: '#/definitions/requests.ConfirmPasswordReset'
       produces:
       - application/json
       responses:
@@ -906,7 +751,7 @@ paths:
           description: OK - Password has been reset successfully
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   type: string
@@ -914,11 +759,11 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Invalid code or other error
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Confirm password reset
       tags:
       - auth
@@ -934,7 +779,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Mail'
+          $ref: '#/definitions/requests.Mail'
       produces:
       - application/json
       responses:
@@ -942,7 +787,7 @@ paths:
           description: OK - Successfully requested a new reset code
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   type: string
@@ -950,12 +795,12 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Service failed to process the request
             (e.g., user not found)
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Resend Password Reset Code
       tags:
       - auth
@@ -971,7 +816,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Register'
+          $ref: '#/definitions/requests.Register'
       produces:
       - application/json
       responses:
@@ -982,7 +827,7 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Register a new user
       tags:
       - auth
@@ -995,7 +840,7 @@ paths:
         "501":
           description: Not Implemented
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Register a user via an external provider
       tags:
       - auth
@@ -1010,7 +855,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Mail'
+          $ref: '#/definitions/requests.Mail'
       produces:
       - application/json
       responses:
@@ -1018,7 +863,7 @@ paths:
           description: OK - Successfully requested a new 2FA code
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   type: string
@@ -1026,11 +871,11 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Service failed to process the request
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Resend second factor code
       tags:
       - auth
@@ -1045,7 +890,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Code'
+          $ref: '#/definitions/requests.Code'
       produces:
       - application/json
       responses:
@@ -1053,19 +898,19 @@ paths:
           description: OK - Successfully requested a new 2FA code
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/users-service_app_models_responses.User'
+                  $ref: '#/definitions/responses.User'
               type: object
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Service failed to process the request
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Resend second factor code
       tags:
       - auth
@@ -1081,7 +926,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Code'
+          $ref: '#/definitions/requests.Code'
       produces:
       - application/json
       responses:
@@ -1089,19 +934,19 @@ paths:
           description: OK - Account verified successfully
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/users-service_app_models_responses.User'
+                  $ref: '#/definitions/responses.User'
               type: object
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Invalid or expired code
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Verify user account (e.g., phone)
       tags:
       - auth
@@ -1116,7 +961,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Mail'
+          $ref: '#/definitions/requests.Mail'
       produces:
       - application/json
       responses:
@@ -1124,7 +969,7 @@ paths:
           description: OK - Successfully requested a new verification code
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   type: string
@@ -1132,11 +977,11 @@ paths:
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Service failed to process the request
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Resend verification code
       tags:
       - auth
@@ -1152,7 +997,7 @@ paths:
           description: OK - Service is healthy
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   properties:
@@ -1163,7 +1008,7 @@ paths:
         "503":
           description: Service Unavailable - Service unhealthy
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Health Probe
       tags:
       - diagnostics
@@ -1180,7 +1025,7 @@ paths:
           description: OK - Service is ready
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   properties:
@@ -1191,7 +1036,7 @@ paths:
         "503":
           description: Service Unavailable - Service not ready
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Readiness Probe
       tags:
       - diagnostics
@@ -1212,7 +1057,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Details'
+          $ref: '#/definitions/requests.Details'
       produces:
       - application/json
       responses:
@@ -1220,23 +1065,23 @@ paths:
           description: OK - User details updated successfully
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/users-service_app_models_responses.User'
+                  $ref: '#/definitions/responses.User'
               type: object
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "401":
           description: Unauthorized - Invalid or missing token
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Update failed
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Update user's details
       tags:
       - users
@@ -1259,7 +1104,7 @@ paths:
           description: OK - Account removed successfully
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
                   type: string
@@ -1267,11 +1112,11 @@ paths:
         "401":
           description: Unauthorized - Invalid or missing token
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Removal failed
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Remove user account
       tags:
       - users
@@ -1292,7 +1137,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.Settings'
+          $ref: '#/definitions/requests.Settings'
       produces:
       - application/json
       responses:
@@ -1300,23 +1145,23 @@ paths:
           description: OK - User settings updated successfully
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/users-service_app_models_responses.User'
+                  $ref: '#/definitions/responses.User'
               type: object
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "401":
           description: Unauthorized - Invalid or missing token
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Update failed
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Update user's settings
       tags:
       - users
@@ -1337,7 +1182,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/users-service_app_models_requests.User'
+          $ref: '#/definitions/requests.User'
       produces:
       - application/json
       responses:
@@ -1345,23 +1190,23 @@ paths:
           description: OK - User updated successfully
           schema:
             allOf:
-            - $ref: '#/definitions/users-service_app_models_responses.SuccessResponse'
+            - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/users-service_app_models_responses.User'
+                  $ref: '#/definitions/responses.User'
               type: object
         "400":
           description: Bad Request - Invalid input data
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "401":
           description: Unauthorized - Invalid or missing token
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "422":
           description: Unprocessable Entity - Update failed
           schema:
-            $ref: '#/definitions/users-service_app_models_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Update user's basic information
       tags:
       - users

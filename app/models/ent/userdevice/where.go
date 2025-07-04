@@ -170,6 +170,16 @@ func NameHasSuffix(v string) predicate.UserDevice {
 	return predicate.UserDevice(sql.FieldHasSuffix(FieldName, v))
 }
 
+// NameIsNil applies the IsNil predicate on the "name" field.
+func NameIsNil() predicate.UserDevice {
+	return predicate.UserDevice(sql.FieldIsNull(FieldName))
+}
+
+// NameNotNil applies the NotNil predicate on the "name" field.
+func NameNotNil() predicate.UserDevice {
+	return predicate.UserDevice(sql.FieldNotNull(FieldName))
+}
+
 // NameEqualFold applies the EqualFold predicate on the "name" field.
 func NameEqualFold(v string) predicate.UserDevice {
 	return predicate.UserDevice(sql.FieldEqualFold(FieldName, v))
@@ -233,6 +243,16 @@ func TypeHasPrefix(v string) predicate.UserDevice {
 // TypeHasSuffix applies the HasSuffix predicate on the "type" field.
 func TypeHasSuffix(v string) predicate.UserDevice {
 	return predicate.UserDevice(sql.FieldHasSuffix(FieldType, v))
+}
+
+// TypeIsNil applies the IsNil predicate on the "type" field.
+func TypeIsNil() predicate.UserDevice {
+	return predicate.UserDevice(sql.FieldIsNull(FieldType))
+}
+
+// TypeNotNil applies the NotNil predicate on the "type" field.
+func TypeNotNil() predicate.UserDevice {
+	return predicate.UserDevice(sql.FieldNotNull(FieldType))
 }
 
 // TypeEqualFold applies the EqualFold predicate on the "type" field.

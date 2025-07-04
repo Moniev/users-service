@@ -33,9 +33,25 @@ func (udc *UserDetailsCreate) SetFirstName(s string) *UserDetailsCreate {
 	return udc
 }
 
+// SetNillableFirstName sets the "first_name" field if the given value is not nil.
+func (udc *UserDetailsCreate) SetNillableFirstName(s *string) *UserDetailsCreate {
+	if s != nil {
+		udc.SetFirstName(*s)
+	}
+	return udc
+}
+
 // SetLastName sets the "last_name" field.
 func (udc *UserDetailsCreate) SetLastName(s string) *UserDetailsCreate {
 	udc.mutation.SetLastName(s)
+	return udc
+}
+
+// SetNillableLastName sets the "last_name" field if the given value is not nil.
+func (udc *UserDetailsCreate) SetNillableLastName(s *string) *UserDetailsCreate {
+	if s != nil {
+		udc.SetLastName(*s)
+	}
 	return udc
 }
 
@@ -137,22 +153,6 @@ func (udc *UserDetailsCreate) check() error {
 	if v, ok := udc.mutation.Name(); ok {
 		if err := userdetails.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.name": %w`, err)}
-		}
-	}
-	if _, ok := udc.mutation.FirstName(); !ok {
-		return &ValidationError{Name: "first_name", err: errors.New(`ent: missing required field "UserDetails.first_name"`)}
-	}
-	if v, ok := udc.mutation.FirstName(); ok {
-		if err := userdetails.FirstNameValidator(v); err != nil {
-			return &ValidationError{Name: "first_name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.first_name": %w`, err)}
-		}
-	}
-	if _, ok := udc.mutation.LastName(); !ok {
-		return &ValidationError{Name: "last_name", err: errors.New(`ent: missing required field "UserDetails.last_name"`)}
-	}
-	if v, ok := udc.mutation.LastName(); ok {
-		if err := userdetails.LastNameValidator(v); err != nil {
-			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.last_name": %w`, err)}
 		}
 	}
 	if _, ok := udc.mutation.CreatedAt(); !ok {

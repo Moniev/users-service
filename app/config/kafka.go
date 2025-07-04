@@ -24,9 +24,11 @@ func CreateTopics(logger zerolog.Logger, settings *Settings, topics []string) er
 		if err := config.SetKey("ssl.certificate.location", settings.KafkaSslCertPath); err != nil {
 			return err
 		}
+
 		if err := config.SetKey("ssl.key.location", settings.KafkaSslKeyPath); err != nil {
 			return err
 		}
+
 		if settings.KafkaClientKeyPassword != "" {
 			logger.Info().Msg("Found client's key")
 			if err := config.SetKey("ssl.key.password", settings.KafkaClientKeyPassword); err != nil {

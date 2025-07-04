@@ -31,13 +31,13 @@ func RegisterAuthRoutes(
 	api := router.Group(prefix).
 		Use(middlewares.Log(logger, "auth-controller")).
 		Use(middlewares.LimitRequestsMiddleware(tracker))
-	api.GET("/register", authController.Register)
+	api.POST("/register", authController.Register)
 	api.POST("/register/externally", authController.RegisterExternally)
 	api.PATCH("/activation/account", authController.ActivateAccount)
 	api.POST("/activation/resend/code", authController.ResendActivationCode)
 	api.PATCH("/verification/account", authController.VerifyAccount)
 	api.POST("/verification/resend/code", authController.ResendVerificationCode)
-	api.GET("/login", authController.Login)
+	api.POST("/login", authController.Login)
 	api.POST("/login/externally", authController.LoginExternally)
 	api.DELETE("/logout", authController.Login)
 	api.POST("/password/reset/request", authController.RequestPasswordReset)

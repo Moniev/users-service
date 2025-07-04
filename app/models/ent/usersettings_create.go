@@ -193,6 +193,11 @@ func (usc *UserSettingsCreate) check() error {
 	if _, ok := usc.mutation.UUID(); !ok {
 		return &ValidationError{Name: "UUID", err: errors.New(`ent: missing required field "UserSettings.UUID"`)}
 	}
+	if v, ok := usc.mutation.UUID(); ok {
+		if err := usersettings.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "UUID", err: fmt.Errorf(`ent: validator failed for field "UserSettings.UUID": %w`, err)}
+		}
+	}
 	if _, ok := usc.mutation.TwoFactor(); !ok {
 		return &ValidationError{Name: "two_factor", err: errors.New(`ent: missing required field "UserSettings.two_factor"`)}
 	}

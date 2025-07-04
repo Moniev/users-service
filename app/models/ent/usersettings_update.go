@@ -213,6 +213,11 @@ func (usu *UserSettingsUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (usu *UserSettingsUpdate) check() error {
+	if v, ok := usu.mutation.UUID(); ok {
+		if err := usersettings.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "UUID", err: fmt.Errorf(`ent: validator failed for field "UserSettings.UUID": %w`, err)}
+		}
+	}
 	if usu.mutation.OwnerCleared() && len(usu.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserSettings.owner"`)
 	}
@@ -565,6 +570,11 @@ func (usuo *UserSettingsUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (usuo *UserSettingsUpdateOne) check() error {
+	if v, ok := usuo.mutation.UUID(); ok {
+		if err := usersettings.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "UUID", err: fmt.Errorf(`ent: validator failed for field "UserSettings.UUID": %w`, err)}
+		}
+	}
 	if usuo.mutation.OwnerCleared() && len(usuo.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserSettings.owner"`)
 	}

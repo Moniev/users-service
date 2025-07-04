@@ -20,6 +20,7 @@ func (ActivationCode) Fields() []ent.Field {
 			Immutable(),
 		field.String("code").
 			Unique().
+			NotEmpty().
 			StructTag(`json:"code"`),
 		field.Bool("used").
 			Default(false).

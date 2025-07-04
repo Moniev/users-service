@@ -20,6 +20,7 @@ func (UserRole) Fields() []ent.Field {
 			Immutable(),
 		field.String("name").
 			Unique().
+			NotEmpty().
 			StructTag(`json:"name"`),
 		field.Text("description").
 			StructTag(`json:"description"`),

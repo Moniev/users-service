@@ -22,10 +22,10 @@ func (UserDetails) Fields() []ent.Field {
 			NotEmpty().
 			StructTag(`json:"name"`),
 		field.String("first_name").
-			NotEmpty().
+			Optional().
 			StructTag(`json:"first_name"`),
 		field.String("last_name").
-			NotEmpty().
+			Optional().
 			StructTag(`json:"last_name"`),
 		field.Time("created_at").
 			StructTag(`json:"created_at"`).

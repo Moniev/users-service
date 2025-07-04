@@ -69,6 +69,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	CodeValidator func(string) error
 	// DefaultUsed holds the default value on creation for the "used" field.
 	DefaultUsed bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.

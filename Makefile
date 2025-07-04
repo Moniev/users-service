@@ -10,14 +10,19 @@ test-unit:
 	@$(GO) test -v -tags=unit ./app/...
 	@echo "\n--- Running Data-Driven Unit Tests (in tests/) ---"
 	@$(GO) test -v -tags=unit ./tests -args -test_type=unit
+	@swag init -g ./app/cmd/main.go -o app/docs
 
 test-integration:
 	@echo "--- Running Integration Tests (requires Docker) ---"
 	@$(GO) test -v -tags=integration ./... -args -test_type=integration
+	@swag init -g ./app/cmd/main.go -o app/docs
+	@docker build -t ghcr.io/factory-chainline/users-service:latest -f ./docker/Dockerfile .
 
 test-e2e:
 	@echo "--- Running End-to-End Tests (requires Docker) ---"
 	@$(GO) test -v -tags=e2e ./... -args -test_type=e2e
+	@swag init -g ./app/cmd/main.go -o app/docs
+	@docker build -t ghcr.io/factory-chainline/users-service:latest -f ./docker/Dockerfile .
 
 
 # ==============================================================================
@@ -26,14 +31,16 @@ test-e2e:
 generate-ent:
 	@echo "--- Generating Ent schema models ---"
 	@$(GO) run entgo.io/ent/cmd/ent generate ./app/models/ent/schema
+	@swag init -g ./app/cmd/main.go -o app/docs
 
 generate-mocks:
 	@echo "--- Generating mocks with mockery ---"
 	@mockery
+	@swag init -g app/cmd/main.go -o app/docs
 
 generate-swagger:
 	@echo "--- Generating Swagger documentation ---"
-	@swag init -g ./app/cmd/main.go -o ./docker/docs/ --parseDependency --parseInternal --dir .
+	@swag init -g ./app/cmd/main.go -o app/docs
 
 
 # ==============================================================================

@@ -29,9 +29,25 @@ func (udc *UserDeviceCreate) SetName(s string) *UserDeviceCreate {
 	return udc
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (udc *UserDeviceCreate) SetNillableName(s *string) *UserDeviceCreate {
+	if s != nil {
+		udc.SetName(*s)
+	}
+	return udc
+}
+
 // SetType sets the "type" field.
 func (udc *UserDeviceCreate) SetType(s string) *UserDeviceCreate {
 	udc.mutation.SetType(s)
+	return udc
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (udc *UserDeviceCreate) SetNillableType(s *string) *UserDeviceCreate {
+	if s != nil {
+		udc.SetType(*s)
+	}
 	return udc
 }
 
@@ -273,14 +289,13 @@ func (udc *UserDeviceCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (udc *UserDeviceCreate) check() error {
-	if _, ok := udc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "UserDevice.name"`)}
-	}
-	if _, ok := udc.mutation.GetType(); !ok {
-		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "UserDevice.type"`)}
-	}
 	if _, ok := udc.mutation.Token(); !ok {
 		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "UserDevice.token"`)}
+	}
+	if v, ok := udc.mutation.Token(); ok {
+		if err := userdevice.TokenValidator(v); err != nil {
+			return &ValidationError{Name: "token", err: fmt.Errorf(`ent: validator failed for field "UserDevice.token": %w`, err)}
+		}
 	}
 	if _, ok := udc.mutation.LastSeenAt(); !ok {
 		return &ValidationError{Name: "last_seen_at", err: errors.New(`ent: missing required field "UserDevice.last_seen_at"`)}

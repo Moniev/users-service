@@ -27,8 +27,8 @@ RUN echo "--- Checking for binary in final stage before chmod ---" && \
 RUN curl -fsSL -o /app/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x /app/wait-for-it.sh
 
-COPY ./docker/docs/swagger.json .
-COPY ./docker/docs/swagger.yaml .
+COPY ./app/docs/swagger.json .
+COPY ./app/docs/swagger.yaml .
 
 RUN cat <<EOF > /app/start.sh
 #!/bin/sh

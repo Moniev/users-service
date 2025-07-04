@@ -29,7 +29,7 @@ type User struct {
 	// Phone holds the value of the "phone" field.
 	Phone string `json:"phone"`
 	// Password holds the value of the "password" field.
-	Password string `json:"password,omitempty"`
+	Password string `json:"-"`
 	// Active holds the value of the "active" field.
 	Active bool `json:"active"`
 	// Verified holds the value of the "verified" field.
@@ -61,17 +61,17 @@ type UserEdges struct {
 	// UserSettings holds the value of the user_settings edge.
 	UserSettings *UserSettings `json:"user_settings"`
 	// ActivationCode holds the value of the activation_code edge.
-	ActivationCode *ActivationCode `json:"activation_code"`
+	ActivationCode *ActivationCode `json:"-"`
 	// VerificationCode holds the value of the verification_code edge.
-	VerificationCode *VerificationCode `json:"verification_code"`
+	VerificationCode *VerificationCode `json:"-"`
 	// SecondFactorCode holds the value of the second_factor_code edge.
-	SecondFactorCode *SecondFactorCode `json:"second_factor_code"`
+	SecondFactorCode *SecondFactorCode `json:"-"`
 	// ResetCode holds the value of the reset_code edge.
-	ResetCode *ResetCode `json:"reset_code"`
+	ResetCode *ResetCode `json:"-"`
 	// UserDevices holds the value of the user_devices edge.
 	UserDevices []*UserDevice `json:"user_devices"`
 	// UserActions holds the value of the user_actions edge.
-	UserActions []*UserAction `json:"user_actions"`
+	UserActions []*UserAction `json:"-"`
 	// UserRoles holds the value of the user_roles edge.
 	UserRoles []*UserRole `json:"user_roles"`
 	// loadedTypes holds the information for reporting if a

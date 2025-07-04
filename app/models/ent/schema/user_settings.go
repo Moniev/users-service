@@ -19,6 +19,7 @@ func (UserSettings) Fields() []ent.Field {
 			Unique().
 			Immutable(),
 		field.Text("UUID").
+			NotEmpty().
 			StructTag(`json:"uuid"`),
 		field.Bool("two_factor").
 			Default(false).

@@ -140,6 +140,11 @@ func (vcc *VerificationCodeCreate) check() error {
 	if _, ok := vcc.mutation.Code(); !ok {
 		return &ValidationError{Name: "code", err: errors.New(`ent: missing required field "VerificationCode.code"`)}
 	}
+	if v, ok := vcc.mutation.Code(); ok {
+		if err := verificationcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "VerificationCode.code": %w`, err)}
+		}
+	}
 	if _, ok := vcc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "VerificationCode.created_at"`)}
 	}

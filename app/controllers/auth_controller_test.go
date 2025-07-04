@@ -98,7 +98,8 @@ func TestAuthController_Register(t *testing.T) {
 				}).Return(&ent.User{Mail: "random@mail.com"}, nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success", "data":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}`,
+
+			expectedResponse: `{"status":"success", "data":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}`,
 		},
 		{
 			name: "Invalid Credentials 1.1",
@@ -179,14 +180,14 @@ func TestAuthController_Register(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/register", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.Register(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -210,14 +211,14 @@ func TestAuthController_RegisterExternally(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/logout", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/externally", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.RegisterExternally(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -269,7 +270,8 @@ func TestAuthController_Login(t *testing.T) {
 				}).Return(&ent.User{Mail: "random@mail.com"}, "token", nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false},"token":"token"}}`,
+
+			expectedResponse: `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false},"token":"token"}}`,
 		},
 		{
 			name: "Invalid Credentials 1.1",
@@ -346,14 +348,14 @@ func TestAuthController_Login(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/login", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.Login(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -377,14 +379,14 @@ func TestAuthController_LoginExternally(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/login/externally", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/login/externally", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.LoginExternally(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -408,14 +410,14 @@ func TestAuthController_Logout(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/logout", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodDelete, "/api/v1/auth/logout", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.Logout(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -465,7 +467,8 @@ func TestAuthController_ActivateAccount(t *testing.T) {
 				}).Return(&ent.User{Mail: "random@mail.com"}, nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
+
+			expectedResponse: `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
 		},
 		{
 			name: "Invalid Input",
@@ -520,14 +523,14 @@ func TestAuthController_ActivateAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
 			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/activation/account", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.ActivateAccount(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -577,7 +580,7 @@ func TestAuthController_VerifySecondFactorCode(t *testing.T) {
 				}).Return(&ent.User{Mail: "random@mail.com"}, "token", nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}, "token": "token"}}`,
+			expectedResponse:   `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}, "token": "token"}}`,
 		},
 		{
 			name: "Invalid Input",
@@ -632,14 +635,14 @@ func TestAuthController_VerifySecondFactorCode(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
 			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/second-factor/verification/code", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.VerifySecondFactorCode(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -689,7 +692,7 @@ func TestAuthController_VerifyAccount(t *testing.T) {
 				}).Return(&ent.User{Mail: "random@mail.com"}, "token", nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false},"token":"token"}}`,
+			expectedResponse:   `{"status":"success", "data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"random@mail.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false},"token":"token"}}`,
 		},
 		{
 			name: "Invalid Input",
@@ -744,14 +747,14 @@ func TestAuthController_VerifyAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
 			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/verification/account", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.VerifyAccount(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -856,14 +859,14 @@ func TestAuthController_ResendActivationCode(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/activation/code/resend", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/activation/resend/code", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.ResendActivationCode(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -968,14 +971,14 @@ func TestAuthController_ResendVerificationCode(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/verification/resend/code", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/verification/resend/code", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.ResendVerificationCode(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -1080,14 +1083,14 @@ func TestAuthController_ResendSecondFactorCode(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/second-factor/resend/code", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/second-factor/resend/code", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.ResendSecondFactorCode(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -1192,14 +1195,14 @@ func TestAuthController_RequestPasswordReset(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/password/reset/request", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/password/reset/request", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.RequestPasswordReset(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -1304,14 +1307,14 @@ func TestAuthController_CancelPasswordReset(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
-			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/password/reset/request/cancel", bytes.NewBuffer(body))
+			c.Request = httptest.NewRequest(http.MethodDelete, "/api/v1/auth/password/reset/request/cancel", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.CancelPasswordReset(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -1440,14 +1443,14 @@ func TestAuthController_ConfirmPasswordReset(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
 			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/password/reset/request/confirm", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.ConfirmPasswordReset(c)
 
 			if w.Code != tc.expectedStatusCode {
@@ -1497,7 +1500,7 @@ func TestAuthController_ResendResetCode(t *testing.T) {
 				}).Return(nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success","data":"requested reset code resent"}`,
+			expectedResponse:   `{"status":"success","data":"requested reset code resend"}`,
 		},
 		{
 			name: "Invalid Input",
@@ -1552,14 +1555,14 @@ func TestAuthController_ResendResetCode(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c, w, _, mockUsersService, _, authController := setupAuthController(t)
+			c, w, _, mockAuthService, _, authController := setupAuthController(t)
 
 			body, _ := json.Marshal(tc.requestBody)
 			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/auth/password/reset/request/resend", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
 
-			tc.setupMocks(mockUsersService)
+			tc.setupMocks(mockAuthService)
 			authController.ResendResetCode(c)
 
 			if w.Code != tc.expectedStatusCode {

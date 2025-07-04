@@ -111,6 +111,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	TokenValidator func(string) error
 	// DefaultLastSeenAt holds the default value on creation for the "last_seen_at" field.
 	DefaultLastSeenAt func() time.Time
 	// UpdateDefaultLastSeenAt holds the default value on update for the "last_seen_at" field.

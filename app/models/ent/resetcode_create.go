@@ -140,6 +140,11 @@ func (rcc *ResetCodeCreate) check() error {
 	if _, ok := rcc.mutation.Code(); !ok {
 		return &ValidationError{Name: "code", err: errors.New(`ent: missing required field "ResetCode.code"`)}
 	}
+	if v, ok := rcc.mutation.Code(); ok {
+		if err := resetcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ResetCode.code": %w`, err)}
+		}
+	}
 	if _, ok := rcc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "ResetCode.created_at"`)}
 	}

@@ -46,11 +46,11 @@ type UserInterface interface {
 }
 
 func (r *User) Valid() error {
-	if valid := utils.CheckEmailFormat(r.Mail); !valid {
+	if valid := utils.CheckEmailFormat(r.Mail); !valid && r.Mail != "" {
 		return errors.New("provided not valid email format")
 	}
 
-	if valid := utils.CheckPhoneFormat(r.Phone); !valid {
+	if valid := utils.CheckPhoneFormat(r.Phone); !valid && r.Phone != "" {
 		return errors.New("provided not valid phone format")
 	}
 

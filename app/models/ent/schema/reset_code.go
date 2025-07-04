@@ -20,6 +20,7 @@ func (ResetCode) Fields() []ent.Field {
 			Immutable(),
 		field.String("code").
 			Unique().
+			NotEmpty().
 			StructTag(`json:"code"`),
 		field.Time("created_at").
 			StructTag(`json:"created_at"`).

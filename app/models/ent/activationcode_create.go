@@ -158,6 +158,11 @@ func (acc *ActivationCodeCreate) check() error {
 	if _, ok := acc.mutation.Code(); !ok {
 		return &ValidationError{Name: "code", err: errors.New(`ent: missing required field "ActivationCode.code"`)}
 	}
+	if v, ok := acc.mutation.Code(); ok {
+		if err := activationcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ActivationCode.code": %w`, err)}
+		}
+	}
 	if _, ok := acc.mutation.Used(); !ok {
 		return &ValidationError{Name: "used", err: errors.New(`ent: missing required field "ActivationCode.used"`)}
 	}

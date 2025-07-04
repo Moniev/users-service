@@ -137,6 +137,11 @@ func (vcu *VerificationCodeUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (vcu *VerificationCodeUpdate) check() error {
+	if v, ok := vcu.mutation.Code(); ok {
+		if err := verificationcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "VerificationCode.code": %w`, err)}
+		}
+	}
 	if vcu.mutation.OwnerCleared() && len(vcu.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "VerificationCode.owner"`)
 	}
@@ -337,6 +342,11 @@ func (vcuo *VerificationCodeUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (vcuo *VerificationCodeUpdateOne) check() error {
+	if v, ok := vcuo.mutation.Code(); ok {
+		if err := verificationcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "VerificationCode.code": %w`, err)}
+		}
+	}
 	if vcuo.mutation.OwnerCleared() && len(vcuo.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "VerificationCode.owner"`)
 	}

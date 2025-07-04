@@ -57,6 +57,12 @@ func (udu *UserDetailsUpdate) SetNillableFirstName(s *string) *UserDetailsUpdate
 	return udu
 }
 
+// ClearFirstName clears the value of the "first_name" field.
+func (udu *UserDetailsUpdate) ClearFirstName() *UserDetailsUpdate {
+	udu.mutation.ClearFirstName()
+	return udu
+}
+
 // SetLastName sets the "last_name" field.
 func (udu *UserDetailsUpdate) SetLastName(s string) *UserDetailsUpdate {
 	udu.mutation.SetLastName(s)
@@ -68,6 +74,12 @@ func (udu *UserDetailsUpdate) SetNillableLastName(s *string) *UserDetailsUpdate 
 	if s != nil {
 		udu.SetLastName(*s)
 	}
+	return udu
+}
+
+// ClearLastName clears the value of the "last_name" field.
+func (udu *UserDetailsUpdate) ClearLastName() *UserDetailsUpdate {
+	udu.mutation.ClearLastName()
 	return udu
 }
 
@@ -156,16 +168,6 @@ func (udu *UserDetailsUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.name": %w`, err)}
 		}
 	}
-	if v, ok := udu.mutation.FirstName(); ok {
-		if err := userdetails.FirstNameValidator(v); err != nil {
-			return &ValidationError{Name: "first_name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.first_name": %w`, err)}
-		}
-	}
-	if v, ok := udu.mutation.LastName(); ok {
-		if err := userdetails.LastNameValidator(v); err != nil {
-			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.last_name": %w`, err)}
-		}
-	}
 	if udu.mutation.OwnerCleared() && len(udu.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserDetails.owner"`)
 	}
@@ -190,8 +192,14 @@ func (udu *UserDetailsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := udu.mutation.FirstName(); ok {
 		_spec.SetField(userdetails.FieldFirstName, field.TypeString, value)
 	}
+	if udu.mutation.FirstNameCleared() {
+		_spec.ClearField(userdetails.FieldFirstName, field.TypeString)
+	}
 	if value, ok := udu.mutation.LastName(); ok {
 		_spec.SetField(userdetails.FieldLastName, field.TypeString, value)
+	}
+	if udu.mutation.LastNameCleared() {
+		_spec.ClearField(userdetails.FieldLastName, field.TypeString)
 	}
 	if value, ok := udu.mutation.CreatedAt(); ok {
 		_spec.SetField(userdetails.FieldCreatedAt, field.TypeTime, value)
@@ -276,6 +284,12 @@ func (uduo *UserDetailsUpdateOne) SetNillableFirstName(s *string) *UserDetailsUp
 	return uduo
 }
 
+// ClearFirstName clears the value of the "first_name" field.
+func (uduo *UserDetailsUpdateOne) ClearFirstName() *UserDetailsUpdateOne {
+	uduo.mutation.ClearFirstName()
+	return uduo
+}
+
 // SetLastName sets the "last_name" field.
 func (uduo *UserDetailsUpdateOne) SetLastName(s string) *UserDetailsUpdateOne {
 	uduo.mutation.SetLastName(s)
@@ -287,6 +301,12 @@ func (uduo *UserDetailsUpdateOne) SetNillableLastName(s *string) *UserDetailsUpd
 	if s != nil {
 		uduo.SetLastName(*s)
 	}
+	return uduo
+}
+
+// ClearLastName clears the value of the "last_name" field.
+func (uduo *UserDetailsUpdateOne) ClearLastName() *UserDetailsUpdateOne {
+	uduo.mutation.ClearLastName()
 	return uduo
 }
 
@@ -388,16 +408,6 @@ func (uduo *UserDetailsUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.name": %w`, err)}
 		}
 	}
-	if v, ok := uduo.mutation.FirstName(); ok {
-		if err := userdetails.FirstNameValidator(v); err != nil {
-			return &ValidationError{Name: "first_name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.first_name": %w`, err)}
-		}
-	}
-	if v, ok := uduo.mutation.LastName(); ok {
-		if err := userdetails.LastNameValidator(v); err != nil {
-			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "UserDetails.last_name": %w`, err)}
-		}
-	}
 	if uduo.mutation.OwnerCleared() && len(uduo.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserDetails.owner"`)
 	}
@@ -439,8 +449,14 @@ func (uduo *UserDetailsUpdateOne) sqlSave(ctx context.Context) (_node *UserDetai
 	if value, ok := uduo.mutation.FirstName(); ok {
 		_spec.SetField(userdetails.FieldFirstName, field.TypeString, value)
 	}
+	if uduo.mutation.FirstNameCleared() {
+		_spec.ClearField(userdetails.FieldFirstName, field.TypeString)
+	}
 	if value, ok := uduo.mutation.LastName(); ok {
 		_spec.SetField(userdetails.FieldLastName, field.TypeString, value)
+	}
+	if uduo.mutation.LastNameCleared() {
+		_spec.ClearField(userdetails.FieldLastName, field.TypeString)
 	}
 	if value, ok := uduo.mutation.CreatedAt(); ok {
 		_spec.SetField(userdetails.FieldCreatedAt, field.TypeTime, value)

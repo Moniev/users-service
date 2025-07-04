@@ -21,16 +21,18 @@ func (UserDevice) Fields() []ent.Field {
 
 		field.String("name").
 			StructTag(`json:"name"`).
+			Optional().
 			Comment("Name of the device"),
 
 		field.String("type").
 			StructTag(`json:"type"`).
+			Optional().
 			Comment("type of the device"),
 
 		field.String("token").
 			StructTag(`json:"token"`).
 			Comment("The unique fingerprint visitorId from FingerprintJS.").
-			Unique(),
+			NotEmpty(),
 
 		field.String("ip_address").
 			StructTag(`json:"ip_address,omitempty"`).

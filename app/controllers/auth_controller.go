@@ -366,7 +366,7 @@ func (c *AuthController) ResendResetCode(ctx *gin.Context) {
 			return "", err
 		}
 
-		return "requested reset code resent", nil
+		return "requested reset code resend", nil
 	})
 }
 

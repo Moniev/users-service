@@ -80,7 +80,7 @@ func TestUsersController_UpdateUser(t *testing.T) {
 				}).Return(&ent.User{Mail: "test@example.com"}, nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success","data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"test@example.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
+			expectedResponse:   `{"status":"success","data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"test@example.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
 		},
 		{
 			name:   "Invalid Input",
@@ -217,7 +217,7 @@ func TestUsersController_UpdateDetails(t *testing.T) {
 					Return(&ent.User{Mail: "test@example.com"}, nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success","data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"test@example.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
+			expectedResponse:   `{"status":"success","data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"test@example.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
 		},
 		{
 			name:   "Invalid Credentials",
@@ -235,21 +235,7 @@ func TestUsersController_UpdateDetails(t *testing.T) {
 					BrowserVersion: "120.0",
 				},
 			},
-			setupMocks: func(m *mocks.MockUsersService) {
-				m.On("UpdateDetails", mock.Anything, 1, &requests.Details{
-					FirstName: "",
-					LastName:  "",
-					Device: requests.Device{
-						DeviceToken:    "token123",
-						IPAddress:      "192.168.1.1",
-						UserAgent:      "Mozilla/5.0",
-						OSName:         "Windows",
-						OSVersion:      "10",
-						BrowserName:    "Chrome",
-						BrowserVersion: "120.0",
-					},
-				}).Return(nil, errors.New("update failed"))
-			},
+			setupMocks:         func(m *mocks.MockUsersService) {},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedResponse:   `{"status":"failure","error":"Bad Request - Invalid input data"}`,
 		},
@@ -324,7 +310,6 @@ func TestUsersController_UpdateDetails(t *testing.T) {
 			c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/users/details/update", bytes.NewBuffer(body))
 			c.Request.Header.Set("Content-Type", "application/json")
 			c.Request.Header.Set("Authorization", "Bearer token")
-			c.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 			tc.setupMocks(mockUsersService)
 			usersController.UpdateDetails(c)
@@ -385,7 +370,7 @@ func TestUsersController_UpdateSettings(t *testing.T) {
 					Return(&ent.User{Mail: "test@example.com"}, nil)
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"status":"success","data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"activation_code":null,"reset_code":null,"second_factor_code":null,"user_actions":null,"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null,"verification_code":null},"id":0,"mail":"test@example.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
+			expectedResponse:   `{"status":"success","data":{"user":{"active":false,"blacklisted":false,"created_at":"0001-01-01T00:00:00Z","edges":{"user_details":null,"user_devices":null,"user_roles":null,"user_settings":null},"id":0,"mail":"test@example.com","organization_ids":null,"phone":"","removed":false,"subscription_ids":null,"team_ids":null,"updated_at":"0001-01-01T00:00:00Z","verified":false}}}`,
 		},
 		{
 			name:   "Invalid Input",
@@ -541,9 +526,7 @@ func TestUsersController_RemoveAccount(t *testing.T) {
 					BrowserVersion: "120.0",
 				},
 			},
-			setupMocks: func(m *mocks.MockUsersService) {
-				m.On("RemoveAccount", mock.Anything, 1).Return(nil)
-			},
+			setupMocks:         func(m *mocks.MockUsersService) {},
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedResponse:   `{"status":"failure","error":"Unauthorized - Invalid or missing token"}`,
 		},
@@ -593,6 +576,8 @@ func TestUsersController_RemoveAccount(t *testing.T) {
 
 			if tc.userID != nil {
 				c.Set("UserID", tc.userID)
+			} else {
+				c.Set("UserID", "")
 			}
 
 			c.Set("RequestID", "")

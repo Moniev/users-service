@@ -339,7 +339,7 @@ The `steps` array defines the sequence of actions and assertions for a test case
 
 - **Generating Swagger documentation**
    ```bash
-      swag init -g ./app/cmd/main.go -o ./docker/docs/ --parseDependency --parseInternal --dir .     
+      swag init -g app/cmd/main.go -o app/docs   
    ``` 
 
 - **Generating Ent schema models**

@@ -361,7 +361,6 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login) (*ent.User
 	}
 
 	if user.Edges.UserSettings.TwoFactor {
-
 		userWithCode, secondFactor, err := s.UsersRepository.CreateSecondFactorCode(ctx, user, device)
 		if err != nil {
 			return nil, "", errors.New("failed to create second factor code")
@@ -471,12 +470,6 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *requests.Code) (*e
 	if err != nil {
 		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to find or create device during account verification")
 		return nil, "", errors.New("failed to handle user device")
-	}
-
-	if user.Edges.VerificationCode != nil {
-		if err := s.EventNotifier.CreateVerificationEvent(user.Edges.UserSettings, user.Phone, user.Edges.VerificationCode); err != nil {
-			s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce phone verification event")
-		}
 	}
 
 	userRoles := utils.MarshalUserRoles(user.Edges.UserRoles)

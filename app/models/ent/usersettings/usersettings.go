@@ -87,6 +87,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// UUIDValidator is a validator for the "UUID" field. It is called by the builders before save.
+	UUIDValidator func(string) error
 	// DefaultTwoFactor holds the default value on creation for the "two_factor" field.
 	DefaultTwoFactor bool
 	// DefaultNightMode holds the default value on creation for the "night_mode" field.

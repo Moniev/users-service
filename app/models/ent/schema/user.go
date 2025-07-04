@@ -27,6 +27,7 @@ func (User) Fields() []ent.Field {
 			Unique().
 			StructTag(`json:"phone"`),
 		field.String("password").
+			StructTag(`json:"-"`).
 			NotEmpty().
 			Unique(),
 		field.Bool("active").
@@ -70,21 +71,21 @@ func (User) Edges() []ent.Edge {
 			Unique().
 			StructTag(`json:"user_settings"`),
 		edge.To("activation_code", ActivationCode.Type).
-			Unique().
-			StructTag(`json:"activation_code"`),
+			StructTag(`json:"-"`).
+			Unique(),
 		edge.To("verification_code", VerificationCode.Type).
-			Unique().
-			StructTag(`json:"verification_code"`),
+			StructTag(`json:"-"`).
+			Unique(),
 		edge.To("second_factor_code", SecondFactorCode.Type).
-			Unique().
-			StructTag(`json:"second_factor_code"`),
+			StructTag(`json:"-"`).
+			Unique(),
 		edge.To("reset_code", ResetCode.Type).
-			Unique().
-			StructTag(`json:"reset_code"`),
+			StructTag(`json:"-"`).
+			Unique(),
 		edge.To("user_devices", UserDevice.Type).
 			StructTag(`json:"user_devices"`),
 		edge.To("user_actions", UserAction.Type).
-			StructTag(`json:"user_actions"`),
+			StructTag(`json:"-"`),
 		edge.To("user_roles", UserRole.Type).
 			StructTag(`json:"user_roles"`),
 	}

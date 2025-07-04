@@ -24,6 +24,10 @@ import (
 func init() {
 	activationcodeFields := schema.ActivationCode{}.Fields()
 	_ = activationcodeFields
+	// activationcodeDescCode is the schema descriptor for code field.
+	activationcodeDescCode := activationcodeFields[1].Descriptor()
+	// activationcode.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	activationcode.CodeValidator = activationcodeDescCode.Validators[0].(func(string) error)
 	// activationcodeDescUsed is the schema descriptor for used field.
 	activationcodeDescUsed := activationcodeFields[2].Descriptor()
 	// activationcode.DefaultUsed holds the default value on creation for the used field.
@@ -44,6 +48,10 @@ func init() {
 	activationcode.DefaultExpiresAt = activationcodeDescExpiresAt.Default.(time.Time)
 	resetcodeFields := schema.ResetCode{}.Fields()
 	_ = resetcodeFields
+	// resetcodeDescCode is the schema descriptor for code field.
+	resetcodeDescCode := resetcodeFields[1].Descriptor()
+	// resetcode.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	resetcode.CodeValidator = resetcodeDescCode.Validators[0].(func(string) error)
 	// resetcodeDescCreatedAt is the schema descriptor for created_at field.
 	resetcodeDescCreatedAt := resetcodeFields[2].Descriptor()
 	// resetcode.DefaultCreatedAt holds the default value on creation for the created_at field.
@@ -156,14 +164,6 @@ func init() {
 	userdetailsDescName := userdetailsFields[1].Descriptor()
 	// userdetails.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	userdetails.NameValidator = userdetailsDescName.Validators[0].(func(string) error)
-	// userdetailsDescFirstName is the schema descriptor for first_name field.
-	userdetailsDescFirstName := userdetailsFields[2].Descriptor()
-	// userdetails.FirstNameValidator is a validator for the "first_name" field. It is called by the builders before save.
-	userdetails.FirstNameValidator = userdetailsDescFirstName.Validators[0].(func(string) error)
-	// userdetailsDescLastName is the schema descriptor for last_name field.
-	userdetailsDescLastName := userdetailsFields[3].Descriptor()
-	// userdetails.LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
-	userdetails.LastNameValidator = userdetailsDescLastName.Validators[0].(func(string) error)
 	// userdetailsDescCreatedAt is the schema descriptor for created_at field.
 	userdetailsDescCreatedAt := userdetailsFields[4].Descriptor()
 	// userdetails.DefaultCreatedAt holds the default value on creation for the created_at field.
@@ -176,6 +176,10 @@ func init() {
 	userdetails.UpdateDefaultUpdatedAt = userdetailsDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userdeviceFields := schema.UserDevice{}.Fields()
 	_ = userdeviceFields
+	// userdeviceDescToken is the schema descriptor for token field.
+	userdeviceDescToken := userdeviceFields[3].Descriptor()
+	// userdevice.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	userdevice.TokenValidator = userdeviceDescToken.Validators[0].(func(string) error)
 	// userdeviceDescLastSeenAt is the schema descriptor for last_seen_at field.
 	userdeviceDescLastSeenAt := userdeviceFields[10].Descriptor()
 	// userdevice.DefaultLastSeenAt holds the default value on creation for the last_seen_at field.
@@ -194,6 +198,10 @@ func init() {
 	userdevice.UpdateDefaultUpdatedAt = userdeviceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userroleFields := schema.UserRole{}.Fields()
 	_ = userroleFields
+	// userroleDescName is the schema descriptor for name field.
+	userroleDescName := userroleFields[1].Descriptor()
+	// userrole.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	userrole.NameValidator = userroleDescName.Validators[0].(func(string) error)
 	// userroleDescCreatedAt is the schema descriptor for created_at field.
 	userroleDescCreatedAt := userroleFields[3].Descriptor()
 	// userrole.DefaultCreatedAt holds the default value on creation for the created_at field.
@@ -206,6 +214,10 @@ func init() {
 	userrole.UpdateDefaultUpdatedAt = userroleDescUpdatedAt.UpdateDefault.(func() time.Time)
 	usersettingsFields := schema.UserSettings{}.Fields()
 	_ = usersettingsFields
+	// usersettingsDescUUID is the schema descriptor for UUID field.
+	usersettingsDescUUID := usersettingsFields[1].Descriptor()
+	// usersettings.UUIDValidator is a validator for the "UUID" field. It is called by the builders before save.
+	usersettings.UUIDValidator = usersettingsDescUUID.Validators[0].(func(string) error)
 	// usersettingsDescTwoFactor is the schema descriptor for two_factor field.
 	usersettingsDescTwoFactor := usersettingsFields[2].Descriptor()
 	// usersettings.DefaultTwoFactor holds the default value on creation for the two_factor field.
@@ -226,6 +238,10 @@ func init() {
 	usersettings.UpdateDefaultUpdatedAt = usersettingsDescUpdatedAt.UpdateDefault.(func() time.Time)
 	verificationcodeFields := schema.VerificationCode{}.Fields()
 	_ = verificationcodeFields
+	// verificationcodeDescCode is the schema descriptor for code field.
+	verificationcodeDescCode := verificationcodeFields[1].Descriptor()
+	// verificationcode.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	verificationcode.CodeValidator = verificationcodeDescCode.Validators[0].(func(string) error)
 	// verificationcodeDescCreatedAt is the schema descriptor for created_at field.
 	verificationcodeDescCreatedAt := verificationcodeFields[2].Descriptor()
 	// verificationcode.DefaultCreatedAt holds the default value on creation for the created_at field.

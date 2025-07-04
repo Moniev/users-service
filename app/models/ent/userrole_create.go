@@ -148,6 +148,11 @@ func (urc *UserRoleCreate) check() error {
 	if _, ok := urc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "UserRole.name"`)}
 	}
+	if v, ok := urc.mutation.Name(); ok {
+		if err := userrole.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UserRole.name": %w`, err)}
+		}
+	}
 	if _, ok := urc.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "UserRole.description"`)}
 	}

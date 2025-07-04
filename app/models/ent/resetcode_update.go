@@ -137,6 +137,11 @@ func (rcu *ResetCodeUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (rcu *ResetCodeUpdate) check() error {
+	if v, ok := rcu.mutation.Code(); ok {
+		if err := resetcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ResetCode.code": %w`, err)}
+		}
+	}
 	if rcu.mutation.OwnerCleared() && len(rcu.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ResetCode.owner"`)
 	}
@@ -337,6 +342,11 @@ func (rcuo *ResetCodeUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (rcuo *ResetCodeUpdateOne) check() error {
+	if v, ok := rcuo.mutation.Code(); ok {
+		if err := resetcode.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ResetCode.code": %w`, err)}
+		}
+	}
 	if rcuo.mutation.OwnerCleared() && len(rcuo.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ResetCode.owner"`)
 	}

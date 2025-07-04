@@ -5086,9 +5086,22 @@ func (m *UserDetailsMutation) OldFirstName(ctx context.Context) (v string, err e
 	return oldValue.FirstName, nil
 }
 
+// ClearFirstName clears the value of the "first_name" field.
+func (m *UserDetailsMutation) ClearFirstName() {
+	m.first_name = nil
+	m.clearedFields[userdetails.FieldFirstName] = struct{}{}
+}
+
+// FirstNameCleared returns if the "first_name" field was cleared in this mutation.
+func (m *UserDetailsMutation) FirstNameCleared() bool {
+	_, ok := m.clearedFields[userdetails.FieldFirstName]
+	return ok
+}
+
 // ResetFirstName resets all changes to the "first_name" field.
 func (m *UserDetailsMutation) ResetFirstName() {
 	m.first_name = nil
+	delete(m.clearedFields, userdetails.FieldFirstName)
 }
 
 // SetLastName sets the "last_name" field.
@@ -5122,9 +5135,22 @@ func (m *UserDetailsMutation) OldLastName(ctx context.Context) (v string, err er
 	return oldValue.LastName, nil
 }
 
+// ClearLastName clears the value of the "last_name" field.
+func (m *UserDetailsMutation) ClearLastName() {
+	m.last_name = nil
+	m.clearedFields[userdetails.FieldLastName] = struct{}{}
+}
+
+// LastNameCleared returns if the "last_name" field was cleared in this mutation.
+func (m *UserDetailsMutation) LastNameCleared() bool {
+	_, ok := m.clearedFields[userdetails.FieldLastName]
+	return ok
+}
+
 // ResetLastName resets all changes to the "last_name" field.
 func (m *UserDetailsMutation) ResetLastName() {
 	m.last_name = nil
+	delete(m.clearedFields, userdetails.FieldLastName)
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -5398,7 +5424,14 @@ func (m *UserDetailsMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UserDetailsMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(userdetails.FieldFirstName) {
+		fields = append(fields, userdetails.FieldFirstName)
+	}
+	if m.FieldCleared(userdetails.FieldLastName) {
+		fields = append(fields, userdetails.FieldLastName)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -5411,6 +5444,14 @@ func (m *UserDetailsMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UserDetailsMutation) ClearField(name string) error {
+	switch name {
+	case userdetails.FieldFirstName:
+		m.ClearFirstName()
+		return nil
+	case userdetails.FieldLastName:
+		m.ClearLastName()
+		return nil
+	}
 	return fmt.Errorf("unknown UserDetails nullable field %s", name)
 }
 
@@ -5676,9 +5717,22 @@ func (m *UserDeviceMutation) OldName(ctx context.Context) (v string, err error) 
 	return oldValue.Name, nil
 }
 
+// ClearName clears the value of the "name" field.
+func (m *UserDeviceMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[userdevice.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *UserDeviceMutation) NameCleared() bool {
+	_, ok := m.clearedFields[userdevice.FieldName]
+	return ok
+}
+
 // ResetName resets all changes to the "name" field.
 func (m *UserDeviceMutation) ResetName() {
 	m.name = nil
+	delete(m.clearedFields, userdevice.FieldName)
 }
 
 // SetType sets the "type" field.
@@ -5712,9 +5766,22 @@ func (m *UserDeviceMutation) OldType(ctx context.Context) (v string, err error) 
 	return oldValue.Type, nil
 }
 
+// ClearType clears the value of the "type" field.
+func (m *UserDeviceMutation) ClearType() {
+	m._type = nil
+	m.clearedFields[userdevice.FieldType] = struct{}{}
+}
+
+// TypeCleared returns if the "type" field was cleared in this mutation.
+func (m *UserDeviceMutation) TypeCleared() bool {
+	_, ok := m.clearedFields[userdevice.FieldType]
+	return ok
+}
+
 // ResetType resets all changes to the "type" field.
 func (m *UserDeviceMutation) ResetType() {
 	m._type = nil
+	delete(m.clearedFields, userdevice.FieldType)
 }
 
 // SetToken sets the "token" field.
@@ -6531,6 +6598,12 @@ func (m *UserDeviceMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *UserDeviceMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(userdevice.FieldName) {
+		fields = append(fields, userdevice.FieldName)
+	}
+	if m.FieldCleared(userdevice.FieldType) {
+		fields = append(fields, userdevice.FieldType)
+	}
 	if m.FieldCleared(userdevice.FieldIPAddress) {
 		fields = append(fields, userdevice.FieldIPAddress)
 	}
@@ -6563,6 +6636,12 @@ func (m *UserDeviceMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *UserDeviceMutation) ClearField(name string) error {
 	switch name {
+	case userdevice.FieldName:
+		m.ClearName()
+		return nil
+	case userdevice.FieldType:
+		m.ClearType()
+		return nil
 	case userdevice.FieldIPAddress:
 		m.ClearIPAddress()
 		return nil

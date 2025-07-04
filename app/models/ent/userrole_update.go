@@ -191,7 +191,20 @@ func (uru *UserRoleUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uru *UserRoleUpdate) check() error {
+	if v, ok := uru.mutation.Name(); ok {
+		if err := userrole.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UserRole.name": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (uru *UserRoleUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := uru.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(userrole.Table, userrole.Columns, sqlgraph.NewFieldSpec(userrole.FieldID, field.TypeInt))
 	if ps := uru.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -496,7 +509,20 @@ func (uruo *UserRoleUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uruo *UserRoleUpdateOne) check() error {
+	if v, ok := uruo.mutation.Name(); ok {
+		if err := userrole.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UserRole.name": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (uruo *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, err error) {
+	if err := uruo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(userrole.Table, userrole.Columns, sqlgraph.NewFieldSpec(userrole.FieldID, field.TypeInt))
 	id, ok := uruo.mutation.ID()
 	if !ok {
