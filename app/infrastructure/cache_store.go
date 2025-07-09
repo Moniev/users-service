@@ -47,7 +47,11 @@ type CacheStoreInterface interface {
 
 var _ CacheStoreInterface = (*CacheStore)(nil)
 
-func NewCacheStore(redisClient CacheClient, logger zerolog.Logger, encryptionSecretKey string) *CacheStore {
+func NewCacheStore(
+	redisClient CacheClient,
+	logger zerolog.Logger,
+	encryptionSecretKey string,
+) *CacheStore {
 	key := []byte(encryptionSecretKey)
 	if len(key) == 0 {
 		logger.Fatal().Msg("ENCRYPTION_SECRET_KEY in settings is not set")

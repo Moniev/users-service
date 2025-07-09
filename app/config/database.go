@@ -29,6 +29,7 @@ func NewEntClient(ctx context.Context, logger zerolog.Logger, settings *Settings
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load cert path: %s: %w", settings.DbSslCaPath, err)
 	}
+
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
 

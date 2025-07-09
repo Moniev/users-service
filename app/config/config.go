@@ -15,7 +15,30 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/mvrilo/go-redoc"
+	ginredoc "github.com/mvrilo/go-redoc/gin"
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+func RegisterMetrics() {
+	prometheus.MustRegister(middlewares.HttpRequestCountWithPath)
+	prometheus.MustRegister(middlewares.HttpRequestDuration)
+	prometheus.MustRegister(middlewares.HttpRequestStatusCode)
+	prometheus.MustRegister(middlewares.HttpRequestSize)
+	prometheus.MustRegister(middlewares.HttpResponseSize)
+	prometheus.MustRegister(middlewares.ActiveRequests)
+	prometheus.MustRegister(middlewares.AuthFailures)
+	prometheus.MustRegister(middlewares.BlockedIPs)
+	prometheus.MustRegister(middlewares.DBQueryDuration)
+	prometheus.MustRegister(middlewares.CacheMisses)
+	prometheus.MustRegister(middlewares.CacheHits)
+	prometheus.MustRegister(middlewares.CPUUsage)
+	prometheus.MustRegister(middlewares.MemoryUsage)
+	prometheus.MustRegister(middlewares.DiskUsage)
+	prometheus.MustRegister(middlewares.ThreadCount)
+	prometheus.MustRegister(middlewares.ErrorRate)
+	prometheus.MustRegister(middlewares.SuccessRate)
+}
 
 func NewApp(settings *Settings) *gin.Engine {
 	ctx := context.Background()
@@ -88,11 +111,20 @@ func NewApp(settings *Settings) *gin.Engine {
 
 	router := gin.Default()
 
+	doc := redoc.Redoc{
+		Title:       "Example API",
+		Description: "Example API Description",
+		SpecFile:    "./openapi.json",
+		SpecPath:    "/openapi.json",
+		DocsPath:    "/docs",
+	}
+
 	router.
 		Use(middlewaresStore.RequestAuthenticationMiddleware()).
 		Use(middlewaresStore.UpdateCacheHitRatioMetrics(redisClient)).
 		Use(middlewaresStore.UpdateServerMetrics()).
-		Use(middlewaresStore.UpdateSystemMetrics())
+		Use(middlewaresStore.UpdateSystemMetrics()).
+		Use(ginredoc.New(doc))
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:        []string{"*"},
@@ -106,6 +138,7 @@ func NewApp(settings *Settings) *gin.Engine {
 	}))
 
 	api := router.Group("")
+	RegisterMetrics()
 
 	routes.RegisterAuthRoutes("/auth", api, authController, tracker, middlewaresStore, logger)
 	routes.RegisterUserRoutes("/users", api, usersController, authService, tracker, middlewaresStore, logger)

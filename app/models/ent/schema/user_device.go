@@ -23,7 +23,6 @@ func (UserDevice) Fields() []ent.Field {
 			StructTag(`json:"name"`).
 			Optional().
 			Comment("Name of the device"),
-
 		field.String("type").
 			StructTag(`json:"type"`).
 			Optional().
@@ -38,27 +37,22 @@ func (UserDevice) Fields() []ent.Field {
 			StructTag(`json:"ip_address,omitempty"`).
 			Comment("The last known IP address of the device.").
 			Optional(),
-
 		field.String("user_agent").
 			StructTag(`json:"user_agent,omitempty"`).
 			Comment("The full User-Agent string from the last request.").
 			Optional(),
-
 		field.String("os_name").
 			StructTag(`json:"os_name,omitempty"`).
 			Comment("Operating system name (e.g., Windows, macOS).").
 			Optional(),
-
 		field.String("os_version").
 			StructTag(`json:"os_version,omitempty"`).
 			Comment("Operating system version (e.g., 11, 14.5).").
 			Optional(),
-
 		field.String("browser_name").
 			StructTag(`json:"browser_name,omitempty"`).
 			Comment("Browser name (e.g., Chrome, Firefox).").
 			Optional(),
-
 		field.String("browser_version").
 			StructTag(`json:"browser_version,omitempty"`).
 			Comment("Browser version (e.g., 126.0).").

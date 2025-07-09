@@ -128,6 +128,7 @@ func (c *UsersController) UpdateSettings(ctx *gin.Context) {
 		if err != nil {
 			return nil, err
 		}
+
 		return &responses.User{User: user}, nil
 	})
 }
@@ -149,6 +150,7 @@ func (c *UsersController) RemoveAccount(ctx *gin.Context) {
 		if err != nil {
 			return "failed to remove user", err
 		}
+
 		return "successfully removed user", nil
 	})
 }
