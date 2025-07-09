@@ -32,6 +32,41 @@ var (
 			},
 		},
 	}
+	// EntrepreneurDetailsColumns holds the columns for the "entrepreneur_details" table.
+	EntrepreneurDetailsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "business_name", Type: field.TypeString, Nullable: true},
+		{Name: "nip", Type: field.TypeString, Unique: true, Nullable: true},
+		{Name: "krs", Type: field.TypeString, Unique: true, Nullable: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "offert", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "income", Type: field.TypeFloat64, Nullable: true},
+		{Name: "costs", Type: field.TypeFloat64, Nullable: true},
+		{Name: "funding_capital", Type: field.TypeFloat64, Nullable: true},
+		{Name: "industry", Type: field.TypeString, Nullable: true},
+		{Name: "management_council_members", Type: field.TypeJSON, Nullable: true},
+		{Name: "decision_makers", Type: field.TypeJSON, Nullable: true},
+		{Name: "business_phone_number", Type: field.TypeString, Nullable: true},
+		{Name: "business_email", Type: field.TypeString, Nullable: true},
+		{Name: "website_address", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "user_details_entrepreneur_details", Type: field.TypeInt, Unique: true, Nullable: true},
+	}
+	// EntrepreneurDetailsTable holds the schema information for the "entrepreneur_details" table.
+	EntrepreneurDetailsTable = &schema.Table{
+		Name:       "entrepreneur_details",
+		Columns:    EntrepreneurDetailsColumns,
+		PrimaryKey: []*schema.Column{EntrepreneurDetailsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "entrepreneur_details_user_details_entrepreneur_details",
+				Columns:    []*schema.Column{EntrepreneurDetailsColumns[17]},
+				RefColumns: []*schema.Column{UserDetailsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// LocationsColumns holds the columns for the "locations" table.
 	LocationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -374,6 +409,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivationCodesTable,
+		EntrepreneurDetailsTable,
 		LocationsTable,
 		ResetCodesTable,
 		RolePermissionsTable,
@@ -393,6 +429,7 @@ var (
 
 func init() {
 	ActivationCodesTable.ForeignKeys[0].RefTable = UsersTable
+	EntrepreneurDetailsTable.ForeignKeys[0].RefTable = UserDetailsTable
 	LocationsTable.ForeignKeys[0].RefTable = UserDetailsTable
 	ResetCodesTable.ForeignKeys[0].RefTable = UsersTable
 	SecondFactorCodesTable.ForeignKeys[0].RefTable = UsersTable

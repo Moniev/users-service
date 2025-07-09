@@ -21,6 +21,7 @@ type UsersServiceInterface interface {
 	UpdateUser(ctx context.Context, userID int, req *requests.User) (*ent.User, error)
 	UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error)
 	UpdateSettings(ctx context.Context, userID int, req *requests.Settings) (*ent.User, error)
+	UpdateEntrepreneurDetails(ctx context.Context, userID int, req *requests.EntrepreneurDetails) (*ent.User, error)
 	RemoveAccount(ctx context.Context, userID int) error
 	GetUserPublic(ctx context.Context, userID int) (*ent.User, error)
 }
@@ -126,6 +127,10 @@ func (s *UsersService) RemoveAccount(ctx context.Context, userID int) error {
 	}
 
 	return nil
+}
+
+func (s *UsersService) UpdateEntrepreneurDetails(ctx context.Context, userID int, req *requests.EntrepreneurDetails) (*ent.User, error) {
+	return nil, nil
 }
 
 func (s *UsersService) GetUserPublic(ctx context.Context, userID int) (*ent.User, error) {

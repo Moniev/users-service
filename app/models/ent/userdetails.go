@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/userdetails"
 
@@ -41,9 +42,11 @@ type UserDetailsEdges struct {
 	Owner *User `json:"owner"`
 	// Locations holds the value of the locations edge.
 	Locations []*Location `json:"locations"`
+	// EntrepreneurDetails holds the value of the entrepreneur_details edge.
+	EntrepreneurDetails *EntrepreneurDetails `json:"entrepreneur_details"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -64,6 +67,17 @@ func (e UserDetailsEdges) LocationsOrErr() ([]*Location, error) {
 		return e.Locations, nil
 	}
 	return nil, &NotLoadedError{edge: "locations"}
+}
+
+// EntrepreneurDetailsOrErr returns the EntrepreneurDetails value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserDetailsEdges) EntrepreneurDetailsOrErr() (*EntrepreneurDetails, error) {
+	if e.EntrepreneurDetails != nil {
+		return e.EntrepreneurDetails, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: entrepreneurdetails.Label}
+	}
+	return nil, &NotLoadedError{edge: "entrepreneur_details"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -158,6 +172,11 @@ func (ud *UserDetails) QueryOwner() *UserQuery {
 // QueryLocations queries the "locations" edge of the UserDetails entity.
 func (ud *UserDetails) QueryLocations() *LocationQuery {
 	return NewUserDetailsClient(ud.config).QueryLocations(ud)
+}
+
+// QueryEntrepreneurDetails queries the "entrepreneur_details" edge of the UserDetails entity.
+func (ud *UserDetails) QueryEntrepreneurDetails() *EntrepreneurDetailsQuery {
+	return NewUserDetailsClient(ud.config).QueryEntrepreneurDetails(ud)
 }
 
 // Update returns a builder for updating this UserDetails.

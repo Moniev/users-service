@@ -20,6 +20,18 @@ func (f ActivationCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActivationCodeMutation", m)
 }
 
+// The EntrepreneurDetailsFunc type is an adapter to allow the use of ordinary
+// function as EntrepreneurDetails mutator.
+type EntrepreneurDetailsFunc func(context.Context, *ent.EntrepreneurDetailsMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EntrepreneurDetailsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.EntrepreneurDetailsMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EntrepreneurDetailsMutation", m)
+}
+
 // The LocationFunc type is an adapter to allow the use of ordinary
 // function as Location mutator.
 type LocationFunc func(context.Context, *ent.LocationMutation) (ent.Value, error)

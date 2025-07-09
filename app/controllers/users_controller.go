@@ -154,3 +154,13 @@ func (c *UsersController) RemoveAccount(ctx *gin.Context) {
 		return "successfully removed user", nil
 	})
 }
+
+func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
+	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.EntrepreneurDetails) (*responses.User, error) {
+		user, err := c.UsersService.UpdateEntrepreneurDetails(reqCtx, userID, req)
+		if err != nil {
+			return nil, err
+		}
+		return &responses.User{User: user}, nil
+	})
+}

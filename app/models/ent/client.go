@@ -12,6 +12,7 @@ import (
 	"users-service/app/models/ent/migrate"
 
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/rolepermission"
@@ -37,6 +38,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// ActivationCode is the client for interacting with the ActivationCode builders.
 	ActivationCode *ActivationCodeClient
+	// EntrepreneurDetails is the client for interacting with the EntrepreneurDetails builders.
+	EntrepreneurDetails *EntrepreneurDetailsClient
 	// Location is the client for interacting with the Location builders.
 	Location *LocationClient
 	// ResetCode is the client for interacting with the ResetCode builders.
@@ -71,6 +74,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.ActivationCode = NewActivationCodeClient(c.config)
+	c.EntrepreneurDetails = NewEntrepreneurDetailsClient(c.config)
 	c.Location = NewLocationClient(c.config)
 	c.ResetCode = NewResetCodeClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
@@ -172,20 +176,21 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		ActivationCode:   NewActivationCodeClient(cfg),
-		Location:         NewLocationClient(cfg),
-		ResetCode:        NewResetCodeClient(cfg),
-		RolePermission:   NewRolePermissionClient(cfg),
-		SecondFactorCode: NewSecondFactorCodeClient(cfg),
-		User:             NewUserClient(cfg),
-		UserAction:       NewUserActionClient(cfg),
-		UserDetails:      NewUserDetailsClient(cfg),
-		UserDevice:       NewUserDeviceClient(cfg),
-		UserRole:         NewUserRoleClient(cfg),
-		UserSettings:     NewUserSettingsClient(cfg),
-		VerificationCode: NewVerificationCodeClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		ActivationCode:      NewActivationCodeClient(cfg),
+		EntrepreneurDetails: NewEntrepreneurDetailsClient(cfg),
+		Location:            NewLocationClient(cfg),
+		ResetCode:           NewResetCodeClient(cfg),
+		RolePermission:      NewRolePermissionClient(cfg),
+		SecondFactorCode:    NewSecondFactorCodeClient(cfg),
+		User:                NewUserClient(cfg),
+		UserAction:          NewUserActionClient(cfg),
+		UserDetails:         NewUserDetailsClient(cfg),
+		UserDevice:          NewUserDeviceClient(cfg),
+		UserRole:            NewUserRoleClient(cfg),
+		UserSettings:        NewUserSettingsClient(cfg),
+		VerificationCode:    NewVerificationCodeClient(cfg),
 	}, nil
 }
 
@@ -203,20 +208,21 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		ActivationCode:   NewActivationCodeClient(cfg),
-		Location:         NewLocationClient(cfg),
-		ResetCode:        NewResetCodeClient(cfg),
-		RolePermission:   NewRolePermissionClient(cfg),
-		SecondFactorCode: NewSecondFactorCodeClient(cfg),
-		User:             NewUserClient(cfg),
-		UserAction:       NewUserActionClient(cfg),
-		UserDetails:      NewUserDetailsClient(cfg),
-		UserDevice:       NewUserDeviceClient(cfg),
-		UserRole:         NewUserRoleClient(cfg),
-		UserSettings:     NewUserSettingsClient(cfg),
-		VerificationCode: NewVerificationCodeClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		ActivationCode:      NewActivationCodeClient(cfg),
+		EntrepreneurDetails: NewEntrepreneurDetailsClient(cfg),
+		Location:            NewLocationClient(cfg),
+		ResetCode:           NewResetCodeClient(cfg),
+		RolePermission:      NewRolePermissionClient(cfg),
+		SecondFactorCode:    NewSecondFactorCodeClient(cfg),
+		User:                NewUserClient(cfg),
+		UserAction:          NewUserActionClient(cfg),
+		UserDetails:         NewUserDetailsClient(cfg),
+		UserDevice:          NewUserDeviceClient(cfg),
+		UserRole:            NewUserRoleClient(cfg),
+		UserSettings:        NewUserSettingsClient(cfg),
+		VerificationCode:    NewVerificationCodeClient(cfg),
 	}, nil
 }
 
@@ -246,9 +252,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ActivationCode, c.Location, c.ResetCode, c.RolePermission, c.SecondFactorCode,
-		c.User, c.UserAction, c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings,
-		c.VerificationCode,
+		c.ActivationCode, c.EntrepreneurDetails, c.Location, c.ResetCode,
+		c.RolePermission, c.SecondFactorCode, c.User, c.UserAction, c.UserDetails,
+		c.UserDevice, c.UserRole, c.UserSettings, c.VerificationCode,
 	} {
 		n.Use(hooks...)
 	}
@@ -258,9 +264,9 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ActivationCode, c.Location, c.ResetCode, c.RolePermission, c.SecondFactorCode,
-		c.User, c.UserAction, c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings,
-		c.VerificationCode,
+		c.ActivationCode, c.EntrepreneurDetails, c.Location, c.ResetCode,
+		c.RolePermission, c.SecondFactorCode, c.User, c.UserAction, c.UserDetails,
+		c.UserDevice, c.UserRole, c.UserSettings, c.VerificationCode,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -271,6 +277,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *ActivationCodeMutation:
 		return c.ActivationCode.mutate(ctx, m)
+	case *EntrepreneurDetailsMutation:
+		return c.EntrepreneurDetails.mutate(ctx, m)
 	case *LocationMutation:
 		return c.Location.mutate(ctx, m)
 	case *ResetCodeMutation:
@@ -444,6 +452,156 @@ func (c *ActivationCodeClient) mutate(ctx context.Context, m *ActivationCodeMuta
 		return (&ActivationCodeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ActivationCode mutation op: %q", m.Op())
+	}
+}
+
+// EntrepreneurDetailsClient is a client for the EntrepreneurDetails schema.
+type EntrepreneurDetailsClient struct {
+	config
+}
+
+// NewEntrepreneurDetailsClient returns a client for the EntrepreneurDetails from the given config.
+func NewEntrepreneurDetailsClient(c config) *EntrepreneurDetailsClient {
+	return &EntrepreneurDetailsClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `entrepreneurdetails.Hooks(f(g(h())))`.
+func (c *EntrepreneurDetailsClient) Use(hooks ...Hook) {
+	c.hooks.EntrepreneurDetails = append(c.hooks.EntrepreneurDetails, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `entrepreneurdetails.Intercept(f(g(h())))`.
+func (c *EntrepreneurDetailsClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EntrepreneurDetails = append(c.inters.EntrepreneurDetails, interceptors...)
+}
+
+// Create returns a builder for creating a EntrepreneurDetails entity.
+func (c *EntrepreneurDetailsClient) Create() *EntrepreneurDetailsCreate {
+	mutation := newEntrepreneurDetailsMutation(c.config, OpCreate)
+	return &EntrepreneurDetailsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EntrepreneurDetails entities.
+func (c *EntrepreneurDetailsClient) CreateBulk(builders ...*EntrepreneurDetailsCreate) *EntrepreneurDetailsCreateBulk {
+	return &EntrepreneurDetailsCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EntrepreneurDetailsClient) MapCreateBulk(slice any, setFunc func(*EntrepreneurDetailsCreate, int)) *EntrepreneurDetailsCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EntrepreneurDetailsCreateBulk{err: fmt.Errorf("calling to EntrepreneurDetailsClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EntrepreneurDetailsCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EntrepreneurDetailsCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EntrepreneurDetails.
+func (c *EntrepreneurDetailsClient) Update() *EntrepreneurDetailsUpdate {
+	mutation := newEntrepreneurDetailsMutation(c.config, OpUpdate)
+	return &EntrepreneurDetailsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EntrepreneurDetailsClient) UpdateOne(ed *EntrepreneurDetails) *EntrepreneurDetailsUpdateOne {
+	mutation := newEntrepreneurDetailsMutation(c.config, OpUpdateOne, withEntrepreneurDetails(ed))
+	return &EntrepreneurDetailsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EntrepreneurDetailsClient) UpdateOneID(id int) *EntrepreneurDetailsUpdateOne {
+	mutation := newEntrepreneurDetailsMutation(c.config, OpUpdateOne, withEntrepreneurDetailsID(id))
+	return &EntrepreneurDetailsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EntrepreneurDetails.
+func (c *EntrepreneurDetailsClient) Delete() *EntrepreneurDetailsDelete {
+	mutation := newEntrepreneurDetailsMutation(c.config, OpDelete)
+	return &EntrepreneurDetailsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EntrepreneurDetailsClient) DeleteOne(ed *EntrepreneurDetails) *EntrepreneurDetailsDeleteOne {
+	return c.DeleteOneID(ed.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EntrepreneurDetailsClient) DeleteOneID(id int) *EntrepreneurDetailsDeleteOne {
+	builder := c.Delete().Where(entrepreneurdetails.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EntrepreneurDetailsDeleteOne{builder}
+}
+
+// Query returns a query builder for EntrepreneurDetails.
+func (c *EntrepreneurDetailsClient) Query() *EntrepreneurDetailsQuery {
+	return &EntrepreneurDetailsQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEntrepreneurDetails},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EntrepreneurDetails entity by its id.
+func (c *EntrepreneurDetailsClient) Get(ctx context.Context, id int) (*EntrepreneurDetails, error) {
+	return c.Query().Where(entrepreneurdetails.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EntrepreneurDetailsClient) GetX(ctx context.Context, id int) *EntrepreneurDetails {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUserDetails queries the user_details edge of a EntrepreneurDetails.
+func (c *EntrepreneurDetailsClient) QueryUserDetails(ed *EntrepreneurDetails) *UserDetailsQuery {
+	query := (&UserDetailsClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ed.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(entrepreneurdetails.Table, entrepreneurdetails.FieldID, id),
+			sqlgraph.To(userdetails.Table, userdetails.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, entrepreneurdetails.UserDetailsTable, entrepreneurdetails.UserDetailsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ed.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EntrepreneurDetailsClient) Hooks() []Hook {
+	hooks := c.hooks.EntrepreneurDetails
+	return append(hooks[:len(hooks):len(hooks)], entrepreneurdetails.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *EntrepreneurDetailsClient) Interceptors() []Interceptor {
+	return c.inters.EntrepreneurDetails
+}
+
+func (c *EntrepreneurDetailsClient) mutate(ctx context.Context, m *EntrepreneurDetailsMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EntrepreneurDetailsCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EntrepreneurDetailsUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EntrepreneurDetailsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EntrepreneurDetailsDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EntrepreneurDetails mutation op: %q", m.Op())
 	}
 }
 
@@ -1625,6 +1783,22 @@ func (c *UserDetailsClient) QueryLocations(ud *UserDetails) *LocationQuery {
 	return query
 }
 
+// QueryEntrepreneurDetails queries the entrepreneur_details edge of a UserDetails.
+func (c *UserDetailsClient) QueryEntrepreneurDetails(ud *UserDetails) *EntrepreneurDetailsQuery {
+	query := (&EntrepreneurDetailsClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ud.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userdetails.Table, userdetails.FieldID, id),
+			sqlgraph.To(entrepreneurdetails.Table, entrepreneurdetails.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, userdetails.EntrepreneurDetailsTable, userdetails.EntrepreneurDetailsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ud.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserDetailsClient) Hooks() []Hook {
 	return c.hooks.UserDetails
@@ -2303,7 +2477,8 @@ func (c *VerificationCodeClient) QueryOwner(vc *VerificationCode) *UserQuery {
 
 // Hooks returns the client hooks.
 func (c *VerificationCodeClient) Hooks() []Hook {
-	return c.hooks.VerificationCode
+	hooks := c.hooks.VerificationCode
+	return append(hooks[:len(hooks):len(hooks)], verificationcode.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -2329,13 +2504,13 @@ func (c *VerificationCodeClient) mutate(ctx context.Context, m *VerificationCode
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ActivationCode, Location, ResetCode, RolePermission, SecondFactorCode, User,
-		UserAction, UserDetails, UserDevice, UserRole, UserSettings,
-		VerificationCode []ent.Hook
+		ActivationCode, EntrepreneurDetails, Location, ResetCode, RolePermission,
+		SecondFactorCode, User, UserAction, UserDetails, UserDevice, UserRole,
+		UserSettings, VerificationCode []ent.Hook
 	}
 	inters struct {
-		ActivationCode, Location, ResetCode, RolePermission, SecondFactorCode, User,
-		UserAction, UserDetails, UserDevice, UserRole, UserSettings,
-		VerificationCode []ent.Interceptor
+		ActivationCode, EntrepreneurDetails, Location, ResetCode, RolePermission,
+		SecondFactorCode, User, UserAction, UserDetails, UserDevice, UserRole,
+		UserSettings, VerificationCode []ent.Interceptor
 	}
 )

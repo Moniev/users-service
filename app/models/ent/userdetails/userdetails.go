@@ -28,6 +28,8 @@ const (
 	EdgeOwner = "owner"
 	// EdgeLocations holds the string denoting the locations edge name in mutations.
 	EdgeLocations = "locations"
+	// EdgeEntrepreneurDetails holds the string denoting the entrepreneur_details edge name in mutations.
+	EdgeEntrepreneurDetails = "entrepreneur_details"
 	// Table holds the table name of the userdetails in the database.
 	Table = "user_details"
 	// OwnerTable is the table that holds the owner relation/edge.
@@ -44,6 +46,13 @@ const (
 	LocationsInverseTable = "locations"
 	// LocationsColumn is the table column denoting the locations relation/edge.
 	LocationsColumn = "user_details_locations"
+	// EntrepreneurDetailsTable is the table that holds the entrepreneur_details relation/edge.
+	EntrepreneurDetailsTable = "entrepreneur_details"
+	// EntrepreneurDetailsInverseTable is the table name for the EntrepreneurDetails entity.
+	// It exists in this package in order to avoid circular dependency with the "entrepreneurdetails" package.
+	EntrepreneurDetailsInverseTable = "entrepreneur_details"
+	// EntrepreneurDetailsColumn is the table column denoting the entrepreneur_details relation/edge.
+	EntrepreneurDetailsColumn = "user_details_entrepreneur_details"
 )
 
 // Columns holds all SQL columns for userdetails fields.
@@ -141,6 +150,13 @@ func ByLocations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newLocationsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByEntrepreneurDetailsField orders the results by entrepreneur_details field.
+func ByEntrepreneurDetailsField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEntrepreneurDetailsStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newOwnerStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -153,5 +169,12 @@ func newLocationsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(LocationsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, LocationsTable, LocationsColumn),
+	)
+}
+func newEntrepreneurDetailsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EntrepreneurDetailsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, EntrepreneurDetailsTable, EntrepreneurDetailsColumn),
 	)
 }

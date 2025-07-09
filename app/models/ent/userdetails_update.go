@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/user"
@@ -130,6 +131,25 @@ func (udu *UserDetailsUpdate) AddLocations(l ...*Location) *UserDetailsUpdate {
 	return udu.AddLocationIDs(ids...)
 }
 
+// SetEntrepreneurDetailsID sets the "entrepreneur_details" edge to the EntrepreneurDetails entity by ID.
+func (udu *UserDetailsUpdate) SetEntrepreneurDetailsID(id int) *UserDetailsUpdate {
+	udu.mutation.SetEntrepreneurDetailsID(id)
+	return udu
+}
+
+// SetNillableEntrepreneurDetailsID sets the "entrepreneur_details" edge to the EntrepreneurDetails entity by ID if the given value is not nil.
+func (udu *UserDetailsUpdate) SetNillableEntrepreneurDetailsID(id *int) *UserDetailsUpdate {
+	if id != nil {
+		udu = udu.SetEntrepreneurDetailsID(*id)
+	}
+	return udu
+}
+
+// SetEntrepreneurDetails sets the "entrepreneur_details" edge to the EntrepreneurDetails entity.
+func (udu *UserDetailsUpdate) SetEntrepreneurDetails(e *EntrepreneurDetails) *UserDetailsUpdate {
+	return udu.SetEntrepreneurDetailsID(e.ID)
+}
+
 // Mutation returns the UserDetailsMutation object of the builder.
 func (udu *UserDetailsUpdate) Mutation() *UserDetailsMutation {
 	return udu.mutation
@@ -160,6 +180,12 @@ func (udu *UserDetailsUpdate) RemoveLocations(l ...*Location) *UserDetailsUpdate
 		ids[i] = l[i].ID
 	}
 	return udu.RemoveLocationIDs(ids...)
+}
+
+// ClearEntrepreneurDetails clears the "entrepreneur_details" edge to the EntrepreneurDetails entity.
+func (udu *UserDetailsUpdate) ClearEntrepreneurDetails() *UserDetailsUpdate {
+	udu.mutation.ClearEntrepreneurDetails()
+	return udu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -318,6 +344,35 @@ func (udu *UserDetailsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if udu.mutation.EntrepreneurDetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   userdetails.EntrepreneurDetailsTable,
+			Columns: []string{userdetails.EntrepreneurDetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entrepreneurdetails.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := udu.mutation.EntrepreneurDetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   userdetails.EntrepreneurDetailsTable,
+			Columns: []string{userdetails.EntrepreneurDetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entrepreneurdetails.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, udu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userdetails.Label}
@@ -438,6 +493,25 @@ func (uduo *UserDetailsUpdateOne) AddLocations(l ...*Location) *UserDetailsUpdat
 	return uduo.AddLocationIDs(ids...)
 }
 
+// SetEntrepreneurDetailsID sets the "entrepreneur_details" edge to the EntrepreneurDetails entity by ID.
+func (uduo *UserDetailsUpdateOne) SetEntrepreneurDetailsID(id int) *UserDetailsUpdateOne {
+	uduo.mutation.SetEntrepreneurDetailsID(id)
+	return uduo
+}
+
+// SetNillableEntrepreneurDetailsID sets the "entrepreneur_details" edge to the EntrepreneurDetails entity by ID if the given value is not nil.
+func (uduo *UserDetailsUpdateOne) SetNillableEntrepreneurDetailsID(id *int) *UserDetailsUpdateOne {
+	if id != nil {
+		uduo = uduo.SetEntrepreneurDetailsID(*id)
+	}
+	return uduo
+}
+
+// SetEntrepreneurDetails sets the "entrepreneur_details" edge to the EntrepreneurDetails entity.
+func (uduo *UserDetailsUpdateOne) SetEntrepreneurDetails(e *EntrepreneurDetails) *UserDetailsUpdateOne {
+	return uduo.SetEntrepreneurDetailsID(e.ID)
+}
+
 // Mutation returns the UserDetailsMutation object of the builder.
 func (uduo *UserDetailsUpdateOne) Mutation() *UserDetailsMutation {
 	return uduo.mutation
@@ -468,6 +542,12 @@ func (uduo *UserDetailsUpdateOne) RemoveLocations(l ...*Location) *UserDetailsUp
 		ids[i] = l[i].ID
 	}
 	return uduo.RemoveLocationIDs(ids...)
+}
+
+// ClearEntrepreneurDetails clears the "entrepreneur_details" edge to the EntrepreneurDetails entity.
+func (uduo *UserDetailsUpdateOne) ClearEntrepreneurDetails() *UserDetailsUpdateOne {
+	uduo.mutation.ClearEntrepreneurDetails()
+	return uduo
 }
 
 // Where appends a list predicates to the UserDetailsUpdate builder.
@@ -649,6 +729,35 @@ func (uduo *UserDetailsUpdateOne) sqlSave(ctx context.Context) (_node *UserDetai
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uduo.mutation.EntrepreneurDetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   userdetails.EntrepreneurDetailsTable,
+			Columns: []string{userdetails.EntrepreneurDetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entrepreneurdetails.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uduo.mutation.EntrepreneurDetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   userdetails.EntrepreneurDetailsTable,
+			Columns: []string{userdetails.EntrepreneurDetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entrepreneurdetails.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

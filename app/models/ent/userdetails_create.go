@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/userdetails"
@@ -114,6 +115,25 @@ func (udc *UserDetailsCreate) AddLocations(l ...*Location) *UserDetailsCreate {
 		ids[i] = l[i].ID
 	}
 	return udc.AddLocationIDs(ids...)
+}
+
+// SetEntrepreneurDetailsID sets the "entrepreneur_details" edge to the EntrepreneurDetails entity by ID.
+func (udc *UserDetailsCreate) SetEntrepreneurDetailsID(id int) *UserDetailsCreate {
+	udc.mutation.SetEntrepreneurDetailsID(id)
+	return udc
+}
+
+// SetNillableEntrepreneurDetailsID sets the "entrepreneur_details" edge to the EntrepreneurDetails entity by ID if the given value is not nil.
+func (udc *UserDetailsCreate) SetNillableEntrepreneurDetailsID(id *int) *UserDetailsCreate {
+	if id != nil {
+		udc = udc.SetEntrepreneurDetailsID(*id)
+	}
+	return udc
+}
+
+// SetEntrepreneurDetails sets the "entrepreneur_details" edge to the EntrepreneurDetails entity.
+func (udc *UserDetailsCreate) SetEntrepreneurDetails(e *EntrepreneurDetails) *UserDetailsCreate {
+	return udc.SetEntrepreneurDetailsID(e.ID)
 }
 
 // Mutation returns the UserDetailsMutation object of the builder.
@@ -258,6 +278,22 @@ func (udc *UserDetailsCreate) createSpec() (*UserDetails, *sqlgraph.CreateSpec) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := udc.mutation.EntrepreneurDetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   userdetails.EntrepreneurDetailsTable,
+			Columns: []string{userdetails.EntrepreneurDetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entrepreneurdetails.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

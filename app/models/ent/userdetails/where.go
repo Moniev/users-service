@@ -421,6 +421,29 @@ func HasLocationsWith(preds ...predicate.Location) predicate.UserDetails {
 	})
 }
 
+// HasEntrepreneurDetails applies the HasEdge predicate on the "entrepreneur_details" edge.
+func HasEntrepreneurDetails() predicate.UserDetails {
+	return predicate.UserDetails(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, EntrepreneurDetailsTable, EntrepreneurDetailsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEntrepreneurDetailsWith applies the HasEdge predicate on the "entrepreneur_details" edge with a given conditions (other predicates).
+func HasEntrepreneurDetailsWith(preds ...predicate.EntrepreneurDetails) predicate.UserDetails {
+	return predicate.UserDetails(func(s *sql.Selector) {
+		step := newEntrepreneurDetailsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserDetails) predicate.UserDetails {
 	return predicate.UserDetails(sql.AndPredicates(predicates...))

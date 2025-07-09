@@ -99,3 +99,8 @@ func (r *Password) Valid() error {
 
 	return r.Device.Valid()
 }
+
+type EntrepreneurDetails struct {
+	BusinessName string `json:"business_name"`
+	NIP          string `json:"nip"`
+}

@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"math"
+	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/user"
@@ -21,13 +22,14 @@ import (
 // UserDetailsQuery is the builder for querying UserDetails entities.
 type UserDetailsQuery struct {
 	config
-	ctx           *QueryContext
-	order         []userdetails.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.UserDetails
-	withOwner     *UserQuery
-	withLocations *LocationQuery
-	withFKs       bool
+	ctx                     *QueryContext
+	order                   []userdetails.OrderOption
+	inters                  []Interceptor
+	predicates              []predicate.UserDetails
+	withOwner               *UserQuery
+	withLocations           *LocationQuery
+	withEntrepreneurDetails *EntrepreneurDetailsQuery
+	withFKs                 bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (udq *UserDetailsQuery) QueryLocations() *LocationQuery {
 			sqlgraph.From(userdetails.Table, userdetails.FieldID, selector),
 			sqlgraph.To(location.Table, location.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, userdetails.LocationsTable, userdetails.LocationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(udq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEntrepreneurDetails chains the current query on the "entrepreneur_details" edge.
+func (udq *UserDetailsQuery) QueryEntrepreneurDetails() *EntrepreneurDetailsQuery {
+	query := (&EntrepreneurDetailsClient{config: udq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := udq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := udq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userdetails.Table, userdetails.FieldID, selector),
+			sqlgraph.To(entrepreneurdetails.Table, entrepreneurdetails.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, userdetails.EntrepreneurDetailsTable, userdetails.EntrepreneurDetailsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(udq.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (udq *UserDetailsQuery) Clone() *UserDetailsQuery {
 		return nil
 	}
 	return &UserDetailsQuery{
-		config:        udq.config,
-		ctx:           udq.ctx.Clone(),
-		order:         append([]userdetails.OrderOption{}, udq.order...),
-		inters:        append([]Interceptor{}, udq.inters...),
-		predicates:    append([]predicate.UserDetails{}, udq.predicates...),
-		withOwner:     udq.withOwner.Clone(),
-		withLocations: udq.withLocations.Clone(),
+		config:                  udq.config,
+		ctx:                     udq.ctx.Clone(),
+		order:                   append([]userdetails.OrderOption{}, udq.order...),
+		inters:                  append([]Interceptor{}, udq.inters...),
+		predicates:              append([]predicate.UserDetails{}, udq.predicates...),
+		withOwner:               udq.withOwner.Clone(),
+		withLocations:           udq.withLocations.Clone(),
+		withEntrepreneurDetails: udq.withEntrepreneurDetails.Clone(),
 		// clone intermediate query.
 		sql:  udq.sql.Clone(),
 		path: udq.path,
@@ -327,6 +352,17 @@ func (udq *UserDetailsQuery) WithLocations(opts ...func(*LocationQuery)) *UserDe
 		opt(query)
 	}
 	udq.withLocations = query
+	return udq
+}
+
+// WithEntrepreneurDetails tells the query-builder to eager-load the nodes that are connected to
+// the "entrepreneur_details" edge. The optional arguments are used to configure the query builder of the edge.
+func (udq *UserDetailsQuery) WithEntrepreneurDetails(opts ...func(*EntrepreneurDetailsQuery)) *UserDetailsQuery {
+	query := (&EntrepreneurDetailsClient{config: udq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	udq.withEntrepreneurDetails = query
 	return udq
 }
 
@@ -409,9 +445,10 @@ func (udq *UserDetailsQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*UserDetails{}
 		withFKs     = udq.withFKs
 		_spec       = udq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			udq.withOwner != nil,
 			udq.withLocations != nil,
+			udq.withEntrepreneurDetails != nil,
 		}
 	)
 	if udq.withOwner != nil {
@@ -448,6 +485,12 @@ func (udq *UserDetailsQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		if err := udq.loadLocations(ctx, query, nodes,
 			func(n *UserDetails) { n.Edges.Locations = []*Location{} },
 			func(n *UserDetails, e *Location) { n.Edges.Locations = append(n.Edges.Locations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := udq.withEntrepreneurDetails; query != nil {
+		if err := udq.loadEntrepreneurDetails(ctx, query, nodes, nil,
+			func(n *UserDetails, e *EntrepreneurDetails) { n.Edges.EntrepreneurDetails = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -512,6 +555,34 @@ func (udq *UserDetailsQuery) loadLocations(ctx context.Context, query *LocationQ
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "user_details_locations" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (udq *UserDetailsQuery) loadEntrepreneurDetails(ctx context.Context, query *EntrepreneurDetailsQuery, nodes []*UserDetails, init func(*UserDetails), assign func(*UserDetails, *EntrepreneurDetails)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*UserDetails)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.EntrepreneurDetails(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(userdetails.EntrepreneurDetailsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_details_entrepreneur_details
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_details_entrepreneur_details" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_details_entrepreneur_details" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

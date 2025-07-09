@@ -9,6 +9,9 @@ import (
 // ActivationCode is the predicate function for activationcode builders.
 type ActivationCode func(*sql.Selector)
 
+// EntrepreneurDetails is the predicate function for entrepreneurdetails builders.
+type EntrepreneurDetails func(*sql.Selector)
+
 // Location is the predicate function for location builders.
 type Location func(*sql.Selector)
 

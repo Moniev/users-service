@@ -49,3 +49,11 @@ func (m *MockUsersService) GetUserPublic(ctx context.Context, userID int) (*ent.
 	}
 	return args.Get(0).(*ent.User), args.Error(1)
 }
+
+func (m *MockUsersService) UpdateEntrepreneurDetails(
+	ctx context.Context,
+	userID int,
+	req *requests.EntrepreneurDetails,
+) (*ent.User, error) {
+	return nil, nil
+}

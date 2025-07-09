@@ -63,6 +63,14 @@ func (vcu *VerificationCodeUpdate) SetUpdatedAt(t time.Time) *VerificationCodeUp
 	return vcu
 }
 
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (vcu *VerificationCodeUpdate) SetNillableUpdatedAt(t *time.Time) *VerificationCodeUpdate {
+	if t != nil {
+		vcu.SetUpdatedAt(*t)
+	}
+	return vcu
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (vcu *VerificationCodeUpdate) SetExpiresAt(t time.Time) *VerificationCodeUpdate {
 	vcu.mutation.SetExpiresAt(t)
@@ -101,7 +109,6 @@ func (vcu *VerificationCodeUpdate) ClearOwner() *VerificationCodeUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (vcu *VerificationCodeUpdate) Save(ctx context.Context) (int, error) {
-	vcu.defaults()
 	return withHooks(ctx, vcu.sqlSave, vcu.mutation, vcu.hooks)
 }
 
@@ -124,14 +131,6 @@ func (vcu *VerificationCodeUpdate) Exec(ctx context.Context) error {
 func (vcu *VerificationCodeUpdate) ExecX(ctx context.Context) {
 	if err := vcu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (vcu *VerificationCodeUpdate) defaults() {
-	if _, ok := vcu.mutation.UpdatedAt(); !ok {
-		v := verificationcode.UpdateDefaultUpdatedAt()
-		vcu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -255,6 +254,14 @@ func (vcuo *VerificationCodeUpdateOne) SetUpdatedAt(t time.Time) *VerificationCo
 	return vcuo
 }
 
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (vcuo *VerificationCodeUpdateOne) SetNillableUpdatedAt(t *time.Time) *VerificationCodeUpdateOne {
+	if t != nil {
+		vcuo.SetUpdatedAt(*t)
+	}
+	return vcuo
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (vcuo *VerificationCodeUpdateOne) SetExpiresAt(t time.Time) *VerificationCodeUpdateOne {
 	vcuo.mutation.SetExpiresAt(t)
@@ -306,7 +313,6 @@ func (vcuo *VerificationCodeUpdateOne) Select(field string, fields ...string) *V
 
 // Save executes the query and returns the updated VerificationCode entity.
 func (vcuo *VerificationCodeUpdateOne) Save(ctx context.Context) (*VerificationCode, error) {
-	vcuo.defaults()
 	return withHooks(ctx, vcuo.sqlSave, vcuo.mutation, vcuo.hooks)
 }
 
@@ -329,14 +335,6 @@ func (vcuo *VerificationCodeUpdateOne) Exec(ctx context.Context) error {
 func (vcuo *VerificationCodeUpdateOne) ExecX(ctx context.Context) {
 	if err := vcuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (vcuo *VerificationCodeUpdateOne) defaults() {
-	if _, ok := vcuo.mutation.UpdatedAt(); !ok {
-		v := verificationcode.UpdateDefaultUpdatedAt()
-		vcuo.mutation.SetUpdatedAt(v)
 	}
 }
 

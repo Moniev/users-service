@@ -33,25 +33,9 @@ func (vcc *VerificationCodeCreate) SetCreatedAt(t time.Time) *VerificationCodeCr
 	return vcc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (vcc *VerificationCodeCreate) SetNillableCreatedAt(t *time.Time) *VerificationCodeCreate {
-	if t != nil {
-		vcc.SetCreatedAt(*t)
-	}
-	return vcc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (vcc *VerificationCodeCreate) SetUpdatedAt(t time.Time) *VerificationCodeCreate {
 	vcc.mutation.SetUpdatedAt(t)
-	return vcc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (vcc *VerificationCodeCreate) SetNillableUpdatedAt(t *time.Time) *VerificationCodeCreate {
-	if t != nil {
-		vcc.SetUpdatedAt(*t)
-	}
 	return vcc
 }
 
@@ -93,7 +77,9 @@ func (vcc *VerificationCodeCreate) Mutation() *VerificationCodeMutation {
 
 // Save creates the VerificationCode in the database.
 func (vcc *VerificationCodeCreate) Save(ctx context.Context) (*VerificationCode, error) {
-	vcc.defaults()
+	if err := vcc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, vcc.sqlSave, vcc.mutation, vcc.hooks)
 }
 
@@ -120,19 +106,12 @@ func (vcc *VerificationCodeCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (vcc *VerificationCodeCreate) defaults() {
-	if _, ok := vcc.mutation.CreatedAt(); !ok {
-		v := verificationcode.DefaultCreatedAt()
-		vcc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := vcc.mutation.UpdatedAt(); !ok {
-		v := verificationcode.DefaultUpdatedAt()
-		vcc.mutation.SetUpdatedAt(v)
-	}
+func (vcc *VerificationCodeCreate) defaults() error {
 	if _, ok := vcc.mutation.ExpiresAt(); !ok {
 		v := verificationcode.DefaultExpiresAt
 		vcc.mutation.SetExpiresAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
