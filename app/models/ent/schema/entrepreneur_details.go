@@ -34,10 +34,10 @@ func (EntrepreneurDetails) Fields() []ent.Field {
 			Nillable().
 			Optional().
 			StructTag(`json:"description"`),
-		field.Text("offert").
+		field.Text("offer").
 			Nillable().
 			Optional().
-			StructTag(`json:"offert"`),
+			StructTag(`json:"offer"`),
 		field.Float("income").
 			Optional().
 			Positive().
@@ -62,10 +62,10 @@ func (EntrepreneurDetails) Fields() []ent.Field {
 		field.String("business_phone_number").
 			Optional().
 			StructTag(`json:"business_phone_number"`),
-		field.String("business_email").
+		field.String("business_mail").
 			Optional().
 			Nillable().
-			StructTag(`json:"business_email"`),
+			StructTag(`json:"business_mail"`),
 		field.String("website_address").
 			Optional().
 			Nillable().

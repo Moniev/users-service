@@ -101,6 +101,26 @@ func (r *Password) Valid() error {
 }
 
 type EntrepreneurDetails struct {
-	BusinessName string `json:"business_name"`
-	NIP          string `json:"nip"`
+	BusinessName             string   `json:"business_name"`
+	NIP                      string   `json:"nip"`
+	KRS                      string   `json:"krs"`
+	Description              string   `json:"description"`
+	Income                   float64  `json:"income"`
+	Costs                    float64  `json:"costs"`
+	FundingCapital           float64  `json:"funding_capital"`
+	Industry                 string   `json:"industry"`
+	ManagementCouncilMembers []string `json:"management_council_members"`
+	DecisionMakers           []string `json:"decision_makers"`
+	BusinessPhoneNumber      string   `json:"business_phone_number"`
+	BusinessMail             string   `json:"business_mail"`
+	WebsiteAddress           string   `json:"website_address"`
+	Device
+}
+
+func (r *EntrepreneurDetails) Valid() error {
+	if r.BusinessPhoneNumber != "" && !utils.CheckPhoneFormat(r.BusinessPhoneNumber) {
+		return errors.New("provided wrong format of phone number")
+	}
+
+	return r.Device.Valid()
 }
