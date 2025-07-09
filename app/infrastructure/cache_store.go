@@ -62,7 +62,7 @@ func NewCacheStore(
 			Int("actualLength", len(key)).
 			Msg("Key length does not match chacha20poly1305 requirements")
 	}
-	logger.Info().
+	logger.Debug().
 		Int("keyLength", len(key)).
 		Msg("Successfully initialized CacheStore with encryption key")
 	return &CacheStore{
@@ -130,7 +130,7 @@ func (s *CacheStore) Set(ctx context.Context, key string, payload []byte, ttl ti
 		return err
 	}
 
-	s.Logger.Info().Str("key", key).Dur("ttl", ttl).Msg("Successfully set encrypted value in cache")
+	s.Logger.Debug().Str("key", key).Dur("ttl", ttl).Msg("Successfully set encrypted value in cache")
 	return nil
 }
 
@@ -141,7 +141,7 @@ func (s *CacheStore) Del(ctx context.Context, key string) error {
 		s.Logger.Error().Err(err).Str("key", key).Msg("Failed to delete value from Redis")
 		return err
 	}
-	s.Logger.Info().Str("key", key).Msg("Successfully deleted value from cache")
+	s.Logger.Debug().Str("key", key).Msg("Successfully deleted value from cache")
 	return nil
 }
 
@@ -321,12 +321,14 @@ func (s *CacheStore) GenerateNonce() ([]byte, error) {
 }
 
 func (s *CacheStore) Ping(ctx context.Context) *redis.StatusCmd {
-	s.Logger.Info().Msg("Attempting to ping Redis client")
+	s.Logger.Debug().Msg("Attempting to ping Redis client")
 	cmd := s.RedisClient.Ping(ctx)
+
 	if cmd.Err() != nil {
 		s.Logger.Error().Err(cmd.Err()).Msg("Failed to ping Redis client")
 	} else {
-		s.Logger.Info().Str("status", cmd.Val()).Msg("Redis client ping successful")
+		s.Logger.Debug().Str("status", cmd.Val()).Msg("Redis client ping successful")
 	}
+
 	return cmd
 }

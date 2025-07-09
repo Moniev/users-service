@@ -76,6 +76,11 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 	var foundUser *ent.User
 	var err error
 
+	payload, _ := r.CacheStore.Get(ctx, "user:"+strconv.Itoa(ID))
+	if payload != nil {
+		return r.CacheStore.DecacheUser(payload)
+	}
+
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByID(ctx, tx, ID)
 		if err != nil {
@@ -87,6 +92,18 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("userID", ID).Msg("Transaction failed for GetUserByID")
 		return nil, err
+	}
+
+	payload, err = r.CacheStore.CacheUser(foundUser)
+	if err != nil {
+		return nil, errors.New("failed to cache user")
+	}
+
+	cacheKeys := utils.GetUserKeys(foundUser)
+	for _, key := range cacheKeys {
+		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
+			return nil, errors.New("failed to set user cache")
+		}
 	}
 
 	r.Logger.Info().Int("userID", foundUser.ID).Msg("Successfully retrieved user by ID")
