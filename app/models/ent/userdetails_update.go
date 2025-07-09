@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/userdetails"
@@ -114,6 +115,21 @@ func (udu *UserDetailsUpdate) SetOwner(u *User) *UserDetailsUpdate {
 	return udu.SetOwnerID(u.ID)
 }
 
+// AddLocationIDs adds the "locations" edge to the Location entity by IDs.
+func (udu *UserDetailsUpdate) AddLocationIDs(ids ...int) *UserDetailsUpdate {
+	udu.mutation.AddLocationIDs(ids...)
+	return udu
+}
+
+// AddLocations adds the "locations" edges to the Location entity.
+func (udu *UserDetailsUpdate) AddLocations(l ...*Location) *UserDetailsUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return udu.AddLocationIDs(ids...)
+}
+
 // Mutation returns the UserDetailsMutation object of the builder.
 func (udu *UserDetailsUpdate) Mutation() *UserDetailsMutation {
 	return udu.mutation
@@ -123,6 +139,27 @@ func (udu *UserDetailsUpdate) Mutation() *UserDetailsMutation {
 func (udu *UserDetailsUpdate) ClearOwner() *UserDetailsUpdate {
 	udu.mutation.ClearOwner()
 	return udu
+}
+
+// ClearLocations clears all "locations" edges to the Location entity.
+func (udu *UserDetailsUpdate) ClearLocations() *UserDetailsUpdate {
+	udu.mutation.ClearLocations()
+	return udu
+}
+
+// RemoveLocationIDs removes the "locations" edge to Location entities by IDs.
+func (udu *UserDetailsUpdate) RemoveLocationIDs(ids ...int) *UserDetailsUpdate {
+	udu.mutation.RemoveLocationIDs(ids...)
+	return udu
+}
+
+// RemoveLocations removes "locations" edges to Location entities.
+func (udu *UserDetailsUpdate) RemoveLocations(l ...*Location) *UserDetailsUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return udu.RemoveLocationIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -236,6 +273,51 @@ func (udu *UserDetailsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if udu.mutation.LocationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userdetails.LocationsTable,
+			Columns: []string{userdetails.LocationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := udu.mutation.RemovedLocationsIDs(); len(nodes) > 0 && !udu.mutation.LocationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userdetails.LocationsTable,
+			Columns: []string{userdetails.LocationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := udu.mutation.LocationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userdetails.LocationsTable,
+			Columns: []string{userdetails.LocationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, udu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userdetails.Label}
@@ -341,6 +423,21 @@ func (uduo *UserDetailsUpdateOne) SetOwner(u *User) *UserDetailsUpdateOne {
 	return uduo.SetOwnerID(u.ID)
 }
 
+// AddLocationIDs adds the "locations" edge to the Location entity by IDs.
+func (uduo *UserDetailsUpdateOne) AddLocationIDs(ids ...int) *UserDetailsUpdateOne {
+	uduo.mutation.AddLocationIDs(ids...)
+	return uduo
+}
+
+// AddLocations adds the "locations" edges to the Location entity.
+func (uduo *UserDetailsUpdateOne) AddLocations(l ...*Location) *UserDetailsUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return uduo.AddLocationIDs(ids...)
+}
+
 // Mutation returns the UserDetailsMutation object of the builder.
 func (uduo *UserDetailsUpdateOne) Mutation() *UserDetailsMutation {
 	return uduo.mutation
@@ -350,6 +447,27 @@ func (uduo *UserDetailsUpdateOne) Mutation() *UserDetailsMutation {
 func (uduo *UserDetailsUpdateOne) ClearOwner() *UserDetailsUpdateOne {
 	uduo.mutation.ClearOwner()
 	return uduo
+}
+
+// ClearLocations clears all "locations" edges to the Location entity.
+func (uduo *UserDetailsUpdateOne) ClearLocations() *UserDetailsUpdateOne {
+	uduo.mutation.ClearLocations()
+	return uduo
+}
+
+// RemoveLocationIDs removes the "locations" edge to Location entities by IDs.
+func (uduo *UserDetailsUpdateOne) RemoveLocationIDs(ids ...int) *UserDetailsUpdateOne {
+	uduo.mutation.RemoveLocationIDs(ids...)
+	return uduo
+}
+
+// RemoveLocations removes "locations" edges to Location entities.
+func (uduo *UserDetailsUpdateOne) RemoveLocations(l ...*Location) *UserDetailsUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return uduo.RemoveLocationIDs(ids...)
 }
 
 // Where appends a list predicates to the UserDetailsUpdate builder.
@@ -486,6 +604,51 @@ func (uduo *UserDetailsUpdateOne) sqlSave(ctx context.Context) (_node *UserDetai
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uduo.mutation.LocationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userdetails.LocationsTable,
+			Columns: []string{userdetails.LocationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uduo.mutation.RemovedLocationsIDs(); len(nodes) > 0 && !uduo.mutation.LocationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userdetails.LocationsTable,
+			Columns: []string{userdetails.LocationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uduo.mutation.LocationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userdetails.LocationsTable,
+			Columns: []string{userdetails.LocationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

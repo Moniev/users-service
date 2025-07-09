@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/userdetails"
 
@@ -98,6 +99,21 @@ func (udc *UserDetailsCreate) SetOwnerID(id int) *UserDetailsCreate {
 // SetOwner sets the "owner" edge to the User entity.
 func (udc *UserDetailsCreate) SetOwner(u *User) *UserDetailsCreate {
 	return udc.SetOwnerID(u.ID)
+}
+
+// AddLocationIDs adds the "locations" edge to the Location entity by IDs.
+func (udc *UserDetailsCreate) AddLocationIDs(ids ...int) *UserDetailsCreate {
+	udc.mutation.AddLocationIDs(ids...)
+	return udc
+}
+
+// AddLocations adds the "locations" edges to the Location entity.
+func (udc *UserDetailsCreate) AddLocations(l ...*Location) *UserDetailsCreate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return udc.AddLocationIDs(ids...)
 }
 
 // Mutation returns the UserDetailsMutation object of the builder.
@@ -231,6 +247,22 @@ func (udc *UserDetailsCreate) createSpec() (*UserDetails, *sqlgraph.CreateSpec) 
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.user_user_details = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := udc.mutation.LocationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userdetails.LocationsTable,
+			Columns: []string{userdetails.LocationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

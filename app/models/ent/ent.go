@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sync"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/rolepermission"
 	"users-service/app/models/ent/secondfactorcode"
@@ -84,6 +85,7 @@ func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			activationcode.Table:   activationcode.ValidColumn,
+			location.Table:         location.ValidColumn,
 			resetcode.Table:        resetcode.ValidColumn,
 			rolepermission.Table:   rolepermission.ValidColumn,
 			secondfactorcode.Table: secondfactorcode.ValidColumn,

@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// ActivationCode is the client for interacting with the ActivationCode builders.
 	ActivationCode *ActivationCodeClient
+	// Location is the client for interacting with the Location builders.
+	Location *LocationClient
 	// ResetCode is the client for interacting with the ResetCode builders.
 	ResetCode *ResetCodeClient
 	// RolePermission is the client for interacting with the RolePermission builders.
@@ -166,6 +168,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.ActivationCode = NewActivationCodeClient(tx.config)
+	tx.Location = NewLocationClient(tx.config)
 	tx.ResetCode = NewResetCodeClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.SecondFactorCode = NewSecondFactorCodeClient(tx.config)

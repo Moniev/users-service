@@ -31,6 +31,7 @@ func NewRedisClient(ctx context.Context, logger zerolog.Logger, settings *Settin
 		if err != nil {
 			logger.Fatal().Err(err).Str("path", settings.RedisSslCaPath).Msg("Failed to read Redis CA certificate")
 		}
+
 		caCertPool := x509.NewCertPool()
 		if !caCertPool.AppendCertsFromPEM(caCert) {
 			logger.Fatal().Str("path", settings.RedisSslCaPath).Msg("Failed to parse Redis CA certificate")

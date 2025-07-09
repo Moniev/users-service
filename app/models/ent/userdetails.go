@@ -39,9 +39,11 @@ type UserDetails struct {
 type UserDetailsEdges struct {
 	// Owner holds the value of the owner edge.
 	Owner *User `json:"owner"`
+	// Locations holds the value of the locations edge.
+	Locations []*Location `json:"locations"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -53,6 +55,15 @@ func (e UserDetailsEdges) OwnerOrErr() (*User, error) {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "owner"}
+}
+
+// LocationsOrErr returns the Locations value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserDetailsEdges) LocationsOrErr() ([]*Location, error) {
+	if e.loadedTypes[1] {
+		return e.Locations, nil
+	}
+	return nil, &NotLoadedError{edge: "locations"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -142,6 +153,11 @@ func (ud *UserDetails) Value(name string) (ent.Value, error) {
 // QueryOwner queries the "owner" edge of the UserDetails entity.
 func (ud *UserDetails) QueryOwner() *UserQuery {
 	return NewUserDetailsClient(ud.config).QueryOwner(ud)
+}
+
+// QueryLocations queries the "locations" edge of the UserDetails entity.
+func (ud *UserDetails) QueryLocations() *LocationQuery {
+	return NewUserDetailsClient(ud.config).QueryLocations(ud)
 }
 
 // Update returns a builder for updating this UserDetails.

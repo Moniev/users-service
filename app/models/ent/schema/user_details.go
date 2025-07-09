@@ -44,5 +44,7 @@ func (UserDetails) Edges() []ent.Edge {
 			Unique().
 			Required().
 			StructTag(`json:"owner"`),
+		edge.To("locations", Location.Type).
+			StructTag(`json:"locations"`),
 	}
 }

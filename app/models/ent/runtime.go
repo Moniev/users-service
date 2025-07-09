@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/rolepermission"
 	"users-service/app/models/ent/schema"
@@ -46,6 +47,32 @@ func init() {
 	activationcodeDescExpiresAt := activationcodeFields[5].Descriptor()
 	// activationcode.DefaultExpiresAt holds the default value on creation for the expires_at field.
 	activationcode.DefaultExpiresAt = activationcodeDescExpiresAt.Default.(time.Time)
+	locationFields := schema.Location{}.Fields()
+	_ = locationFields
+	// locationDescCountry is the schema descriptor for country field.
+	locationDescCountry := locationFields[1].Descriptor()
+	// location.CountryValidator is a validator for the "country" field. It is called by the builders before save.
+	location.CountryValidator = locationDescCountry.Validators[0].(func(string) error)
+	// locationDescProvince is the schema descriptor for province field.
+	locationDescProvince := locationFields[2].Descriptor()
+	// location.ProvinceValidator is a validator for the "province" field. It is called by the builders before save.
+	location.ProvinceValidator = locationDescProvince.Validators[0].(func(string) error)
+	// locationDescCity is the schema descriptor for city field.
+	locationDescCity := locationFields[3].Descriptor()
+	// location.CityValidator is a validator for the "city" field. It is called by the builders before save.
+	location.CityValidator = locationDescCity.Validators[0].(func(string) error)
+	// locationDescPostalCode is the schema descriptor for postal_code field.
+	locationDescPostalCode := locationFields[4].Descriptor()
+	// location.PostalCodeValidator is a validator for the "postal_code" field. It is called by the builders before save.
+	location.PostalCodeValidator = locationDescPostalCode.Validators[0].(func(string) error)
+	// locationDescBuildingNumber is the schema descriptor for building_number field.
+	locationDescBuildingNumber := locationFields[6].Descriptor()
+	// location.BuildingNumberValidator is a validator for the "building_number" field. It is called by the builders before save.
+	location.BuildingNumberValidator = locationDescBuildingNumber.Validators[0].(func(int) error)
+	// locationDescApartmentNumber is the schema descriptor for apartment_number field.
+	locationDescApartmentNumber := locationFields[7].Descriptor()
+	// location.ApartmentNumberValidator is a validator for the "apartment_number" field. It is called by the builders before save.
+	location.ApartmentNumberValidator = locationDescApartmentNumber.Validators[0].(func(int) error)
 	resetcodeFields := schema.ResetCode{}.Fields()
 	_ = resetcodeFields
 	// resetcodeDescCode is the schema descriptor for code field.

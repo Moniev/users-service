@@ -32,6 +32,32 @@ var (
 			},
 		},
 	}
+	// LocationsColumns holds the columns for the "locations" table.
+	LocationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "country", Type: field.TypeString},
+		{Name: "province", Type: field.TypeString},
+		{Name: "city", Type: field.TypeString},
+		{Name: "postal_code", Type: field.TypeString},
+		{Name: "street", Type: field.TypeString, Nullable: true},
+		{Name: "building_number", Type: field.TypeInt},
+		{Name: "apartment_number", Type: field.TypeInt},
+		{Name: "user_details_locations", Type: field.TypeInt},
+	}
+	// LocationsTable holds the schema information for the "locations" table.
+	LocationsTable = &schema.Table{
+		Name:       "locations",
+		Columns:    LocationsColumns,
+		PrimaryKey: []*schema.Column{LocationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "locations_user_details_locations",
+				Columns:    []*schema.Column{LocationsColumns[8]},
+				RefColumns: []*schema.Column{UserDetailsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// ResetCodesColumns holds the columns for the "reset_codes" table.
 	ResetCodesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -348,6 +374,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivationCodesTable,
+		LocationsTable,
 		ResetCodesTable,
 		RolePermissionsTable,
 		SecondFactorCodesTable,
@@ -366,6 +393,7 @@ var (
 
 func init() {
 	ActivationCodesTable.ForeignKeys[0].RefTable = UsersTable
+	LocationsTable.ForeignKeys[0].RefTable = UserDetailsTable
 	ResetCodesTable.ForeignKeys[0].RefTable = UsersTable
 	SecondFactorCodesTable.ForeignKeys[0].RefTable = UsersTable
 	UserDetailsTable.ForeignKeys[0].RefTable = UsersTable

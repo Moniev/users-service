@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/rolepermission"
@@ -35,6 +36,7 @@ const (
 
 	// Node types.
 	TypeActivationCode   = "ActivationCode"
+	TypeLocation         = "Location"
 	TypeResetCode        = "ResetCode"
 	TypeRolePermission   = "RolePermission"
 	TypeSecondFactorCode = "SecondFactorCode"
@@ -660,6 +662,820 @@ func (m *ActivationCodeMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ActivationCode edge %s", name)
+}
+
+// LocationMutation represents an operation that mutates the Location nodes in the graph.
+type LocationMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	country             *string
+	province            *string
+	city                *string
+	postal_code         *string
+	street              *string
+	building_number     *int
+	addbuilding_number  *int
+	apartment_number    *int
+	addapartment_number *int
+	clearedFields       map[string]struct{}
+	user_details        *int
+	cleareduser_details bool
+	done                bool
+	oldValue            func(context.Context) (*Location, error)
+	predicates          []predicate.Location
+}
+
+var _ ent.Mutation = (*LocationMutation)(nil)
+
+// locationOption allows management of the mutation configuration using functional options.
+type locationOption func(*LocationMutation)
+
+// newLocationMutation creates new mutation for the Location entity.
+func newLocationMutation(c config, op Op, opts ...locationOption) *LocationMutation {
+	m := &LocationMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeLocation,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withLocationID sets the ID field of the mutation.
+func withLocationID(id int) locationOption {
+	return func(m *LocationMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Location
+		)
+		m.oldValue = func(ctx context.Context) (*Location, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Location.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withLocation sets the old Location of the mutation.
+func withLocation(node *Location) locationOption {
+	return func(m *LocationMutation) {
+		m.oldValue = func(context.Context) (*Location, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m LocationMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m LocationMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Location entities.
+func (m *LocationMutation) SetID(id int) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *LocationMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *LocationMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Location.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCountry sets the "country" field.
+func (m *LocationMutation) SetCountry(s string) {
+	m.country = &s
+}
+
+// Country returns the value of the "country" field in the mutation.
+func (m *LocationMutation) Country() (r string, exists bool) {
+	v := m.country
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountry returns the old "country" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldCountry(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountry: %w", err)
+	}
+	return oldValue.Country, nil
+}
+
+// ResetCountry resets all changes to the "country" field.
+func (m *LocationMutation) ResetCountry() {
+	m.country = nil
+}
+
+// SetProvince sets the "province" field.
+func (m *LocationMutation) SetProvince(s string) {
+	m.province = &s
+}
+
+// Province returns the value of the "province" field in the mutation.
+func (m *LocationMutation) Province() (r string, exists bool) {
+	v := m.province
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProvince returns the old "province" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldProvince(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProvince is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProvince requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProvince: %w", err)
+	}
+	return oldValue.Province, nil
+}
+
+// ResetProvince resets all changes to the "province" field.
+func (m *LocationMutation) ResetProvince() {
+	m.province = nil
+}
+
+// SetCity sets the "city" field.
+func (m *LocationMutation) SetCity(s string) {
+	m.city = &s
+}
+
+// City returns the value of the "city" field in the mutation.
+func (m *LocationMutation) City() (r string, exists bool) {
+	v := m.city
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCity returns the old "city" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldCity(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCity: %w", err)
+	}
+	return oldValue.City, nil
+}
+
+// ResetCity resets all changes to the "city" field.
+func (m *LocationMutation) ResetCity() {
+	m.city = nil
+}
+
+// SetPostalCode sets the "postal_code" field.
+func (m *LocationMutation) SetPostalCode(s string) {
+	m.postal_code = &s
+}
+
+// PostalCode returns the value of the "postal_code" field in the mutation.
+func (m *LocationMutation) PostalCode() (r string, exists bool) {
+	v := m.postal_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostalCode returns the old "postal_code" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldPostalCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostalCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostalCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostalCode: %w", err)
+	}
+	return oldValue.PostalCode, nil
+}
+
+// ResetPostalCode resets all changes to the "postal_code" field.
+func (m *LocationMutation) ResetPostalCode() {
+	m.postal_code = nil
+}
+
+// SetStreet sets the "street" field.
+func (m *LocationMutation) SetStreet(s string) {
+	m.street = &s
+}
+
+// Street returns the value of the "street" field in the mutation.
+func (m *LocationMutation) Street() (r string, exists bool) {
+	v := m.street
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStreet returns the old "street" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldStreet(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStreet is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStreet requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStreet: %w", err)
+	}
+	return oldValue.Street, nil
+}
+
+// ClearStreet clears the value of the "street" field.
+func (m *LocationMutation) ClearStreet() {
+	m.street = nil
+	m.clearedFields[location.FieldStreet] = struct{}{}
+}
+
+// StreetCleared returns if the "street" field was cleared in this mutation.
+func (m *LocationMutation) StreetCleared() bool {
+	_, ok := m.clearedFields[location.FieldStreet]
+	return ok
+}
+
+// ResetStreet resets all changes to the "street" field.
+func (m *LocationMutation) ResetStreet() {
+	m.street = nil
+	delete(m.clearedFields, location.FieldStreet)
+}
+
+// SetBuildingNumber sets the "building_number" field.
+func (m *LocationMutation) SetBuildingNumber(i int) {
+	m.building_number = &i
+	m.addbuilding_number = nil
+}
+
+// BuildingNumber returns the value of the "building_number" field in the mutation.
+func (m *LocationMutation) BuildingNumber() (r int, exists bool) {
+	v := m.building_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBuildingNumber returns the old "building_number" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldBuildingNumber(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBuildingNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBuildingNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBuildingNumber: %w", err)
+	}
+	return oldValue.BuildingNumber, nil
+}
+
+// AddBuildingNumber adds i to the "building_number" field.
+func (m *LocationMutation) AddBuildingNumber(i int) {
+	if m.addbuilding_number != nil {
+		*m.addbuilding_number += i
+	} else {
+		m.addbuilding_number = &i
+	}
+}
+
+// AddedBuildingNumber returns the value that was added to the "building_number" field in this mutation.
+func (m *LocationMutation) AddedBuildingNumber() (r int, exists bool) {
+	v := m.addbuilding_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBuildingNumber resets all changes to the "building_number" field.
+func (m *LocationMutation) ResetBuildingNumber() {
+	m.building_number = nil
+	m.addbuilding_number = nil
+}
+
+// SetApartmentNumber sets the "apartment_number" field.
+func (m *LocationMutation) SetApartmentNumber(i int) {
+	m.apartment_number = &i
+	m.addapartment_number = nil
+}
+
+// ApartmentNumber returns the value of the "apartment_number" field in the mutation.
+func (m *LocationMutation) ApartmentNumber() (r int, exists bool) {
+	v := m.apartment_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApartmentNumber returns the old "apartment_number" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldApartmentNumber(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApartmentNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApartmentNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApartmentNumber: %w", err)
+	}
+	return oldValue.ApartmentNumber, nil
+}
+
+// AddApartmentNumber adds i to the "apartment_number" field.
+func (m *LocationMutation) AddApartmentNumber(i int) {
+	if m.addapartment_number != nil {
+		*m.addapartment_number += i
+	} else {
+		m.addapartment_number = &i
+	}
+}
+
+// AddedApartmentNumber returns the value that was added to the "apartment_number" field in this mutation.
+func (m *LocationMutation) AddedApartmentNumber() (r int, exists bool) {
+	v := m.addapartment_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetApartmentNumber resets all changes to the "apartment_number" field.
+func (m *LocationMutation) ResetApartmentNumber() {
+	m.apartment_number = nil
+	m.addapartment_number = nil
+}
+
+// SetUserDetailsID sets the "user_details" edge to the UserDetails entity by id.
+func (m *LocationMutation) SetUserDetailsID(id int) {
+	m.user_details = &id
+}
+
+// ClearUserDetails clears the "user_details" edge to the UserDetails entity.
+func (m *LocationMutation) ClearUserDetails() {
+	m.cleareduser_details = true
+}
+
+// UserDetailsCleared reports if the "user_details" edge to the UserDetails entity was cleared.
+func (m *LocationMutation) UserDetailsCleared() bool {
+	return m.cleareduser_details
+}
+
+// UserDetailsID returns the "user_details" edge ID in the mutation.
+func (m *LocationMutation) UserDetailsID() (id int, exists bool) {
+	if m.user_details != nil {
+		return *m.user_details, true
+	}
+	return
+}
+
+// UserDetailsIDs returns the "user_details" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserDetailsID instead. It exists only for internal usage by the builders.
+func (m *LocationMutation) UserDetailsIDs() (ids []int) {
+	if id := m.user_details; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUserDetails resets all changes to the "user_details" edge.
+func (m *LocationMutation) ResetUserDetails() {
+	m.user_details = nil
+	m.cleareduser_details = false
+}
+
+// Where appends a list predicates to the LocationMutation builder.
+func (m *LocationMutation) Where(ps ...predicate.Location) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the LocationMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *LocationMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Location, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *LocationMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *LocationMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Location).
+func (m *LocationMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *LocationMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.country != nil {
+		fields = append(fields, location.FieldCountry)
+	}
+	if m.province != nil {
+		fields = append(fields, location.FieldProvince)
+	}
+	if m.city != nil {
+		fields = append(fields, location.FieldCity)
+	}
+	if m.postal_code != nil {
+		fields = append(fields, location.FieldPostalCode)
+	}
+	if m.street != nil {
+		fields = append(fields, location.FieldStreet)
+	}
+	if m.building_number != nil {
+		fields = append(fields, location.FieldBuildingNumber)
+	}
+	if m.apartment_number != nil {
+		fields = append(fields, location.FieldApartmentNumber)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *LocationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case location.FieldCountry:
+		return m.Country()
+	case location.FieldProvince:
+		return m.Province()
+	case location.FieldCity:
+		return m.City()
+	case location.FieldPostalCode:
+		return m.PostalCode()
+	case location.FieldStreet:
+		return m.Street()
+	case location.FieldBuildingNumber:
+		return m.BuildingNumber()
+	case location.FieldApartmentNumber:
+		return m.ApartmentNumber()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *LocationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case location.FieldCountry:
+		return m.OldCountry(ctx)
+	case location.FieldProvince:
+		return m.OldProvince(ctx)
+	case location.FieldCity:
+		return m.OldCity(ctx)
+	case location.FieldPostalCode:
+		return m.OldPostalCode(ctx)
+	case location.FieldStreet:
+		return m.OldStreet(ctx)
+	case location.FieldBuildingNumber:
+		return m.OldBuildingNumber(ctx)
+	case location.FieldApartmentNumber:
+		return m.OldApartmentNumber(ctx)
+	}
+	return nil, fmt.Errorf("unknown Location field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LocationMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case location.FieldCountry:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountry(v)
+		return nil
+	case location.FieldProvince:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProvince(v)
+		return nil
+	case location.FieldCity:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCity(v)
+		return nil
+	case location.FieldPostalCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostalCode(v)
+		return nil
+	case location.FieldStreet:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStreet(v)
+		return nil
+	case location.FieldBuildingNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBuildingNumber(v)
+		return nil
+	case location.FieldApartmentNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApartmentNumber(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Location field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *LocationMutation) AddedFields() []string {
+	var fields []string
+	if m.addbuilding_number != nil {
+		fields = append(fields, location.FieldBuildingNumber)
+	}
+	if m.addapartment_number != nil {
+		fields = append(fields, location.FieldApartmentNumber)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *LocationMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case location.FieldBuildingNumber:
+		return m.AddedBuildingNumber()
+	case location.FieldApartmentNumber:
+		return m.AddedApartmentNumber()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LocationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case location.FieldBuildingNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBuildingNumber(v)
+		return nil
+	case location.FieldApartmentNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddApartmentNumber(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Location numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *LocationMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(location.FieldStreet) {
+		fields = append(fields, location.FieldStreet)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *LocationMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *LocationMutation) ClearField(name string) error {
+	switch name {
+	case location.FieldStreet:
+		m.ClearStreet()
+		return nil
+	}
+	return fmt.Errorf("unknown Location nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *LocationMutation) ResetField(name string) error {
+	switch name {
+	case location.FieldCountry:
+		m.ResetCountry()
+		return nil
+	case location.FieldProvince:
+		m.ResetProvince()
+		return nil
+	case location.FieldCity:
+		m.ResetCity()
+		return nil
+	case location.FieldPostalCode:
+		m.ResetPostalCode()
+		return nil
+	case location.FieldStreet:
+		m.ResetStreet()
+		return nil
+	case location.FieldBuildingNumber:
+		m.ResetBuildingNumber()
+		return nil
+	case location.FieldApartmentNumber:
+		m.ResetApartmentNumber()
+		return nil
+	}
+	return fmt.Errorf("unknown Location field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *LocationMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user_details != nil {
+		edges = append(edges, location.EdgeUserDetails)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *LocationMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case location.EdgeUserDetails:
+		if id := m.user_details; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *LocationMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *LocationMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *LocationMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser_details {
+		edges = append(edges, location.EdgeUserDetails)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *LocationMutation) EdgeCleared(name string) bool {
+	switch name {
+	case location.EdgeUserDetails:
+		return m.cleareduser_details
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *LocationMutation) ClearEdge(name string) error {
+	switch name {
+	case location.EdgeUserDetails:
+		m.ClearUserDetails()
+		return nil
+	}
+	return fmt.Errorf("unknown Location unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *LocationMutation) ResetEdge(name string) error {
+	switch name {
+	case location.EdgeUserDetails:
+		m.ResetUserDetails()
+		return nil
+	}
+	return fmt.Errorf("unknown Location edge %s", name)
 }
 
 // ResetCodeMutation represents an operation that mutates the ResetCode nodes in the graph.
@@ -4899,20 +5715,23 @@ func (m *UserActionMutation) ResetEdge(name string) error {
 // UserDetailsMutation represents an operation that mutates the UserDetails nodes in the graph.
 type UserDetailsMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	first_name    *string
-	last_name     *string
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	owner         *int
-	clearedowner  bool
-	done          bool
-	oldValue      func(context.Context) (*UserDetails, error)
-	predicates    []predicate.UserDetails
+	op               Op
+	typ              string
+	id               *int
+	name             *string
+	first_name       *string
+	last_name        *string
+	created_at       *time.Time
+	updated_at       *time.Time
+	clearedFields    map[string]struct{}
+	owner            *int
+	clearedowner     bool
+	locations        map[int]struct{}
+	removedlocations map[int]struct{}
+	clearedlocations bool
+	done             bool
+	oldValue         func(context.Context) (*UserDetails, error)
+	predicates       []predicate.UserDetails
 }
 
 var _ ent.Mutation = (*UserDetailsMutation)(nil)
@@ -5264,6 +6083,60 @@ func (m *UserDetailsMutation) ResetOwner() {
 	m.clearedowner = false
 }
 
+// AddLocationIDs adds the "locations" edge to the Location entity by ids.
+func (m *UserDetailsMutation) AddLocationIDs(ids ...int) {
+	if m.locations == nil {
+		m.locations = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.locations[ids[i]] = struct{}{}
+	}
+}
+
+// ClearLocations clears the "locations" edge to the Location entity.
+func (m *UserDetailsMutation) ClearLocations() {
+	m.clearedlocations = true
+}
+
+// LocationsCleared reports if the "locations" edge to the Location entity was cleared.
+func (m *UserDetailsMutation) LocationsCleared() bool {
+	return m.clearedlocations
+}
+
+// RemoveLocationIDs removes the "locations" edge to the Location entity by IDs.
+func (m *UserDetailsMutation) RemoveLocationIDs(ids ...int) {
+	if m.removedlocations == nil {
+		m.removedlocations = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.locations, ids[i])
+		m.removedlocations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLocations returns the removed IDs of the "locations" edge to the Location entity.
+func (m *UserDetailsMutation) RemovedLocationsIDs() (ids []int) {
+	for id := range m.removedlocations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// LocationsIDs returns the "locations" edge IDs in the mutation.
+func (m *UserDetailsMutation) LocationsIDs() (ids []int) {
+	for id := range m.locations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLocations resets all changes to the "locations" edge.
+func (m *UserDetailsMutation) ResetLocations() {
+	m.locations = nil
+	m.clearedlocations = false
+	m.removedlocations = nil
+}
+
 // Where appends a list predicates to the UserDetailsMutation builder.
 func (m *UserDetailsMutation) Where(ps ...predicate.UserDetails) {
 	m.predicates = append(m.predicates, ps...)
@@ -5480,9 +6353,12 @@ func (m *UserDetailsMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserDetailsMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.owner != nil {
 		edges = append(edges, userdetails.EdgeOwner)
+	}
+	if m.locations != nil {
+		edges = append(edges, userdetails.EdgeLocations)
 	}
 	return edges
 }
@@ -5495,27 +6371,47 @@ func (m *UserDetailsMutation) AddedIDs(name string) []ent.Value {
 		if id := m.owner; id != nil {
 			return []ent.Value{*id}
 		}
+	case userdetails.EdgeLocations:
+		ids := make([]ent.Value, 0, len(m.locations))
+		for id := range m.locations {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserDetailsMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.removedlocations != nil {
+		edges = append(edges, userdetails.EdgeLocations)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserDetailsMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case userdetails.EdgeLocations:
+		ids := make([]ent.Value, 0, len(m.removedlocations))
+		for id := range m.removedlocations {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserDetailsMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedowner {
 		edges = append(edges, userdetails.EdgeOwner)
+	}
+	if m.clearedlocations {
+		edges = append(edges, userdetails.EdgeLocations)
 	}
 	return edges
 }
@@ -5526,6 +6422,8 @@ func (m *UserDetailsMutation) EdgeCleared(name string) bool {
 	switch name {
 	case userdetails.EdgeOwner:
 		return m.clearedowner
+	case userdetails.EdgeLocations:
+		return m.clearedlocations
 	}
 	return false
 }
@@ -5547,6 +6445,9 @@ func (m *UserDetailsMutation) ResetEdge(name string) error {
 	switch name {
 	case userdetails.EdgeOwner:
 		m.ResetOwner()
+		return nil
+	case userdetails.EdgeLocations:
+		m.ResetLocations()
 		return nil
 	}
 	return fmt.Errorf("unknown UserDetails edge %s", name)

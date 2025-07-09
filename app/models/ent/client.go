@@ -12,6 +12,7 @@ import (
 	"users-service/app/models/ent/migrate"
 
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/rolepermission"
 	"users-service/app/models/ent/secondfactorcode"
@@ -36,6 +37,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// ActivationCode is the client for interacting with the ActivationCode builders.
 	ActivationCode *ActivationCodeClient
+	// Location is the client for interacting with the Location builders.
+	Location *LocationClient
 	// ResetCode is the client for interacting with the ResetCode builders.
 	ResetCode *ResetCodeClient
 	// RolePermission is the client for interacting with the RolePermission builders.
@@ -68,6 +71,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.ActivationCode = NewActivationCodeClient(c.config)
+	c.Location = NewLocationClient(c.config)
 	c.ResetCode = NewResetCodeClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.SecondFactorCode = NewSecondFactorCodeClient(c.config)
@@ -171,6 +175,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:              ctx,
 		config:           cfg,
 		ActivationCode:   NewActivationCodeClient(cfg),
+		Location:         NewLocationClient(cfg),
 		ResetCode:        NewResetCodeClient(cfg),
 		RolePermission:   NewRolePermissionClient(cfg),
 		SecondFactorCode: NewSecondFactorCodeClient(cfg),
@@ -201,6 +206,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:              ctx,
 		config:           cfg,
 		ActivationCode:   NewActivationCodeClient(cfg),
+		Location:         NewLocationClient(cfg),
 		ResetCode:        NewResetCodeClient(cfg),
 		RolePermission:   NewRolePermissionClient(cfg),
 		SecondFactorCode: NewSecondFactorCodeClient(cfg),
@@ -240,8 +246,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ActivationCode, c.ResetCode, c.RolePermission, c.SecondFactorCode, c.User,
-		c.UserAction, c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings,
+		c.ActivationCode, c.Location, c.ResetCode, c.RolePermission, c.SecondFactorCode,
+		c.User, c.UserAction, c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings,
 		c.VerificationCode,
 	} {
 		n.Use(hooks...)
@@ -252,8 +258,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ActivationCode, c.ResetCode, c.RolePermission, c.SecondFactorCode, c.User,
-		c.UserAction, c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings,
+		c.ActivationCode, c.Location, c.ResetCode, c.RolePermission, c.SecondFactorCode,
+		c.User, c.UserAction, c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings,
 		c.VerificationCode,
 	} {
 		n.Intercept(interceptors...)
@@ -265,6 +271,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *ActivationCodeMutation:
 		return c.ActivationCode.mutate(ctx, m)
+	case *LocationMutation:
+		return c.Location.mutate(ctx, m)
 	case *ResetCodeMutation:
 		return c.ResetCode.mutate(ctx, m)
 	case *RolePermissionMutation:
@@ -436,6 +444,155 @@ func (c *ActivationCodeClient) mutate(ctx context.Context, m *ActivationCodeMuta
 		return (&ActivationCodeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ActivationCode mutation op: %q", m.Op())
+	}
+}
+
+// LocationClient is a client for the Location schema.
+type LocationClient struct {
+	config
+}
+
+// NewLocationClient returns a client for the Location from the given config.
+func NewLocationClient(c config) *LocationClient {
+	return &LocationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `location.Hooks(f(g(h())))`.
+func (c *LocationClient) Use(hooks ...Hook) {
+	c.hooks.Location = append(c.hooks.Location, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `location.Intercept(f(g(h())))`.
+func (c *LocationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Location = append(c.inters.Location, interceptors...)
+}
+
+// Create returns a builder for creating a Location entity.
+func (c *LocationClient) Create() *LocationCreate {
+	mutation := newLocationMutation(c.config, OpCreate)
+	return &LocationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Location entities.
+func (c *LocationClient) CreateBulk(builders ...*LocationCreate) *LocationCreateBulk {
+	return &LocationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LocationClient) MapCreateBulk(slice any, setFunc func(*LocationCreate, int)) *LocationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LocationCreateBulk{err: fmt.Errorf("calling to LocationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LocationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LocationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Location.
+func (c *LocationClient) Update() *LocationUpdate {
+	mutation := newLocationMutation(c.config, OpUpdate)
+	return &LocationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LocationClient) UpdateOne(l *Location) *LocationUpdateOne {
+	mutation := newLocationMutation(c.config, OpUpdateOne, withLocation(l))
+	return &LocationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LocationClient) UpdateOneID(id int) *LocationUpdateOne {
+	mutation := newLocationMutation(c.config, OpUpdateOne, withLocationID(id))
+	return &LocationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Location.
+func (c *LocationClient) Delete() *LocationDelete {
+	mutation := newLocationMutation(c.config, OpDelete)
+	return &LocationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LocationClient) DeleteOne(l *Location) *LocationDeleteOne {
+	return c.DeleteOneID(l.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LocationClient) DeleteOneID(id int) *LocationDeleteOne {
+	builder := c.Delete().Where(location.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LocationDeleteOne{builder}
+}
+
+// Query returns a query builder for Location.
+func (c *LocationClient) Query() *LocationQuery {
+	return &LocationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLocation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Location entity by its id.
+func (c *LocationClient) Get(ctx context.Context, id int) (*Location, error) {
+	return c.Query().Where(location.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LocationClient) GetX(ctx context.Context, id int) *Location {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUserDetails queries the user_details edge of a Location.
+func (c *LocationClient) QueryUserDetails(l *Location) *UserDetailsQuery {
+	query := (&UserDetailsClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := l.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(location.Table, location.FieldID, id),
+			sqlgraph.To(userdetails.Table, userdetails.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, location.UserDetailsTable, location.UserDetailsColumn),
+		)
+		fromV = sqlgraph.Neighbors(l.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LocationClient) Hooks() []Hook {
+	return c.hooks.Location
+}
+
+// Interceptors returns the client interceptors.
+func (c *LocationClient) Interceptors() []Interceptor {
+	return c.inters.Location
+}
+
+func (c *LocationClient) mutate(ctx context.Context, m *LocationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LocationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LocationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LocationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LocationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Location mutation op: %q", m.Op())
 	}
 }
 
@@ -1452,6 +1609,22 @@ func (c *UserDetailsClient) QueryOwner(ud *UserDetails) *UserQuery {
 	return query
 }
 
+// QueryLocations queries the locations edge of a UserDetails.
+func (c *UserDetailsClient) QueryLocations(ud *UserDetails) *LocationQuery {
+	query := (&LocationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ud.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userdetails.Table, userdetails.FieldID, id),
+			sqlgraph.To(location.Table, location.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userdetails.LocationsTable, userdetails.LocationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ud.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserDetailsClient) Hooks() []Hook {
 	return c.hooks.UserDetails
@@ -2156,12 +2329,13 @@ func (c *VerificationCodeClient) mutate(ctx context.Context, m *VerificationCode
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ActivationCode, ResetCode, RolePermission, SecondFactorCode, User, UserAction,
-		UserDetails, UserDevice, UserRole, UserSettings, VerificationCode []ent.Hook
+		ActivationCode, Location, ResetCode, RolePermission, SecondFactorCode, User,
+		UserAction, UserDetails, UserDevice, UserRole, UserSettings,
+		VerificationCode []ent.Hook
 	}
 	inters struct {
-		ActivationCode, ResetCode, RolePermission, SecondFactorCode, User, UserAction,
-		UserDetails, UserDevice, UserRole, UserSettings,
+		ActivationCode, Location, ResetCode, RolePermission, SecondFactorCode, User,
+		UserAction, UserDetails, UserDevice, UserRole, UserSettings,
 		VerificationCode []ent.Interceptor
 	}
 )

@@ -1,5 +1,45 @@
 basePath: /api/v1
 definitions:
+  ent.Location:
+    properties:
+      apartment_number:
+        description: ApartmentNumber holds the value of the "apartment_number" field.
+        type: integer
+      building_number:
+        description: BuildingNumber holds the value of the "building_number" field.
+        type: integer
+      city:
+        description: City holds the value of the "city" field.
+        type: string
+      country:
+        description: Country holds the value of the "country" field.
+        type: string
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.LocationEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the LocationQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: integer
+      postal_code:
+        description: PostalCode holds the value of the "postal_code" field.
+        type: string
+      province:
+        description: Province holds the value of the "province" field.
+        type: string
+      street:
+        description: Street holds the value of the "street" field.
+        type: string
+    type: object
+  ent.LocationEdges:
+    properties:
+      user_details:
+        allOf:
+        - $ref: '#/definitions/ent.UserDetails'
+        description: UserDetails holds the value of the user_details edge.
+    type: object
   ent.RolePermission:
     properties:
       add:
@@ -159,6 +199,11 @@ definitions:
     type: object
   ent.UserDetailsEdges:
     properties:
+      locations:
+        description: Locations holds the value of the locations edge.
+        items:
+          $ref: '#/definitions/ent.Location'
+        type: array
       owner:
         allOf:
         - $ref: '#/definitions/ent.User'

@@ -20,6 +20,18 @@ func (f ActivationCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActivationCodeMutation", m)
 }
 
+// The LocationFunc type is an adapter to allow the use of ordinary
+// function as Location mutator.
+type LocationFunc func(context.Context, *ent.LocationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LocationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.LocationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LocationMutation", m)
+}
+
 // The ResetCodeFunc type is an adapter to allow the use of ordinary
 // function as ResetCode mutator.
 type ResetCodeFunc func(context.Context, *ent.ResetCodeMutation) (ent.Value, error)
