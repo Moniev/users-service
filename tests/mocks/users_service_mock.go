@@ -55,5 +55,10 @@ func (m *MockUsersService) UpdateEntrepreneurDetails(
 	userID int,
 	req *requests.EntrepreneurDetails,
 ) (*ent.User, error) {
-	return nil, nil
+	args := m.Called(ctx, userID, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*ent.User), args.Error(1)
 }
