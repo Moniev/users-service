@@ -115,8 +115,8 @@ func NewApp(settings *Settings) *gin.Engine {
 		Title:       "Factory Chainline, Users Service API",
 		Description: "Main users management microservice responsible for use related operations.",
 		SpecFile:    "./swagger.json",
-		SpecPath:    "/swagger.json",
-		DocsPath:    "/docs",
+		SpecPath:    "/docs/swagger.json",
+		DocsPath:    "/redoc",
 	}
 
 	router.
