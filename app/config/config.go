@@ -112,10 +112,10 @@ func NewApp(settings *Settings) *gin.Engine {
 	router := gin.Default()
 
 	doc := redoc.Redoc{
-		Title:       "Example API",
-		Description: "Example API Description",
-		SpecFile:    "./openapi.json",
-		SpecPath:    "/openapi.json",
+		Title:       "Factory Chainline, Users Service API",
+		Description: "Main users management microservice responsible for use related operations.",
+		SpecFile:    "./swagger.json",
+		SpecPath:    "/swagger.json",
 		DocsPath:    "/docs",
 	}
 

@@ -1,5 +1,78 @@
-basePath: /api/v1
+basePath: /
 definitions:
+  ent.EntrepreneurDetails:
+    properties:
+      business_email:
+        description: BusinessEmail holds the value of the "business_email" field.
+        type: string
+      business_name:
+        description: BusinessName holds the value of the "business_name" field.
+        type: string
+      business_phone_number:
+        description: BusinessPhoneNumber holds the value of the "business_phone_number"
+          field.
+        type: string
+      costs:
+        description: Costs holds the value of the "costs" field.
+        type: number
+      created_at:
+        description: CreatedAt holds the value of the "created_at" field.
+        type: string
+      decision_makers:
+        description: DecisionMakers holds the value of the "decision_makers" field.
+        items:
+          type: string
+        type: array
+      description:
+        description: Description holds the value of the "description" field.
+        type: string
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.EntrepreneurDetailsEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the EntrepreneurDetailsQuery when eager-loading is set.
+      funding_capital:
+        description: FundingCapital holds the value of the "funding_capital" field.
+        type: number
+      id:
+        description: ID of the ent.
+        type: integer
+      income:
+        description: Income holds the value of the "income" field.
+        type: number
+      industry:
+        description: Industry holds the value of the "industry" field.
+        type: string
+      krs:
+        description: Krs holds the value of the "krs" field.
+        type: string
+      management_council_members:
+        description: ManagementCouncilMembers holds the value of the "management_council_members"
+          field.
+        items:
+          type: string
+        type: array
+      nip:
+        description: Nip holds the value of the "nip" field.
+        type: string
+      offert:
+        description: Offert holds the value of the "offert" field.
+        type: string
+      updated_at:
+        description: UpdatedAt holds the value of the "updated_at" field.
+        type: string
+      website_address:
+        description: WebsiteAddress holds the value of the "website_address" field.
+        type: string
+    type: object
+  ent.EntrepreneurDetailsEdges:
+    properties:
+      user_details:
+        allOf:
+        - $ref: '#/definitions/ent.UserDetails'
+        description: UserDetails holds the value of the user_details edge.
+    type: object
   ent.Location:
     properties:
       apartment_number:
@@ -199,6 +272,11 @@ definitions:
     type: object
   ent.UserDetailsEdges:
     properties:
+      entrepreneur_details:
+        allOf:
+        - $ref: '#/definitions/ent.EntrepreneurDetails'
+        description: EntrepreneurDetails holds the value of the entrepreneur_details
+          edge.
       locations:
         description: Locations holds the value of the locations edge.
         items:
@@ -592,17 +670,17 @@ definitions:
         $ref: '#/definitions/ent.User'
     type: object
 externalDocs:
-  description: OpenAPI
-  url: https://not-yet-hosted.com/
-host: localhost:8000
+  description: OpenAPI 3.0 Specification
+  url: https://not-yet-hosted/specification
+host: users-service-users-service.svc.cluster.local:8000
 info:
   contact:
-    email: m0ni3v@gmail.com
+    email: m0niev@gmail.com
     name: API Support
-    url: https://github.com/Moniev
-  description: Microservice delegated toward user's schema management and it's business
-    logic.
-  title: Factory-Chainline Users-Service API
+    url: http://not-yet-hosted/support
+  description: Main users management microservice responsible for user related operations.
+  termsOfService: http://not-yet-hosted/terms/
+  title: Users Service API
   version: 1.0.0
 paths:
   /api/v1/auth/activation/account:
@@ -1255,7 +1333,12 @@ paths:
       summary: Update user's basic information
       tags:
       - users
+schemes:
+- http
+- https
 securityDefinitions:
-  BearerApi:
-    type: basic
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -2,22 +2,26 @@ package main
 
 import "users-service/app/config"
 
-// @title           Factory-Chainline Users-Service API
-// @version         1.0.0
-// @description     Microservice delegated toward user's schema management and it's business logic.
-// @termsOfService
+// @title Users Service API
+// @version 1.0.0
+// @description Main users management microservice responsible for user related operations.
+// @termsOfService http://not-yet-hosted/terms/
 
-// @contact.name   API Support
-// @contact.url    https://github.com/Moniev
-// @contact.email  m0ni3v@gmail.com
+// @contact.name API Support
+// @contact.url http://not-yet-hosted/support
+// @contact.email m0niev@gmail.com
 
-// @host      localhost:8000
-// @BasePath  /api/v1
+// @host users-service-users-service.svc.cluster.local:8000
+// @BasePath /
+// @externalDocs.description OpenAPI 3.0 Specification
+// @externalDocs.url https://not-yet-hosted/specification
+// @schemes http https
 
-// @securityDefinitions.basic  BearerApi
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 
-// @externalDocs.description  OpenAPI
-// @externalDocs.url          https://not-yet-hosted.com/
+// @Swagger / @version 3.0
 func main() {
 	settings := config.GetSettings()
 
