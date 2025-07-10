@@ -23,6 +23,7 @@ type UsersControllerInterface interface {
 	UpdateUser(ctx *gin.Context)
 	UpdateDetails(ctx *gin.Context)
 	UpdateSettings(ctx *gin.Context)
+
 	RemoveAccount(ctx *gin.Context)
 }
 

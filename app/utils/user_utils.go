@@ -1,18 +1,15 @@
 package utils
 
 import (
-	"strconv"
+	"fmt"
 	"users-service/app/models/ent"
 )
 
 func GetUserKeys(user *ent.User) []string {
-	keys := make([]string, 0)
-
-	idKey := "user:id:" + strconv.Itoa(user.ID)
-	keys = append(keys, idKey)
-
-	mailKey := "user:mail:" + user.Mail
-	keys = append(keys, mailKey)
+	keys := []string{
+		fmt.Sprintf("user:%d", user.ID),
+		fmt.Sprintf("user:email:%s", user.Mail),
+	}
 
 	return keys
 }

@@ -25,6 +25,7 @@ type UsersServiceInterface interface {
 	UpdateLocation(ctx context.Context, userID int, req *requests.Location) (*ent.User, error)
 
 	RemoveAccount(ctx context.Context, userID int) error
+
 	GetUserPublic(ctx context.Context, userID int) (*ent.User, error)
 	GetUserPrivate(ctx context.Context, userID int) (*ent.User, error)
 }
