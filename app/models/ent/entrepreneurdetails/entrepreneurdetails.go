@@ -21,8 +21,8 @@ const (
 	FieldKrs = "krs"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
-	// FieldOffert holds the string denoting the offert field in the database.
-	FieldOffert = "offert"
+	// FieldOffer holds the string denoting the offer field in the database.
+	FieldOffer = "offer"
 	// FieldIncome holds the string denoting the income field in the database.
 	FieldIncome = "income"
 	// FieldCosts holds the string denoting the costs field in the database.
@@ -37,8 +37,8 @@ const (
 	FieldDecisionMakers = "decision_makers"
 	// FieldBusinessPhoneNumber holds the string denoting the business_phone_number field in the database.
 	FieldBusinessPhoneNumber = "business_phone_number"
-	// FieldBusinessEmail holds the string denoting the business_email field in the database.
-	FieldBusinessEmail = "business_email"
+	// FieldBusinessMail holds the string denoting the business_mail field in the database.
+	FieldBusinessMail = "business_mail"
 	// FieldWebsiteAddress holds the string denoting the website_address field in the database.
 	FieldWebsiteAddress = "website_address"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -65,7 +65,7 @@ var Columns = []string{
 	FieldNip,
 	FieldKrs,
 	FieldDescription,
-	FieldOffert,
+	FieldOffer,
 	FieldIncome,
 	FieldCosts,
 	FieldFundingCapital,
@@ -73,7 +73,7 @@ var Columns = []string{
 	FieldManagementCouncilMembers,
 	FieldDecisionMakers,
 	FieldBusinessPhoneNumber,
-	FieldBusinessEmail,
+	FieldBusinessMail,
 	FieldWebsiteAddress,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -141,9 +141,9 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
 }
 
-// ByOffert orders the results by the offert field.
-func ByOffert(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldOffert, opts...).ToFunc()
+// ByOffer orders the results by the offer field.
+func ByOffer(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOffer, opts...).ToFunc()
 }
 
 // ByIncome orders the results by the income field.
@@ -171,9 +171,9 @@ func ByBusinessPhoneNumber(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBusinessPhoneNumber, opts...).ToFunc()
 }
 
-// ByBusinessEmail orders the results by the business_email field.
-func ByBusinessEmail(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBusinessEmail, opts...).ToFunc()
+// ByBusinessMail orders the results by the business_mail field.
+func ByBusinessMail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBusinessMail, opts...).ToFunc()
 }
 
 // ByWebsiteAddress orders the results by the website_address field.

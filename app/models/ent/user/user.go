@@ -3,8 +3,7 @@
 package user
 
 import (
-	"time"
-
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 )
@@ -56,6 +55,8 @@ const (
 	EdgeUserActions = "user_actions"
 	// EdgeUserRoles holds the string denoting the user_roles edge name in mutations.
 	EdgeUserRoles = "user_roles"
+	// EdgeBlacklistedTokens holds the string denoting the blacklisted_tokens edge name in mutations.
+	EdgeBlacklistedTokens = "blacklisted_tokens"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// UserDetailsTable is the table that holds the user_details relation/edge.
@@ -117,6 +118,13 @@ const (
 	// UserRolesInverseTable is the table name for the UserRole entity.
 	// It exists in this package in order to avoid circular dependency with the "userrole" package.
 	UserRolesInverseTable = "user_roles"
+	// BlacklistedTokensTable is the table that holds the blacklisted_tokens relation/edge.
+	BlacklistedTokensTable = "blacklisted_tokens"
+	// BlacklistedTokensInverseTable is the table name for the BlacklistedToken entity.
+	// It exists in this package in order to avoid circular dependency with the "blacklistedtoken" package.
+	BlacklistedTokensInverseTable = "blacklisted_tokens"
+	// BlacklistedTokensColumn is the table column denoting the blacklisted_tokens relation/edge.
+	BlacklistedTokensColumn = "blacklisted_token_owner"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -155,7 +163,13 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "users-service/app/models/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// MailValidator is a validator for the "mail" field. It is called by the builders before save.
 	MailValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
@@ -168,12 +182,6 @@ var (
 	DefaultBlacklisted bool
 	// DefaultRemoved holds the default value on creation for the "removed" field.
 	DefaultRemoved bool
-	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
-	DefaultCreatedAt func() time.Time
-	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
-	DefaultUpdatedAt func() time.Time
-	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
-	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultSubscriptionIds holds the default value on creation for the "subscription_ids" field.
 	DefaultSubscriptionIds []int
 	// DefaultTeamIds holds the default value on creation for the "team_ids" field.
@@ -318,6 +326,20 @@ func ByUserRoles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newUserRolesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByBlacklistedTokensCount orders the results by blacklisted_tokens count.
+func ByBlacklistedTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBlacklistedTokensStep(), opts...)
+	}
+}
+
+// ByBlacklistedTokens orders the results by blacklisted_tokens terms.
+func ByBlacklistedTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBlacklistedTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newUserDetailsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -379,5 +401,12 @@ func newUserRolesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserRolesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, false, UserRolesTable, UserRolesPrimaryKey...),
+	)
+}
+func newBlacklistedTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BlacklistedTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, BlacklistedTokensTable, BlacklistedTokensColumn),
 	)
 }

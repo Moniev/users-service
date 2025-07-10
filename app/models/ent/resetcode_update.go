@@ -43,23 +43,17 @@ func (rcu *ResetCodeUpdate) SetNillableCode(s *string) *ResetCodeUpdate {
 	return rcu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (rcu *ResetCodeUpdate) SetCreatedAt(t time.Time) *ResetCodeUpdate {
-	rcu.mutation.SetCreatedAt(t)
-	return rcu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (rcu *ResetCodeUpdate) SetNillableCreatedAt(t *time.Time) *ResetCodeUpdate {
-	if t != nil {
-		rcu.SetCreatedAt(*t)
-	}
-	return rcu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (rcu *ResetCodeUpdate) SetUpdatedAt(t time.Time) *ResetCodeUpdate {
 	rcu.mutation.SetUpdatedAt(t)
+	return rcu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (rcu *ResetCodeUpdate) SetNillableUpdatedAt(t *time.Time) *ResetCodeUpdate {
+	if t != nil {
+		rcu.SetUpdatedAt(*t)
+	}
 	return rcu
 }
 
@@ -101,7 +95,6 @@ func (rcu *ResetCodeUpdate) ClearOwner() *ResetCodeUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (rcu *ResetCodeUpdate) Save(ctx context.Context) (int, error) {
-	rcu.defaults()
 	return withHooks(ctx, rcu.sqlSave, rcu.mutation, rcu.hooks)
 }
 
@@ -124,14 +117,6 @@ func (rcu *ResetCodeUpdate) Exec(ctx context.Context) error {
 func (rcu *ResetCodeUpdate) ExecX(ctx context.Context) {
 	if err := rcu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (rcu *ResetCodeUpdate) defaults() {
-	if _, ok := rcu.mutation.UpdatedAt(); !ok {
-		v := resetcode.UpdateDefaultUpdatedAt()
-		rcu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -162,9 +147,6 @@ func (rcu *ResetCodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := rcu.mutation.Code(); ok {
 		_spec.SetField(resetcode.FieldCode, field.TypeString, value)
-	}
-	if value, ok := rcu.mutation.CreatedAt(); ok {
-		_spec.SetField(resetcode.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := rcu.mutation.UpdatedAt(); ok {
 		_spec.SetField(resetcode.FieldUpdatedAt, field.TypeTime, value)
@@ -235,23 +217,17 @@ func (rcuo *ResetCodeUpdateOne) SetNillableCode(s *string) *ResetCodeUpdateOne {
 	return rcuo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (rcuo *ResetCodeUpdateOne) SetCreatedAt(t time.Time) *ResetCodeUpdateOne {
-	rcuo.mutation.SetCreatedAt(t)
-	return rcuo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (rcuo *ResetCodeUpdateOne) SetNillableCreatedAt(t *time.Time) *ResetCodeUpdateOne {
-	if t != nil {
-		rcuo.SetCreatedAt(*t)
-	}
-	return rcuo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (rcuo *ResetCodeUpdateOne) SetUpdatedAt(t time.Time) *ResetCodeUpdateOne {
 	rcuo.mutation.SetUpdatedAt(t)
+	return rcuo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (rcuo *ResetCodeUpdateOne) SetNillableUpdatedAt(t *time.Time) *ResetCodeUpdateOne {
+	if t != nil {
+		rcuo.SetUpdatedAt(*t)
+	}
 	return rcuo
 }
 
@@ -306,7 +282,6 @@ func (rcuo *ResetCodeUpdateOne) Select(field string, fields ...string) *ResetCod
 
 // Save executes the query and returns the updated ResetCode entity.
 func (rcuo *ResetCodeUpdateOne) Save(ctx context.Context) (*ResetCode, error) {
-	rcuo.defaults()
 	return withHooks(ctx, rcuo.sqlSave, rcuo.mutation, rcuo.hooks)
 }
 
@@ -329,14 +304,6 @@ func (rcuo *ResetCodeUpdateOne) Exec(ctx context.Context) error {
 func (rcuo *ResetCodeUpdateOne) ExecX(ctx context.Context) {
 	if err := rcuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (rcuo *ResetCodeUpdateOne) defaults() {
-	if _, ok := rcuo.mutation.UpdatedAt(); !ok {
-		v := resetcode.UpdateDefaultUpdatedAt()
-		rcuo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -384,9 +351,6 @@ func (rcuo *ResetCodeUpdateOne) sqlSave(ctx context.Context) (_node *ResetCode, 
 	}
 	if value, ok := rcuo.mutation.Code(); ok {
 		_spec.SetField(resetcode.FieldCode, field.TypeString, value)
-	}
-	if value, ok := rcuo.mutation.CreatedAt(); ok {
-		_spec.SetField(resetcode.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := rcuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(resetcode.FieldUpdatedAt, field.TypeTime, value)

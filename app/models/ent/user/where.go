@@ -632,6 +632,29 @@ func HasUserRolesWith(preds ...predicate.UserRole) predicate.User {
 	})
 }
 
+// HasBlacklistedTokens applies the HasEdge predicate on the "blacklisted_tokens" edge.
+func HasBlacklistedTokens() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, BlacklistedTokensTable, BlacklistedTokensColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBlacklistedTokensWith applies the HasEdge predicate on the "blacklisted_tokens" edge with a given conditions (other predicates).
+func HasBlacklistedTokensWith(preds ...predicate.BlacklistedToken) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newBlacklistedTokensStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))

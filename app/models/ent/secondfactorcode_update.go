@@ -58,23 +58,17 @@ func (sfcu *SecondFactorCodeUpdate) SetNillableCode(s *string) *SecondFactorCode
 	return sfcu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (sfcu *SecondFactorCodeUpdate) SetCreatedAt(t time.Time) *SecondFactorCodeUpdate {
-	sfcu.mutation.SetCreatedAt(t)
-	return sfcu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (sfcu *SecondFactorCodeUpdate) SetNillableCreatedAt(t *time.Time) *SecondFactorCodeUpdate {
-	if t != nil {
-		sfcu.SetCreatedAt(*t)
-	}
-	return sfcu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (sfcu *SecondFactorCodeUpdate) SetUpdatedAt(t time.Time) *SecondFactorCodeUpdate {
 	sfcu.mutation.SetUpdatedAt(t)
+	return sfcu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (sfcu *SecondFactorCodeUpdate) SetNillableUpdatedAt(t *time.Time) *SecondFactorCodeUpdate {
+	if t != nil {
+		sfcu.SetUpdatedAt(*t)
+	}
 	return sfcu
 }
 
@@ -133,7 +127,6 @@ func (sfcu *SecondFactorCodeUpdate) ClearTargetUserDevice() *SecondFactorCodeUpd
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (sfcu *SecondFactorCodeUpdate) Save(ctx context.Context) (int, error) {
-	sfcu.defaults()
 	return withHooks(ctx, sfcu.sqlSave, sfcu.mutation, sfcu.hooks)
 }
 
@@ -156,14 +149,6 @@ func (sfcu *SecondFactorCodeUpdate) Exec(ctx context.Context) error {
 func (sfcu *SecondFactorCodeUpdate) ExecX(ctx context.Context) {
 	if err := sfcu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (sfcu *SecondFactorCodeUpdate) defaults() {
-	if _, ok := sfcu.mutation.UpdatedAt(); !ok {
-		v := secondfactorcode.UpdateDefaultUpdatedAt()
-		sfcu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -195,9 +180,6 @@ func (sfcu *SecondFactorCodeUpdate) sqlSave(ctx context.Context) (n int, err err
 	}
 	if value, ok := sfcu.mutation.Code(); ok {
 		_spec.SetField(secondfactorcode.FieldCode, field.TypeString, value)
-	}
-	if value, ok := sfcu.mutation.CreatedAt(); ok {
-		_spec.SetField(secondfactorcode.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := sfcu.mutation.UpdatedAt(); ok {
 		_spec.SetField(secondfactorcode.FieldUpdatedAt, field.TypeTime, value)
@@ -311,23 +293,17 @@ func (sfcuo *SecondFactorCodeUpdateOne) SetNillableCode(s *string) *SecondFactor
 	return sfcuo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (sfcuo *SecondFactorCodeUpdateOne) SetCreatedAt(t time.Time) *SecondFactorCodeUpdateOne {
-	sfcuo.mutation.SetCreatedAt(t)
-	return sfcuo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (sfcuo *SecondFactorCodeUpdateOne) SetNillableCreatedAt(t *time.Time) *SecondFactorCodeUpdateOne {
-	if t != nil {
-		sfcuo.SetCreatedAt(*t)
-	}
-	return sfcuo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (sfcuo *SecondFactorCodeUpdateOne) SetUpdatedAt(t time.Time) *SecondFactorCodeUpdateOne {
 	sfcuo.mutation.SetUpdatedAt(t)
+	return sfcuo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (sfcuo *SecondFactorCodeUpdateOne) SetNillableUpdatedAt(t *time.Time) *SecondFactorCodeUpdateOne {
+	if t != nil {
+		sfcuo.SetUpdatedAt(*t)
+	}
 	return sfcuo
 }
 
@@ -399,7 +375,6 @@ func (sfcuo *SecondFactorCodeUpdateOne) Select(field string, fields ...string) *
 
 // Save executes the query and returns the updated SecondFactorCode entity.
 func (sfcuo *SecondFactorCodeUpdateOne) Save(ctx context.Context) (*SecondFactorCode, error) {
-	sfcuo.defaults()
 	return withHooks(ctx, sfcuo.sqlSave, sfcuo.mutation, sfcuo.hooks)
 }
 
@@ -422,14 +397,6 @@ func (sfcuo *SecondFactorCodeUpdateOne) Exec(ctx context.Context) error {
 func (sfcuo *SecondFactorCodeUpdateOne) ExecX(ctx context.Context) {
 	if err := sfcuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (sfcuo *SecondFactorCodeUpdateOne) defaults() {
-	if _, ok := sfcuo.mutation.UpdatedAt(); !ok {
-		v := secondfactorcode.UpdateDefaultUpdatedAt()
-		sfcuo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -478,9 +445,6 @@ func (sfcuo *SecondFactorCodeUpdateOne) sqlSave(ctx context.Context) (_node *Sec
 	}
 	if value, ok := sfcuo.mutation.Code(); ok {
 		_spec.SetField(secondfactorcode.FieldCode, field.TypeString, value)
-	}
-	if value, ok := sfcuo.mutation.CreatedAt(); ok {
-		_spec.SetField(secondfactorcode.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := sfcuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(secondfactorcode.FieldUpdatedAt, field.TypeTime, value)

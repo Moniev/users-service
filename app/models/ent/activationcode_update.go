@@ -57,23 +57,17 @@ func (acu *ActivationCodeUpdate) SetNillableUsed(b *bool) *ActivationCodeUpdate 
 	return acu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (acu *ActivationCodeUpdate) SetCreatedAt(t time.Time) *ActivationCodeUpdate {
-	acu.mutation.SetCreatedAt(t)
-	return acu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (acu *ActivationCodeUpdate) SetNillableCreatedAt(t *time.Time) *ActivationCodeUpdate {
-	if t != nil {
-		acu.SetCreatedAt(*t)
-	}
-	return acu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (acu *ActivationCodeUpdate) SetUpdatedAt(t time.Time) *ActivationCodeUpdate {
 	acu.mutation.SetUpdatedAt(t)
+	return acu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (acu *ActivationCodeUpdate) SetNillableUpdatedAt(t *time.Time) *ActivationCodeUpdate {
+	if t != nil {
+		acu.SetUpdatedAt(*t)
+	}
 	return acu
 }
 
@@ -115,7 +109,6 @@ func (acu *ActivationCodeUpdate) ClearOwner() *ActivationCodeUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (acu *ActivationCodeUpdate) Save(ctx context.Context) (int, error) {
-	acu.defaults()
 	return withHooks(ctx, acu.sqlSave, acu.mutation, acu.hooks)
 }
 
@@ -138,14 +131,6 @@ func (acu *ActivationCodeUpdate) Exec(ctx context.Context) error {
 func (acu *ActivationCodeUpdate) ExecX(ctx context.Context) {
 	if err := acu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (acu *ActivationCodeUpdate) defaults() {
-	if _, ok := acu.mutation.UpdatedAt(); !ok {
-		v := activationcode.UpdateDefaultUpdatedAt()
-		acu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -179,9 +164,6 @@ func (acu *ActivationCodeUpdate) sqlSave(ctx context.Context) (n int, err error)
 	}
 	if value, ok := acu.mutation.Used(); ok {
 		_spec.SetField(activationcode.FieldUsed, field.TypeBool, value)
-	}
-	if value, ok := acu.mutation.CreatedAt(); ok {
-		_spec.SetField(activationcode.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := acu.mutation.UpdatedAt(); ok {
 		_spec.SetField(activationcode.FieldUpdatedAt, field.TypeTime, value)
@@ -266,23 +248,17 @@ func (acuo *ActivationCodeUpdateOne) SetNillableUsed(b *bool) *ActivationCodeUpd
 	return acuo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (acuo *ActivationCodeUpdateOne) SetCreatedAt(t time.Time) *ActivationCodeUpdateOne {
-	acuo.mutation.SetCreatedAt(t)
-	return acuo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (acuo *ActivationCodeUpdateOne) SetNillableCreatedAt(t *time.Time) *ActivationCodeUpdateOne {
-	if t != nil {
-		acuo.SetCreatedAt(*t)
-	}
-	return acuo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (acuo *ActivationCodeUpdateOne) SetUpdatedAt(t time.Time) *ActivationCodeUpdateOne {
 	acuo.mutation.SetUpdatedAt(t)
+	return acuo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (acuo *ActivationCodeUpdateOne) SetNillableUpdatedAt(t *time.Time) *ActivationCodeUpdateOne {
+	if t != nil {
+		acuo.SetUpdatedAt(*t)
+	}
 	return acuo
 }
 
@@ -337,7 +313,6 @@ func (acuo *ActivationCodeUpdateOne) Select(field string, fields ...string) *Act
 
 // Save executes the query and returns the updated ActivationCode entity.
 func (acuo *ActivationCodeUpdateOne) Save(ctx context.Context) (*ActivationCode, error) {
-	acuo.defaults()
 	return withHooks(ctx, acuo.sqlSave, acuo.mutation, acuo.hooks)
 }
 
@@ -360,14 +335,6 @@ func (acuo *ActivationCodeUpdateOne) Exec(ctx context.Context) error {
 func (acuo *ActivationCodeUpdateOne) ExecX(ctx context.Context) {
 	if err := acuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (acuo *ActivationCodeUpdateOne) defaults() {
-	if _, ok := acuo.mutation.UpdatedAt(); !ok {
-		v := activationcode.UpdateDefaultUpdatedAt()
-		acuo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -418,9 +385,6 @@ func (acuo *ActivationCodeUpdateOne) sqlSave(ctx context.Context) (_node *Activa
 	}
 	if value, ok := acuo.mutation.Used(); ok {
 		_spec.SetField(activationcode.FieldUsed, field.TypeBool, value)
-	}
-	if value, ok := acuo.mutation.CreatedAt(); ok {
-		_spec.SetField(activationcode.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := acuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(activationcode.FieldUpdatedAt, field.TypeTime, value)

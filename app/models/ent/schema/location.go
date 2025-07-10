@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"context"
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -37,6 +40,11 @@ func (Location) Fields() []ent.Field {
 		field.Int("apartment_number").
 			NonNegative().
 			StructTag(`json:"apartment_number"`),
+		field.Time("created_at").
+			Immutable().
+			StructTag(`json:"created_at"`),
+		field.Time("updated_at").
+			StructTag(`json:"updated_at"`),
 	}
 }
 
@@ -47,5 +55,29 @@ func (Location) Edges() []ent.Edge {
 			Unique().
 			Required().
 			StructTag(`json:"user_details"`),
+	}
+}
+
+func (Location) Hooks() []ent.Hook {
+	return []ent.Hook{
+		func(next ent.Mutator) ent.Mutator {
+			return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+				if m.Op().Is(ent.OpCreate) {
+					if err := m.SetField("created_at", time.Now().UTC()); err != nil {
+						return nil, err
+					}
+
+					if err := m.SetField("updated_at", time.Now().UTC()); err != nil {
+						return nil, err
+					}
+
+				} else if m.Op().Is(ent.OpUpdate) || m.Op().Is(ent.OpUpdateOne) {
+					if err := m.SetField("updated_at", time.Now().UTC()); err != nil {
+						return nil, err
+					}
+				}
+				return next.Mutate(ctx, m)
+			})
+		},
 	}
 }

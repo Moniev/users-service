@@ -40,25 +40,9 @@ func (urc *UserRoleCreate) SetCreatedAt(t time.Time) *UserRoleCreate {
 	return urc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (urc *UserRoleCreate) SetNillableCreatedAt(t *time.Time) *UserRoleCreate {
-	if t != nil {
-		urc.SetCreatedAt(*t)
-	}
-	return urc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (urc *UserRoleCreate) SetUpdatedAt(t time.Time) *UserRoleCreate {
 	urc.mutation.SetUpdatedAt(t)
-	return urc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (urc *UserRoleCreate) SetNillableUpdatedAt(t *time.Time) *UserRoleCreate {
-	if t != nil {
-		urc.SetUpdatedAt(*t)
-	}
 	return urc
 }
 
@@ -105,7 +89,6 @@ func (urc *UserRoleCreate) Mutation() *UserRoleMutation {
 
 // Save creates the UserRole in the database.
 func (urc *UserRoleCreate) Save(ctx context.Context) (*UserRole, error) {
-	urc.defaults()
 	return withHooks(ctx, urc.sqlSave, urc.mutation, urc.hooks)
 }
 
@@ -128,18 +111,6 @@ func (urc *UserRoleCreate) Exec(ctx context.Context) error {
 func (urc *UserRoleCreate) ExecX(ctx context.Context) {
 	if err := urc.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (urc *UserRoleCreate) defaults() {
-	if _, ok := urc.mutation.CreatedAt(); !ok {
-		v := userrole.DefaultCreatedAt()
-		urc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := urc.mutation.UpdatedAt(); !ok {
-		v := userrole.DefaultUpdatedAt()
-		urc.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -263,7 +234,6 @@ func (urcb *UserRoleCreateBulk) Save(ctx context.Context) ([]*UserRole, error) {
 	for i := range urcb.builders {
 		func(i int, root context.Context) {
 			builder := urcb.builders[i]
-			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*UserRoleMutation)
 				if !ok {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/blacklistedtoken"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/secondfactorcode"
@@ -142,23 +143,17 @@ func (uu *UserUpdate) SetNillableRemoved(b *bool) *UserUpdate {
 	return uu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uu *UserUpdate) SetCreatedAt(t time.Time) *UserUpdate {
-	uu.mutation.SetCreatedAt(t)
-	return uu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableCreatedAt(t *time.Time) *UserUpdate {
-	if t != nil {
-		uu.SetCreatedAt(*t)
-	}
-	return uu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uu *UserUpdate) SetUpdatedAt(t time.Time) *UserUpdate {
 	uu.mutation.SetUpdatedAt(t)
+	return uu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableUpdatedAt(t *time.Time) *UserUpdate {
+	if t != nil {
+		uu.SetUpdatedAt(*t)
+	}
 	return uu
 }
 
@@ -357,6 +352,21 @@ func (uu *UserUpdate) AddUserRoles(u ...*UserRole) *UserUpdate {
 	return uu.AddUserRoleIDs(ids...)
 }
 
+// AddBlacklistedTokenIDs adds the "blacklisted_tokens" edge to the BlacklistedToken entity by IDs.
+func (uu *UserUpdate) AddBlacklistedTokenIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddBlacklistedTokenIDs(ids...)
+	return uu
+}
+
+// AddBlacklistedTokens adds the "blacklisted_tokens" edges to the BlacklistedToken entity.
+func (uu *UserUpdate) AddBlacklistedTokens(b ...*BlacklistedToken) *UserUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uu.AddBlacklistedTokenIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -461,9 +471,29 @@ func (uu *UserUpdate) RemoveUserRoles(u ...*UserRole) *UserUpdate {
 	return uu.RemoveUserRoleIDs(ids...)
 }
 
+// ClearBlacklistedTokens clears all "blacklisted_tokens" edges to the BlacklistedToken entity.
+func (uu *UserUpdate) ClearBlacklistedTokens() *UserUpdate {
+	uu.mutation.ClearBlacklistedTokens()
+	return uu
+}
+
+// RemoveBlacklistedTokenIDs removes the "blacklisted_tokens" edge to BlacklistedToken entities by IDs.
+func (uu *UserUpdate) RemoveBlacklistedTokenIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveBlacklistedTokenIDs(ids...)
+	return uu
+}
+
+// RemoveBlacklistedTokens removes "blacklisted_tokens" edges to BlacklistedToken entities.
+func (uu *UserUpdate) RemoveBlacklistedTokens(b ...*BlacklistedToken) *UserUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uu.RemoveBlacklistedTokenIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
-	uu.defaults()
 	return withHooks(ctx, uu.sqlSave, uu.mutation, uu.hooks)
 }
 
@@ -486,14 +516,6 @@ func (uu *UserUpdate) Exec(ctx context.Context) error {
 func (uu *UserUpdate) ExecX(ctx context.Context) {
 	if err := uu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uu *UserUpdate) defaults() {
-	if _, ok := uu.mutation.UpdatedAt(); !ok {
-		v := user.UpdateDefaultUpdatedAt()
-		uu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -547,9 +569,6 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.Removed(); ok {
 		_spec.SetField(user.FieldRemoved, field.TypeBool, value)
-	}
-	if value, ok := uu.mutation.CreatedAt(); ok {
-		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uu.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
@@ -887,6 +906,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.BlacklistedTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.BlacklistedTokensTable,
+			Columns: []string{user.BlacklistedTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(blacklistedtoken.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedBlacklistedTokensIDs(); len(nodes) > 0 && !uu.mutation.BlacklistedTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.BlacklistedTokensTable,
+			Columns: []string{user.BlacklistedTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(blacklistedtoken.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.BlacklistedTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.BlacklistedTokensTable,
+			Columns: []string{user.BlacklistedTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(blacklistedtoken.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -1011,23 +1075,17 @@ func (uuo *UserUpdateOne) SetNillableRemoved(b *bool) *UserUpdateOne {
 	return uuo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uuo *UserUpdateOne) SetCreatedAt(t time.Time) *UserUpdateOne {
-	uuo.mutation.SetCreatedAt(t)
-	return uuo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableCreatedAt(t *time.Time) *UserUpdateOne {
-	if t != nil {
-		uuo.SetCreatedAt(*t)
-	}
-	return uuo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uuo *UserUpdateOne) SetUpdatedAt(t time.Time) *UserUpdateOne {
 	uuo.mutation.SetUpdatedAt(t)
+	return uuo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableUpdatedAt(t *time.Time) *UserUpdateOne {
+	if t != nil {
+		uuo.SetUpdatedAt(*t)
+	}
 	return uuo
 }
 
@@ -1226,6 +1284,21 @@ func (uuo *UserUpdateOne) AddUserRoles(u ...*UserRole) *UserUpdateOne {
 	return uuo.AddUserRoleIDs(ids...)
 }
 
+// AddBlacklistedTokenIDs adds the "blacklisted_tokens" edge to the BlacklistedToken entity by IDs.
+func (uuo *UserUpdateOne) AddBlacklistedTokenIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddBlacklistedTokenIDs(ids...)
+	return uuo
+}
+
+// AddBlacklistedTokens adds the "blacklisted_tokens" edges to the BlacklistedToken entity.
+func (uuo *UserUpdateOne) AddBlacklistedTokens(b ...*BlacklistedToken) *UserUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uuo.AddBlacklistedTokenIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -1330,6 +1403,27 @@ func (uuo *UserUpdateOne) RemoveUserRoles(u ...*UserRole) *UserUpdateOne {
 	return uuo.RemoveUserRoleIDs(ids...)
 }
 
+// ClearBlacklistedTokens clears all "blacklisted_tokens" edges to the BlacklistedToken entity.
+func (uuo *UserUpdateOne) ClearBlacklistedTokens() *UserUpdateOne {
+	uuo.mutation.ClearBlacklistedTokens()
+	return uuo
+}
+
+// RemoveBlacklistedTokenIDs removes the "blacklisted_tokens" edge to BlacklistedToken entities by IDs.
+func (uuo *UserUpdateOne) RemoveBlacklistedTokenIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveBlacklistedTokenIDs(ids...)
+	return uuo
+}
+
+// RemoveBlacklistedTokens removes "blacklisted_tokens" edges to BlacklistedToken entities.
+func (uuo *UserUpdateOne) RemoveBlacklistedTokens(b ...*BlacklistedToken) *UserUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uuo.RemoveBlacklistedTokenIDs(ids...)
+}
+
 // Where appends a list predicates to the UserUpdate builder.
 func (uuo *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
 	uuo.mutation.Where(ps...)
@@ -1345,7 +1439,6 @@ func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne 
 
 // Save executes the query and returns the updated User entity.
 func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
-	uuo.defaults()
 	return withHooks(ctx, uuo.sqlSave, uuo.mutation, uuo.hooks)
 }
 
@@ -1368,14 +1461,6 @@ func (uuo *UserUpdateOne) Exec(ctx context.Context) error {
 func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 	if err := uuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uuo *UserUpdateOne) defaults() {
-	if _, ok := uuo.mutation.UpdatedAt(); !ok {
-		v := user.UpdateDefaultUpdatedAt()
-		uuo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -1446,9 +1531,6 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.Removed(); ok {
 		_spec.SetField(user.FieldRemoved, field.TypeBool, value)
-	}
-	if value, ok := uuo.mutation.CreatedAt(); ok {
-		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
@@ -1779,6 +1861,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userrole.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.BlacklistedTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.BlacklistedTokensTable,
+			Columns: []string{user.BlacklistedTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(blacklistedtoken.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedBlacklistedTokensIDs(); len(nodes) > 0 && !uuo.mutation.BlacklistedTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.BlacklistedTokensTable,
+			Columns: []string{user.BlacklistedTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(blacklistedtoken.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.BlacklistedTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.BlacklistedTokensTable,
+			Columns: []string{user.BlacklistedTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(blacklistedtoken.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

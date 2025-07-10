@@ -77,16 +77,16 @@ func (edc *EntrepreneurDetailsCreate) SetNillableDescription(s *string) *Entrepr
 	return edc
 }
 
-// SetOffert sets the "offert" field.
-func (edc *EntrepreneurDetailsCreate) SetOffert(s string) *EntrepreneurDetailsCreate {
-	edc.mutation.SetOffert(s)
+// SetOffer sets the "offer" field.
+func (edc *EntrepreneurDetailsCreate) SetOffer(s string) *EntrepreneurDetailsCreate {
+	edc.mutation.SetOffer(s)
 	return edc
 }
 
-// SetNillableOffert sets the "offert" field if the given value is not nil.
-func (edc *EntrepreneurDetailsCreate) SetNillableOffert(s *string) *EntrepreneurDetailsCreate {
+// SetNillableOffer sets the "offer" field if the given value is not nil.
+func (edc *EntrepreneurDetailsCreate) SetNillableOffer(s *string) *EntrepreneurDetailsCreate {
 	if s != nil {
-		edc.SetOffert(*s)
+		edc.SetOffer(*s)
 	}
 	return edc
 }
@@ -173,16 +173,16 @@ func (edc *EntrepreneurDetailsCreate) SetNillableBusinessPhoneNumber(s *string) 
 	return edc
 }
 
-// SetBusinessEmail sets the "business_email" field.
-func (edc *EntrepreneurDetailsCreate) SetBusinessEmail(s string) *EntrepreneurDetailsCreate {
-	edc.mutation.SetBusinessEmail(s)
+// SetBusinessMail sets the "business_mail" field.
+func (edc *EntrepreneurDetailsCreate) SetBusinessMail(s string) *EntrepreneurDetailsCreate {
+	edc.mutation.SetBusinessMail(s)
 	return edc
 }
 
-// SetNillableBusinessEmail sets the "business_email" field if the given value is not nil.
-func (edc *EntrepreneurDetailsCreate) SetNillableBusinessEmail(s *string) *EntrepreneurDetailsCreate {
+// SetNillableBusinessMail sets the "business_mail" field if the given value is not nil.
+func (edc *EntrepreneurDetailsCreate) SetNillableBusinessMail(s *string) *EntrepreneurDetailsCreate {
 	if s != nil {
-		edc.SetBusinessEmail(*s)
+		edc.SetBusinessMail(*s)
 	}
 	return edc
 }
@@ -336,9 +336,9 @@ func (edc *EntrepreneurDetailsCreate) createSpec() (*EntrepreneurDetails, *sqlgr
 		_spec.SetField(entrepreneurdetails.FieldDescription, field.TypeString, value)
 		_node.Description = &value
 	}
-	if value, ok := edc.mutation.Offert(); ok {
-		_spec.SetField(entrepreneurdetails.FieldOffert, field.TypeString, value)
-		_node.Offert = &value
+	if value, ok := edc.mutation.Offer(); ok {
+		_spec.SetField(entrepreneurdetails.FieldOffer, field.TypeString, value)
+		_node.Offer = &value
 	}
 	if value, ok := edc.mutation.Income(); ok {
 		_spec.SetField(entrepreneurdetails.FieldIncome, field.TypeFloat64, value)
@@ -368,9 +368,9 @@ func (edc *EntrepreneurDetailsCreate) createSpec() (*EntrepreneurDetails, *sqlgr
 		_spec.SetField(entrepreneurdetails.FieldBusinessPhoneNumber, field.TypeString, value)
 		_node.BusinessPhoneNumber = value
 	}
-	if value, ok := edc.mutation.BusinessEmail(); ok {
-		_spec.SetField(entrepreneurdetails.FieldBusinessEmail, field.TypeString, value)
-		_node.BusinessEmail = &value
+	if value, ok := edc.mutation.BusinessMail(); ok {
+		_spec.SetField(entrepreneurdetails.FieldBusinessMail, field.TypeString, value)
+		_node.BusinessMail = &value
 	}
 	if value, ok := edc.mutation.WebsiteAddress(); ok {
 		_spec.SetField(entrepreneurdetails.FieldWebsiteAddress, field.TypeString, value)

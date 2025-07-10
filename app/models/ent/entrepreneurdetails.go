@@ -27,8 +27,8 @@ type EntrepreneurDetails struct {
 	Krs string `json:"krs"`
 	// Description holds the value of the "description" field.
 	Description *string `json:"description"`
-	// Offert holds the value of the "offert" field.
-	Offert *string `json:"offert"`
+	// Offer holds the value of the "offer" field.
+	Offer *string `json:"offer"`
 	// Income holds the value of the "income" field.
 	Income float64 `json:"income"`
 	// Costs holds the value of the "costs" field.
@@ -43,8 +43,8 @@ type EntrepreneurDetails struct {
 	DecisionMakers []string `json:"decision_makers"`
 	// BusinessPhoneNumber holds the value of the "business_phone_number" field.
 	BusinessPhoneNumber string `json:"business_phone_number"`
-	// BusinessEmail holds the value of the "business_email" field.
-	BusinessEmail *string `json:"business_email"`
+	// BusinessMail holds the value of the "business_mail" field.
+	BusinessMail *string `json:"business_mail"`
 	// WebsiteAddress holds the value of the "website_address" field.
 	WebsiteAddress *string `json:"website_address"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -89,7 +89,7 @@ func (*EntrepreneurDetails) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case entrepreneurdetails.FieldID:
 			values[i] = new(sql.NullInt64)
-		case entrepreneurdetails.FieldBusinessName, entrepreneurdetails.FieldNip, entrepreneurdetails.FieldKrs, entrepreneurdetails.FieldDescription, entrepreneurdetails.FieldOffert, entrepreneurdetails.FieldIndustry, entrepreneurdetails.FieldBusinessPhoneNumber, entrepreneurdetails.FieldBusinessEmail, entrepreneurdetails.FieldWebsiteAddress:
+		case entrepreneurdetails.FieldBusinessName, entrepreneurdetails.FieldNip, entrepreneurdetails.FieldKrs, entrepreneurdetails.FieldDescription, entrepreneurdetails.FieldOffer, entrepreneurdetails.FieldIndustry, entrepreneurdetails.FieldBusinessPhoneNumber, entrepreneurdetails.FieldBusinessMail, entrepreneurdetails.FieldWebsiteAddress:
 			values[i] = new(sql.NullString)
 		case entrepreneurdetails.FieldCreatedAt, entrepreneurdetails.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -141,12 +141,12 @@ func (ed *EntrepreneurDetails) assignValues(columns []string, values []any) erro
 				ed.Description = new(string)
 				*ed.Description = value.String
 			}
-		case entrepreneurdetails.FieldOffert:
+		case entrepreneurdetails.FieldOffer:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field offert", values[i])
+				return fmt.Errorf("unexpected type %T for field offer", values[i])
 			} else if value.Valid {
-				ed.Offert = new(string)
-				*ed.Offert = value.String
+				ed.Offer = new(string)
+				*ed.Offer = value.String
 			}
 		case entrepreneurdetails.FieldIncome:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -195,12 +195,12 @@ func (ed *EntrepreneurDetails) assignValues(columns []string, values []any) erro
 			} else if value.Valid {
 				ed.BusinessPhoneNumber = value.String
 			}
-		case entrepreneurdetails.FieldBusinessEmail:
+		case entrepreneurdetails.FieldBusinessMail:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field business_email", values[i])
+				return fmt.Errorf("unexpected type %T for field business_mail", values[i])
 			} else if value.Valid {
-				ed.BusinessEmail = new(string)
-				*ed.BusinessEmail = value.String
+				ed.BusinessMail = new(string)
+				*ed.BusinessMail = value.String
 			}
 		case entrepreneurdetails.FieldWebsiteAddress:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -283,8 +283,8 @@ func (ed *EntrepreneurDetails) String() string {
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
-	if v := ed.Offert; v != nil {
-		builder.WriteString("offert=")
+	if v := ed.Offer; v != nil {
+		builder.WriteString("offer=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
@@ -311,8 +311,8 @@ func (ed *EntrepreneurDetails) String() string {
 	builder.WriteString("business_phone_number=")
 	builder.WriteString(ed.BusinessPhoneNumber)
 	builder.WriteString(", ")
-	if v := ed.BusinessEmail; v != nil {
-		builder.WriteString("business_email=")
+	if v := ed.BusinessMail; v != nil {
+		builder.WriteString("business_mail=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

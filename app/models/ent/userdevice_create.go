@@ -161,25 +161,9 @@ func (udc *UserDeviceCreate) SetCreatedAt(t time.Time) *UserDeviceCreate {
 	return udc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (udc *UserDeviceCreate) SetNillableCreatedAt(t *time.Time) *UserDeviceCreate {
-	if t != nil {
-		udc.SetCreatedAt(*t)
-	}
-	return udc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (udc *UserDeviceCreate) SetUpdatedAt(t time.Time) *UserDeviceCreate {
 	udc.mutation.SetUpdatedAt(t)
-	return udc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (udc *UserDeviceCreate) SetNillableUpdatedAt(t *time.Time) *UserDeviceCreate {
-	if t != nil {
-		udc.SetUpdatedAt(*t)
-	}
 	return udc
 }
 
@@ -245,7 +229,9 @@ func (udc *UserDeviceCreate) Mutation() *UserDeviceMutation {
 
 // Save creates the UserDevice in the database.
 func (udc *UserDeviceCreate) Save(ctx context.Context) (*UserDevice, error) {
-	udc.defaults()
+	if err := udc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, udc.sqlSave, udc.mutation, udc.hooks)
 }
 
@@ -272,19 +258,15 @@ func (udc *UserDeviceCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (udc *UserDeviceCreate) defaults() {
+func (udc *UserDeviceCreate) defaults() error {
 	if _, ok := udc.mutation.LastSeenAt(); !ok {
+		if userdevice.DefaultLastSeenAt == nil {
+			return fmt.Errorf("ent: uninitialized userdevice.DefaultLastSeenAt (forgotten import ent/runtime?)")
+		}
 		v := userdevice.DefaultLastSeenAt()
 		udc.mutation.SetLastSeenAt(v)
 	}
-	if _, ok := udc.mutation.CreatedAt(); !ok {
-		v := userdevice.DefaultCreatedAt()
-		udc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := udc.mutation.UpdatedAt(); !ok {
-		v := userdevice.DefaultUpdatedAt()
-		udc.mutation.SetUpdatedAt(v)
-	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

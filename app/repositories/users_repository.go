@@ -8,8 +8,11 @@ import (
 	"users-service/app/infrastructure"
 	"users-service/app/models/ent"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/entrepreneurdetails"
+	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
+	"users-service/app/models/ent/userdetails"
 	"users-service/app/models/ent/userdevice"
 	"users-service/app/models/ent/verificationcode"
 	"users-service/app/models/requests"
@@ -47,6 +50,8 @@ type UsersRepositoryInterface interface {
 	UpdateUsersPassword(ctx context.Context, user *ent.User, hashedPassword string) (*ent.User, error)
 	UpdateUsersDetails(ctx context.Context, user *ent.User, req *requests.Details) (*ent.User, error)
 	UpdateUsersSettings(ctx context.Context, user *ent.User, req *requests.Settings) (*ent.User, error)
+	UpdateEntrepreneurDetails(ctx context.Context, user *ent.User, req *requests.EntrepreneurDetails) (*ent.User, error)
+	UpdateLocation(ctx context.Context, user *ent.User, req *requests.Location) (*ent.User, error)
 
 	RemoveResetCode(ctx context.Context, user *ent.User) (*ent.User, error)
 	RemoveSecondFactorCode(ctx context.Context, user *ent.User) (*ent.User, error)
@@ -704,12 +709,12 @@ func (r *UsersRepository) UpdateUsersDetails(ctx context.Context, user *ent.User
 		return nil, errors.New("failed to update user")
 	}
 
-	r.Logger.Info().Int("userID", updatedUser.ID).Msg("User details updated successfully")
+	r.Logger.Debug().Int("userID", updatedUser.ID).Msg("User details updated successfully")
 	return updatedUser, nil
 }
 
 func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.User, req *requests.Settings) (*ent.User, error) {
-	r.Logger.Info().Int("userID", user.ID).Msg("Attempting to update user settings")
+	r.Logger.Debug().Int("userID", user.ID).Msg("Attempting to update user settings")
 	var updatedUser *ent.User
 	var err error
 
@@ -751,7 +756,7 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 		return nil, errors.New("failed to update user")
 	}
 
-	r.Logger.Info().Int("userID", updatedUser.ID).Msg("User settings updated successfully")
+	r.Logger.Debug().Int("userID", updatedUser.ID).Msg("User settings updated successfully")
 	return updatedUser, nil
 }
 
@@ -776,12 +781,12 @@ func (r *UsersRepository) RemoveAccount(ctx context.Context, user *ent.User) err
 		return errors.New("failed to remove user")
 	}
 
-	r.Logger.Info().Int("userID", user.ID).Msg("User account successfully marked as removed")
+	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
 	return err
 }
 
 func (r *UsersRepository) FindOrCreateDevice(ctx context.Context, userID int, req *requests.Device) (*ent.UserDevice, error) {
-	r.Logger.Info().Int("userID", userID).Str("deviceToken", req.DeviceToken).Msg("Attempting to find or create device")
+	r.Logger.Debug().Int("userID", userID).Str("deviceToken", req.DeviceToken).Msg("Attempting to find or create device")
 	var device *ent.UserDevice
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
@@ -812,7 +817,7 @@ func (r *UsersRepository) FindOrCreateDevice(ctx context.Context, userID int, re
 					return createErr
 				}
 				device = newDevice
-				r.Logger.Info().Int("userID", userID).Int("deviceID", device.ID).Msg("New device created successfully")
+				r.Logger.Debug().Int("userID", userID).Int("deviceID", device.ID).Msg("New device created successfully")
 				return nil
 			}
 			r.Logger.Error().Err(err).Int("userID", userID).Str("deviceToken", req.DeviceToken).Msg("Failed to query device in DB")
@@ -820,24 +825,135 @@ func (r *UsersRepository) FindOrCreateDevice(ctx context.Context, userID int, re
 		}
 
 		device = d
-		r.Logger.Info().Int("userID", userID).Int("deviceID", device.ID).Msg("Existing device found")
+		r.Logger.Debug().Int("userID", userID).Int("deviceID", device.ID).Msg("Existing device found")
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("userID", userID).Str("deviceToken", req.DeviceToken).Msg("Transaction failed for FindOrCreateDevice")
 		return nil, errors.New("failed to find or create device in transaction")
 	}
 
-	r.Logger.Info().Int("userID", userID).Int("deviceID", device.ID).Msg("Device operation completed successfully")
+	r.Logger.Debug().Int("userID", userID).Int("deviceID", device.ID).Msg("Device operation completed successfully")
 	return device, nil
 }
 
+func (r *UsersRepository) UpdateEntrepreneurDetails(ctx context.Context, user *ent.User, req *requests.EntrepreneurDetails) (*ent.User, error) {
+	r.Logger.Info().Int("userID", user.ID).Msg("Attempting to update entrepreneur details")
+	var updatedUser *ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		details, _ := tx.EntrepreneurDetails.
+			Query().
+			Where(entrepreneurdetails.HasUserDetailsWith(userdetails.IDEQ(updatedUser.Edges.UserDetails.ID))).
+			Only(ctx)
+		if details == nil {
+			if _, err := tx.EntrepreneurDetails.
+				Create().
+				SetUserDetailsID(updatedUser.Edges.UserDetails.ID).
+				SetBusinessName(req.BusinessName).
+				SetNip(req.NIP).
+				SetKrs(req.KRS).
+				SetDescription(req.Description).
+				SetIncome(req.Income).
+				SetCosts(req.Costs).
+				SetFundingCapital(req.FundingCapital).
+				SetManagementCouncilMembers(req.ManagementCouncilMembers).
+				SetDecisionMakers(req.DecisionMakers).
+				SetBusinessPhoneNumber(req.BusinessPhoneNumber).
+				SetBusinessMail(req.BusinessMail).
+				SetWebsiteAddress(req.WebsiteAddress).
+				Save(ctx); err != nil {
+				return errors.New("failed to create entrepreneur details")
+			}
+		} else {
+			if _, err := tx.EntrepreneurDetails.
+				UpdateOneID(details.ID).
+				SetUserDetailsID(updatedUser.Edges.UserDetails.ID).
+				SetBusinessName(req.BusinessName).
+				SetNip(req.NIP).
+				SetKrs(req.KRS).
+				SetDescription(req.Description).
+				SetIncome(req.Income).
+				SetCosts(req.Costs).
+				SetFundingCapital(req.FundingCapital).
+				SetManagementCouncilMembers(req.ManagementCouncilMembers).
+				SetDecisionMakers(req.DecisionMakers).
+				SetBusinessPhoneNumber(req.BusinessPhoneNumber).
+				SetBusinessMail(req.BusinessMail).
+				SetWebsiteAddress(req.WebsiteAddress).
+				Save(ctx); err != nil {
+				return errors.New("failed to update entrepreneur details")
+			}
+		}
+
+		updatedUser, err = GetUserByID(ctx, tx, user.ID)
+		if err != nil {
+			return errors.New("failed to fetch updated user")
+		}
+
+		r.Logger.Debug().Int("userID", user.ID).Msg("User account marked as removed in DB")
+
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Transaction failed for RemoveAccount")
+		return nil, errors.New("failed to remove user")
+	}
+
+	return updatedUser, nil
+}
+
+func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, req *requests.Location) (*ent.User, error) {
+	r.Logger.Info().Int("userID", user.ID).Msg("Attempting to update user location")
+	var updatedUser *ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		foundLocation, _ := tx.Location.
+			Query().
+			Where(location.HasUserDetailsWith(userdetails.IDEQ(updatedUser.Edges.UserDetails.ID))).
+			Only(ctx)
+		if foundLocation != nil {
+			if _, err := tx.Location.
+				Update().
+				Save(ctx); err != nil {
+				return errors.New("failed to update user's location")
+			}
+
+		} else {
+			if _, err := tx.Location.
+				Create().
+				Save(ctx); err != nil {
+				return errors.New("failed to create new location")
+			}
+		}
+
+		updatedUser, err = GetUserByID(ctx, tx, user.ID)
+		if err != nil {
+			return errors.New("failed to fetch updated user")
+		}
+
+		r.Logger.Debug().Int("userID", user.ID).Msg("User account marked as removed in DB")
+
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Transaction failed for RemoveAccount")
+		return nil, errors.New("failed to remove user")
+	}
+
+	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
+
+	return nil, nil
+}
+
 func (r *UsersRepository) Ping() error {
-	r.Logger.Info().Msg("Attempting to ping database")
+	r.Logger.Debug().Msg("Attempting to ping database")
+
 	err := r.Driver.DB().Ping()
 	if err != nil {
 		r.Logger.Error().Err(err).Msg("Failed to ping database")
 		return err
 	}
-	r.Logger.Info().Msg("Database ping successful")
+
+	r.Logger.Debug().Msg("Database ping successful")
 	return nil
 }

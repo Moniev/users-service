@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/userdetails"
 
@@ -67,6 +68,18 @@ func (lc *LocationCreate) SetBuildingNumber(i int) *LocationCreate {
 // SetApartmentNumber sets the "apartment_number" field.
 func (lc *LocationCreate) SetApartmentNumber(i int) *LocationCreate {
 	lc.mutation.SetApartmentNumber(i)
+	return lc
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (lc *LocationCreate) SetCreatedAt(t time.Time) *LocationCreate {
+	lc.mutation.SetCreatedAt(t)
+	return lc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (lc *LocationCreate) SetUpdatedAt(t time.Time) *LocationCreate {
+	lc.mutation.SetUpdatedAt(t)
 	return lc
 }
 
@@ -169,6 +182,12 @@ func (lc *LocationCreate) check() error {
 			return &ValidationError{Name: "apartment_number", err: fmt.Errorf(`ent: validator failed for field "Location.apartment_number": %w`, err)}
 		}
 	}
+	if _, ok := lc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Location.created_at"`)}
+	}
+	if _, ok := lc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Location.updated_at"`)}
+	}
 	if len(lc.mutation.UserDetailsIDs()) == 0 {
 		return &ValidationError{Name: "user_details", err: errors.New(`ent: missing required edge "Location.user_details"`)}
 	}
@@ -231,6 +250,14 @@ func (lc *LocationCreate) createSpec() (*Location, *sqlgraph.CreateSpec) {
 	if value, ok := lc.mutation.ApartmentNumber(); ok {
 		_spec.SetField(location.FieldApartmentNumber, field.TypeInt, value)
 		_node.ApartmentNumber = value
+	}
+	if value, ok := lc.mutation.CreatedAt(); ok {
+		_spec.SetField(location.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := lc.mutation.UpdatedAt(); ok {
+		_spec.SetField(location.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
 	}
 	if nodes := lc.mutation.UserDetailsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

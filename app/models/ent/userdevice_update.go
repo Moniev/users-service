@@ -211,23 +211,17 @@ func (udu *UserDeviceUpdate) SetLastSeenAt(t time.Time) *UserDeviceUpdate {
 	return udu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (udu *UserDeviceUpdate) SetCreatedAt(t time.Time) *UserDeviceUpdate {
-	udu.mutation.SetCreatedAt(t)
-	return udu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (udu *UserDeviceUpdate) SetNillableCreatedAt(t *time.Time) *UserDeviceUpdate {
-	if t != nil {
-		udu.SetCreatedAt(*t)
-	}
-	return udu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (udu *UserDeviceUpdate) SetUpdatedAt(t time.Time) *UserDeviceUpdate {
 	udu.mutation.SetUpdatedAt(t)
+	return udu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (udu *UserDeviceUpdate) SetNillableUpdatedAt(t *time.Time) *UserDeviceUpdate {
+	if t != nil {
+		udu.SetUpdatedAt(*t)
+	}
 	return udu
 }
 
@@ -305,7 +299,9 @@ func (udu *UserDeviceUpdate) ClearSecondFactorCodes() *UserDeviceUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (udu *UserDeviceUpdate) Save(ctx context.Context) (int, error) {
-	udu.defaults()
+	if err := udu.defaults(); err != nil {
+		return 0, err
+	}
 	return withHooks(ctx, udu.sqlSave, udu.mutation, udu.hooks)
 }
 
@@ -332,15 +328,15 @@ func (udu *UserDeviceUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (udu *UserDeviceUpdate) defaults() {
+func (udu *UserDeviceUpdate) defaults() error {
 	if _, ok := udu.mutation.LastSeenAt(); !ok {
+		if userdevice.UpdateDefaultLastSeenAt == nil {
+			return fmt.Errorf("ent: uninitialized userdevice.UpdateDefaultLastSeenAt (forgotten import ent/runtime?)")
+		}
 		v := userdevice.UpdateDefaultLastSeenAt()
 		udu.mutation.SetLastSeenAt(v)
 	}
-	if _, ok := udu.mutation.UpdatedAt(); !ok {
-		v := userdevice.UpdateDefaultUpdatedAt()
-		udu.mutation.SetUpdatedAt(v)
-	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -421,9 +417,6 @@ func (udu *UserDeviceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := udu.mutation.LastSeenAt(); ok {
 		_spec.SetField(userdevice.FieldLastSeenAt, field.TypeTime, value)
-	}
-	if value, ok := udu.mutation.CreatedAt(); ok {
-		_spec.SetField(userdevice.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := udu.mutation.UpdatedAt(); ok {
 		_spec.SetField(userdevice.FieldUpdatedAt, field.TypeTime, value)
@@ -715,23 +708,17 @@ func (uduo *UserDeviceUpdateOne) SetLastSeenAt(t time.Time) *UserDeviceUpdateOne
 	return uduo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uduo *UserDeviceUpdateOne) SetCreatedAt(t time.Time) *UserDeviceUpdateOne {
-	uduo.mutation.SetCreatedAt(t)
-	return uduo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uduo *UserDeviceUpdateOne) SetNillableCreatedAt(t *time.Time) *UserDeviceUpdateOne {
-	if t != nil {
-		uduo.SetCreatedAt(*t)
-	}
-	return uduo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uduo *UserDeviceUpdateOne) SetUpdatedAt(t time.Time) *UserDeviceUpdateOne {
 	uduo.mutation.SetUpdatedAt(t)
+	return uduo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uduo *UserDeviceUpdateOne) SetNillableUpdatedAt(t *time.Time) *UserDeviceUpdateOne {
+	if t != nil {
+		uduo.SetUpdatedAt(*t)
+	}
 	return uduo
 }
 
@@ -822,7 +809,9 @@ func (uduo *UserDeviceUpdateOne) Select(field string, fields ...string) *UserDev
 
 // Save executes the query and returns the updated UserDevice entity.
 func (uduo *UserDeviceUpdateOne) Save(ctx context.Context) (*UserDevice, error) {
-	uduo.defaults()
+	if err := uduo.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, uduo.sqlSave, uduo.mutation, uduo.hooks)
 }
 
@@ -849,15 +838,15 @@ func (uduo *UserDeviceUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (uduo *UserDeviceUpdateOne) defaults() {
+func (uduo *UserDeviceUpdateOne) defaults() error {
 	if _, ok := uduo.mutation.LastSeenAt(); !ok {
+		if userdevice.UpdateDefaultLastSeenAt == nil {
+			return fmt.Errorf("ent: uninitialized userdevice.UpdateDefaultLastSeenAt (forgotten import ent/runtime?)")
+		}
 		v := userdevice.UpdateDefaultLastSeenAt()
 		uduo.mutation.SetLastSeenAt(v)
 	}
-	if _, ok := uduo.mutation.UpdatedAt(); !ok {
-		v := userdevice.UpdateDefaultUpdatedAt()
-		uduo.mutation.SetUpdatedAt(v)
-	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -955,9 +944,6 @@ func (uduo *UserDeviceUpdateOne) sqlSave(ctx context.Context) (_node *UserDevice
 	}
 	if value, ok := uduo.mutation.LastSeenAt(); ok {
 		_spec.SetField(userdevice.FieldLastSeenAt, field.TypeTime, value)
-	}
-	if value, ok := uduo.mutation.CreatedAt(); ok {
-		_spec.SetField(userdevice.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uduo.mutation.UpdatedAt(); ok {
 		_spec.SetField(userdevice.FieldUpdatedAt, field.TypeTime, value)

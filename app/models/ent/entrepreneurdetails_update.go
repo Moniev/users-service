@@ -110,23 +110,23 @@ func (edu *EntrepreneurDetailsUpdate) ClearDescription() *EntrepreneurDetailsUpd
 	return edu
 }
 
-// SetOffert sets the "offert" field.
-func (edu *EntrepreneurDetailsUpdate) SetOffert(s string) *EntrepreneurDetailsUpdate {
-	edu.mutation.SetOffert(s)
+// SetOffer sets the "offer" field.
+func (edu *EntrepreneurDetailsUpdate) SetOffer(s string) *EntrepreneurDetailsUpdate {
+	edu.mutation.SetOffer(s)
 	return edu
 }
 
-// SetNillableOffert sets the "offert" field if the given value is not nil.
-func (edu *EntrepreneurDetailsUpdate) SetNillableOffert(s *string) *EntrepreneurDetailsUpdate {
+// SetNillableOffer sets the "offer" field if the given value is not nil.
+func (edu *EntrepreneurDetailsUpdate) SetNillableOffer(s *string) *EntrepreneurDetailsUpdate {
 	if s != nil {
-		edu.SetOffert(*s)
+		edu.SetOffer(*s)
 	}
 	return edu
 }
 
-// ClearOffert clears the value of the "offert" field.
-func (edu *EntrepreneurDetailsUpdate) ClearOffert() *EntrepreneurDetailsUpdate {
-	edu.mutation.ClearOffert()
+// ClearOffer clears the value of the "offer" field.
+func (edu *EntrepreneurDetailsUpdate) ClearOffer() *EntrepreneurDetailsUpdate {
+	edu.mutation.ClearOffer()
 	return edu
 }
 
@@ -287,23 +287,23 @@ func (edu *EntrepreneurDetailsUpdate) ClearBusinessPhoneNumber() *EntrepreneurDe
 	return edu
 }
 
-// SetBusinessEmail sets the "business_email" field.
-func (edu *EntrepreneurDetailsUpdate) SetBusinessEmail(s string) *EntrepreneurDetailsUpdate {
-	edu.mutation.SetBusinessEmail(s)
+// SetBusinessMail sets the "business_mail" field.
+func (edu *EntrepreneurDetailsUpdate) SetBusinessMail(s string) *EntrepreneurDetailsUpdate {
+	edu.mutation.SetBusinessMail(s)
 	return edu
 }
 
-// SetNillableBusinessEmail sets the "business_email" field if the given value is not nil.
-func (edu *EntrepreneurDetailsUpdate) SetNillableBusinessEmail(s *string) *EntrepreneurDetailsUpdate {
+// SetNillableBusinessMail sets the "business_mail" field if the given value is not nil.
+func (edu *EntrepreneurDetailsUpdate) SetNillableBusinessMail(s *string) *EntrepreneurDetailsUpdate {
 	if s != nil {
-		edu.SetBusinessEmail(*s)
+		edu.SetBusinessMail(*s)
 	}
 	return edu
 }
 
-// ClearBusinessEmail clears the value of the "business_email" field.
-func (edu *EntrepreneurDetailsUpdate) ClearBusinessEmail() *EntrepreneurDetailsUpdate {
-	edu.mutation.ClearBusinessEmail()
+// ClearBusinessMail clears the value of the "business_mail" field.
+func (edu *EntrepreneurDetailsUpdate) ClearBusinessMail() *EntrepreneurDetailsUpdate {
+	edu.mutation.ClearBusinessMail()
 	return edu
 }
 
@@ -449,11 +449,11 @@ func (edu *EntrepreneurDetailsUpdate) sqlSave(ctx context.Context) (n int, err e
 	if edu.mutation.DescriptionCleared() {
 		_spec.ClearField(entrepreneurdetails.FieldDescription, field.TypeString)
 	}
-	if value, ok := edu.mutation.Offert(); ok {
-		_spec.SetField(entrepreneurdetails.FieldOffert, field.TypeString, value)
+	if value, ok := edu.mutation.Offer(); ok {
+		_spec.SetField(entrepreneurdetails.FieldOffer, field.TypeString, value)
 	}
-	if edu.mutation.OffertCleared() {
-		_spec.ClearField(entrepreneurdetails.FieldOffert, field.TypeString)
+	if edu.mutation.OfferCleared() {
+		_spec.ClearField(entrepreneurdetails.FieldOffer, field.TypeString)
 	}
 	if value, ok := edu.mutation.Income(); ok {
 		_spec.SetField(entrepreneurdetails.FieldIncome, field.TypeFloat64, value)
@@ -516,11 +516,11 @@ func (edu *EntrepreneurDetailsUpdate) sqlSave(ctx context.Context) (n int, err e
 	if edu.mutation.BusinessPhoneNumberCleared() {
 		_spec.ClearField(entrepreneurdetails.FieldBusinessPhoneNumber, field.TypeString)
 	}
-	if value, ok := edu.mutation.BusinessEmail(); ok {
-		_spec.SetField(entrepreneurdetails.FieldBusinessEmail, field.TypeString, value)
+	if value, ok := edu.mutation.BusinessMail(); ok {
+		_spec.SetField(entrepreneurdetails.FieldBusinessMail, field.TypeString, value)
 	}
-	if edu.mutation.BusinessEmailCleared() {
-		_spec.ClearField(entrepreneurdetails.FieldBusinessEmail, field.TypeString)
+	if edu.mutation.BusinessMailCleared() {
+		_spec.ClearField(entrepreneurdetails.FieldBusinessMail, field.TypeString)
 	}
 	if value, ok := edu.mutation.WebsiteAddress(); ok {
 		_spec.SetField(entrepreneurdetails.FieldWebsiteAddress, field.TypeString, value)
@@ -660,23 +660,23 @@ func (eduo *EntrepreneurDetailsUpdateOne) ClearDescription() *EntrepreneurDetail
 	return eduo
 }
 
-// SetOffert sets the "offert" field.
-func (eduo *EntrepreneurDetailsUpdateOne) SetOffert(s string) *EntrepreneurDetailsUpdateOne {
-	eduo.mutation.SetOffert(s)
+// SetOffer sets the "offer" field.
+func (eduo *EntrepreneurDetailsUpdateOne) SetOffer(s string) *EntrepreneurDetailsUpdateOne {
+	eduo.mutation.SetOffer(s)
 	return eduo
 }
 
-// SetNillableOffert sets the "offert" field if the given value is not nil.
-func (eduo *EntrepreneurDetailsUpdateOne) SetNillableOffert(s *string) *EntrepreneurDetailsUpdateOne {
+// SetNillableOffer sets the "offer" field if the given value is not nil.
+func (eduo *EntrepreneurDetailsUpdateOne) SetNillableOffer(s *string) *EntrepreneurDetailsUpdateOne {
 	if s != nil {
-		eduo.SetOffert(*s)
+		eduo.SetOffer(*s)
 	}
 	return eduo
 }
 
-// ClearOffert clears the value of the "offert" field.
-func (eduo *EntrepreneurDetailsUpdateOne) ClearOffert() *EntrepreneurDetailsUpdateOne {
-	eduo.mutation.ClearOffert()
+// ClearOffer clears the value of the "offer" field.
+func (eduo *EntrepreneurDetailsUpdateOne) ClearOffer() *EntrepreneurDetailsUpdateOne {
+	eduo.mutation.ClearOffer()
 	return eduo
 }
 
@@ -837,23 +837,23 @@ func (eduo *EntrepreneurDetailsUpdateOne) ClearBusinessPhoneNumber() *Entreprene
 	return eduo
 }
 
-// SetBusinessEmail sets the "business_email" field.
-func (eduo *EntrepreneurDetailsUpdateOne) SetBusinessEmail(s string) *EntrepreneurDetailsUpdateOne {
-	eduo.mutation.SetBusinessEmail(s)
+// SetBusinessMail sets the "business_mail" field.
+func (eduo *EntrepreneurDetailsUpdateOne) SetBusinessMail(s string) *EntrepreneurDetailsUpdateOne {
+	eduo.mutation.SetBusinessMail(s)
 	return eduo
 }
 
-// SetNillableBusinessEmail sets the "business_email" field if the given value is not nil.
-func (eduo *EntrepreneurDetailsUpdateOne) SetNillableBusinessEmail(s *string) *EntrepreneurDetailsUpdateOne {
+// SetNillableBusinessMail sets the "business_mail" field if the given value is not nil.
+func (eduo *EntrepreneurDetailsUpdateOne) SetNillableBusinessMail(s *string) *EntrepreneurDetailsUpdateOne {
 	if s != nil {
-		eduo.SetBusinessEmail(*s)
+		eduo.SetBusinessMail(*s)
 	}
 	return eduo
 }
 
-// ClearBusinessEmail clears the value of the "business_email" field.
-func (eduo *EntrepreneurDetailsUpdateOne) ClearBusinessEmail() *EntrepreneurDetailsUpdateOne {
-	eduo.mutation.ClearBusinessEmail()
+// ClearBusinessMail clears the value of the "business_mail" field.
+func (eduo *EntrepreneurDetailsUpdateOne) ClearBusinessMail() *EntrepreneurDetailsUpdateOne {
+	eduo.mutation.ClearBusinessMail()
 	return eduo
 }
 
@@ -1029,11 +1029,11 @@ func (eduo *EntrepreneurDetailsUpdateOne) sqlSave(ctx context.Context) (_node *E
 	if eduo.mutation.DescriptionCleared() {
 		_spec.ClearField(entrepreneurdetails.FieldDescription, field.TypeString)
 	}
-	if value, ok := eduo.mutation.Offert(); ok {
-		_spec.SetField(entrepreneurdetails.FieldOffert, field.TypeString, value)
+	if value, ok := eduo.mutation.Offer(); ok {
+		_spec.SetField(entrepreneurdetails.FieldOffer, field.TypeString, value)
 	}
-	if eduo.mutation.OffertCleared() {
-		_spec.ClearField(entrepreneurdetails.FieldOffert, field.TypeString)
+	if eduo.mutation.OfferCleared() {
+		_spec.ClearField(entrepreneurdetails.FieldOffer, field.TypeString)
 	}
 	if value, ok := eduo.mutation.Income(); ok {
 		_spec.SetField(entrepreneurdetails.FieldIncome, field.TypeFloat64, value)
@@ -1096,11 +1096,11 @@ func (eduo *EntrepreneurDetailsUpdateOne) sqlSave(ctx context.Context) (_node *E
 	if eduo.mutation.BusinessPhoneNumberCleared() {
 		_spec.ClearField(entrepreneurdetails.FieldBusinessPhoneNumber, field.TypeString)
 	}
-	if value, ok := eduo.mutation.BusinessEmail(); ok {
-		_spec.SetField(entrepreneurdetails.FieldBusinessEmail, field.TypeString, value)
+	if value, ok := eduo.mutation.BusinessMail(); ok {
+		_spec.SetField(entrepreneurdetails.FieldBusinessMail, field.TypeString, value)
 	}
-	if eduo.mutation.BusinessEmailCleared() {
-		_spec.ClearField(entrepreneurdetails.FieldBusinessEmail, field.TypeString)
+	if eduo.mutation.BusinessMailCleared() {
+		_spec.ClearField(entrepreneurdetails.FieldBusinessMail, field.TypeString)
 	}
 	if value, ok := eduo.mutation.WebsiteAddress(); ok {
 		_spec.SetField(entrepreneurdetails.FieldWebsiteAddress, field.TypeString, value)

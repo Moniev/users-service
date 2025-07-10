@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/userdetails"
 
@@ -31,6 +32,10 @@ type Location struct {
 	BuildingNumber int `json:"building_number"`
 	// ApartmentNumber holds the value of the "apartment_number" field.
 	ApartmentNumber int `json:"apartment_number"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LocationQuery when eager-loading is set.
 	Edges                  LocationEdges `json:"edges"`
@@ -67,6 +72,8 @@ func (*Location) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case location.FieldCountry, location.FieldProvince, location.FieldCity, location.FieldPostalCode, location.FieldStreet:
 			values[i] = new(sql.NullString)
+		case location.FieldCreatedAt, location.FieldUpdatedAt:
+			values[i] = new(sql.NullTime)
 		case location.ForeignKeys[0]: // user_details_locations
 			values[i] = new(sql.NullInt64)
 		default:
@@ -131,6 +138,18 @@ func (l *Location) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field apartment_number", values[i])
 			} else if value.Valid {
 				l.ApartmentNumber = int(value.Int64)
+			}
+		case location.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				l.CreatedAt = value.Time
+			}
+		case location.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				l.UpdatedAt = value.Time
 			}
 		case location.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -200,6 +219,12 @@ func (l *Location) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("apartment_number=")
 	builder.WriteString(fmt.Sprintf("%v", l.ApartmentNumber))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(l.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(l.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -75,9 +75,9 @@ func Description(v string) predicate.EntrepreneurDetails {
 	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldDescription, v))
 }
 
-// Offert applies equality check predicate on the "offert" field. It's identical to OffertEQ.
-func Offert(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldOffert, v))
+// Offer applies equality check predicate on the "offer" field. It's identical to OfferEQ.
+func Offer(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldOffer, v))
 }
 
 // Income applies equality check predicate on the "income" field. It's identical to IncomeEQ.
@@ -105,9 +105,9 @@ func BusinessPhoneNumber(v string) predicate.EntrepreneurDetails {
 	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldBusinessPhoneNumber, v))
 }
 
-// BusinessEmail applies equality check predicate on the "business_email" field. It's identical to BusinessEmailEQ.
-func BusinessEmail(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldBusinessEmail, v))
+// BusinessMail applies equality check predicate on the "business_mail" field. It's identical to BusinessMailEQ.
+func BusinessMail(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldBusinessMail, v))
 }
 
 // WebsiteAddress applies equality check predicate on the "website_address" field. It's identical to WebsiteAddressEQ.
@@ -425,79 +425,79 @@ func DescriptionContainsFold(v string) predicate.EntrepreneurDetails {
 	return predicate.EntrepreneurDetails(sql.FieldContainsFold(FieldDescription, v))
 }
 
-// OffertEQ applies the EQ predicate on the "offert" field.
-func OffertEQ(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldOffert, v))
+// OfferEQ applies the EQ predicate on the "offer" field.
+func OfferEQ(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldOffer, v))
 }
 
-// OffertNEQ applies the NEQ predicate on the "offert" field.
-func OffertNEQ(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldNEQ(FieldOffert, v))
+// OfferNEQ applies the NEQ predicate on the "offer" field.
+func OfferNEQ(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldNEQ(FieldOffer, v))
 }
 
-// OffertIn applies the In predicate on the "offert" field.
-func OffertIn(vs ...string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldIn(FieldOffert, vs...))
+// OfferIn applies the In predicate on the "offer" field.
+func OfferIn(vs ...string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldIn(FieldOffer, vs...))
 }
 
-// OffertNotIn applies the NotIn predicate on the "offert" field.
-func OffertNotIn(vs ...string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldNotIn(FieldOffert, vs...))
+// OfferNotIn applies the NotIn predicate on the "offer" field.
+func OfferNotIn(vs ...string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldNotIn(FieldOffer, vs...))
 }
 
-// OffertGT applies the GT predicate on the "offert" field.
-func OffertGT(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldGT(FieldOffert, v))
+// OfferGT applies the GT predicate on the "offer" field.
+func OfferGT(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldGT(FieldOffer, v))
 }
 
-// OffertGTE applies the GTE predicate on the "offert" field.
-func OffertGTE(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldGTE(FieldOffert, v))
+// OfferGTE applies the GTE predicate on the "offer" field.
+func OfferGTE(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldGTE(FieldOffer, v))
 }
 
-// OffertLT applies the LT predicate on the "offert" field.
-func OffertLT(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldLT(FieldOffert, v))
+// OfferLT applies the LT predicate on the "offer" field.
+func OfferLT(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldLT(FieldOffer, v))
 }
 
-// OffertLTE applies the LTE predicate on the "offert" field.
-func OffertLTE(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldLTE(FieldOffert, v))
+// OfferLTE applies the LTE predicate on the "offer" field.
+func OfferLTE(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldLTE(FieldOffer, v))
 }
 
-// OffertContains applies the Contains predicate on the "offert" field.
-func OffertContains(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldContains(FieldOffert, v))
+// OfferContains applies the Contains predicate on the "offer" field.
+func OfferContains(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldContains(FieldOffer, v))
 }
 
-// OffertHasPrefix applies the HasPrefix predicate on the "offert" field.
-func OffertHasPrefix(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldHasPrefix(FieldOffert, v))
+// OfferHasPrefix applies the HasPrefix predicate on the "offer" field.
+func OfferHasPrefix(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldHasPrefix(FieldOffer, v))
 }
 
-// OffertHasSuffix applies the HasSuffix predicate on the "offert" field.
-func OffertHasSuffix(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldHasSuffix(FieldOffert, v))
+// OfferHasSuffix applies the HasSuffix predicate on the "offer" field.
+func OfferHasSuffix(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldHasSuffix(FieldOffer, v))
 }
 
-// OffertIsNil applies the IsNil predicate on the "offert" field.
-func OffertIsNil() predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldIsNull(FieldOffert))
+// OfferIsNil applies the IsNil predicate on the "offer" field.
+func OfferIsNil() predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldIsNull(FieldOffer))
 }
 
-// OffertNotNil applies the NotNil predicate on the "offert" field.
-func OffertNotNil() predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldNotNull(FieldOffert))
+// OfferNotNil applies the NotNil predicate on the "offer" field.
+func OfferNotNil() predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldNotNull(FieldOffer))
 }
 
-// OffertEqualFold applies the EqualFold predicate on the "offert" field.
-func OffertEqualFold(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldEqualFold(FieldOffert, v))
+// OfferEqualFold applies the EqualFold predicate on the "offer" field.
+func OfferEqualFold(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldEqualFold(FieldOffer, v))
 }
 
-// OffertContainsFold applies the ContainsFold predicate on the "offert" field.
-func OffertContainsFold(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldContainsFold(FieldOffert, v))
+// OfferContainsFold applies the ContainsFold predicate on the "offer" field.
+func OfferContainsFold(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldContainsFold(FieldOffer, v))
 }
 
 // IncomeEQ applies the EQ predicate on the "income" field.
@@ -820,79 +820,79 @@ func BusinessPhoneNumberContainsFold(v string) predicate.EntrepreneurDetails {
 	return predicate.EntrepreneurDetails(sql.FieldContainsFold(FieldBusinessPhoneNumber, v))
 }
 
-// BusinessEmailEQ applies the EQ predicate on the "business_email" field.
-func BusinessEmailEQ(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldBusinessEmail, v))
+// BusinessMailEQ applies the EQ predicate on the "business_mail" field.
+func BusinessMailEQ(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldEQ(FieldBusinessMail, v))
 }
 
-// BusinessEmailNEQ applies the NEQ predicate on the "business_email" field.
-func BusinessEmailNEQ(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldNEQ(FieldBusinessEmail, v))
+// BusinessMailNEQ applies the NEQ predicate on the "business_mail" field.
+func BusinessMailNEQ(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldNEQ(FieldBusinessMail, v))
 }
 
-// BusinessEmailIn applies the In predicate on the "business_email" field.
-func BusinessEmailIn(vs ...string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldIn(FieldBusinessEmail, vs...))
+// BusinessMailIn applies the In predicate on the "business_mail" field.
+func BusinessMailIn(vs ...string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldIn(FieldBusinessMail, vs...))
 }
 
-// BusinessEmailNotIn applies the NotIn predicate on the "business_email" field.
-func BusinessEmailNotIn(vs ...string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldNotIn(FieldBusinessEmail, vs...))
+// BusinessMailNotIn applies the NotIn predicate on the "business_mail" field.
+func BusinessMailNotIn(vs ...string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldNotIn(FieldBusinessMail, vs...))
 }
 
-// BusinessEmailGT applies the GT predicate on the "business_email" field.
-func BusinessEmailGT(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldGT(FieldBusinessEmail, v))
+// BusinessMailGT applies the GT predicate on the "business_mail" field.
+func BusinessMailGT(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldGT(FieldBusinessMail, v))
 }
 
-// BusinessEmailGTE applies the GTE predicate on the "business_email" field.
-func BusinessEmailGTE(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldGTE(FieldBusinessEmail, v))
+// BusinessMailGTE applies the GTE predicate on the "business_mail" field.
+func BusinessMailGTE(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldGTE(FieldBusinessMail, v))
 }
 
-// BusinessEmailLT applies the LT predicate on the "business_email" field.
-func BusinessEmailLT(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldLT(FieldBusinessEmail, v))
+// BusinessMailLT applies the LT predicate on the "business_mail" field.
+func BusinessMailLT(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldLT(FieldBusinessMail, v))
 }
 
-// BusinessEmailLTE applies the LTE predicate on the "business_email" field.
-func BusinessEmailLTE(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldLTE(FieldBusinessEmail, v))
+// BusinessMailLTE applies the LTE predicate on the "business_mail" field.
+func BusinessMailLTE(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldLTE(FieldBusinessMail, v))
 }
 
-// BusinessEmailContains applies the Contains predicate on the "business_email" field.
-func BusinessEmailContains(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldContains(FieldBusinessEmail, v))
+// BusinessMailContains applies the Contains predicate on the "business_mail" field.
+func BusinessMailContains(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldContains(FieldBusinessMail, v))
 }
 
-// BusinessEmailHasPrefix applies the HasPrefix predicate on the "business_email" field.
-func BusinessEmailHasPrefix(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldHasPrefix(FieldBusinessEmail, v))
+// BusinessMailHasPrefix applies the HasPrefix predicate on the "business_mail" field.
+func BusinessMailHasPrefix(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldHasPrefix(FieldBusinessMail, v))
 }
 
-// BusinessEmailHasSuffix applies the HasSuffix predicate on the "business_email" field.
-func BusinessEmailHasSuffix(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldHasSuffix(FieldBusinessEmail, v))
+// BusinessMailHasSuffix applies the HasSuffix predicate on the "business_mail" field.
+func BusinessMailHasSuffix(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldHasSuffix(FieldBusinessMail, v))
 }
 
-// BusinessEmailIsNil applies the IsNil predicate on the "business_email" field.
-func BusinessEmailIsNil() predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldIsNull(FieldBusinessEmail))
+// BusinessMailIsNil applies the IsNil predicate on the "business_mail" field.
+func BusinessMailIsNil() predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldIsNull(FieldBusinessMail))
 }
 
-// BusinessEmailNotNil applies the NotNil predicate on the "business_email" field.
-func BusinessEmailNotNil() predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldNotNull(FieldBusinessEmail))
+// BusinessMailNotNil applies the NotNil predicate on the "business_mail" field.
+func BusinessMailNotNil() predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldNotNull(FieldBusinessMail))
 }
 
-// BusinessEmailEqualFold applies the EqualFold predicate on the "business_email" field.
-func BusinessEmailEqualFold(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldEqualFold(FieldBusinessEmail, v))
+// BusinessMailEqualFold applies the EqualFold predicate on the "business_mail" field.
+func BusinessMailEqualFold(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldEqualFold(FieldBusinessMail, v))
 }
 
-// BusinessEmailContainsFold applies the ContainsFold predicate on the "business_email" field.
-func BusinessEmailContainsFold(v string) predicate.EntrepreneurDetails {
-	return predicate.EntrepreneurDetails(sql.FieldContainsFold(FieldBusinessEmail, v))
+// BusinessMailContainsFold applies the ContainsFold predicate on the "business_mail" field.
+func BusinessMailContainsFold(v string) predicate.EntrepreneurDetails {
+	return predicate.EntrepreneurDetails(sql.FieldContainsFold(FieldBusinessMail, v))
 }
 
 // WebsiteAddressEQ applies the EQ predicate on the "website_address" field.

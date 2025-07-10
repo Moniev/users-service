@@ -72,23 +72,17 @@ func (usu *UserSettingsUpdate) SetNillableNightMode(b *bool) *UserSettingsUpdate
 	return usu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (usu *UserSettingsUpdate) SetCreatedAt(t time.Time) *UserSettingsUpdate {
-	usu.mutation.SetCreatedAt(t)
-	return usu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (usu *UserSettingsUpdate) SetNillableCreatedAt(t *time.Time) *UserSettingsUpdate {
-	if t != nil {
-		usu.SetCreatedAt(*t)
-	}
-	return usu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (usu *UserSettingsUpdate) SetUpdatedAt(t time.Time) *UserSettingsUpdate {
 	usu.mutation.SetUpdatedAt(t)
+	return usu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (usu *UserSettingsUpdate) SetNillableUpdatedAt(t *time.Time) *UserSettingsUpdate {
+	if t != nil {
+		usu.SetUpdatedAt(*t)
+	}
 	return usu
 }
 
@@ -177,7 +171,6 @@ func (usu *UserSettingsUpdate) RemoveNotificationTargetDevices(u ...*UserDevice)
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (usu *UserSettingsUpdate) Save(ctx context.Context) (int, error) {
-	usu.defaults()
 	return withHooks(ctx, usu.sqlSave, usu.mutation, usu.hooks)
 }
 
@@ -200,14 +193,6 @@ func (usu *UserSettingsUpdate) Exec(ctx context.Context) error {
 func (usu *UserSettingsUpdate) ExecX(ctx context.Context) {
 	if err := usu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (usu *UserSettingsUpdate) defaults() {
-	if _, ok := usu.mutation.UpdatedAt(); !ok {
-		v := usersettings.UpdateDefaultUpdatedAt()
-		usu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -244,9 +229,6 @@ func (usu *UserSettingsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := usu.mutation.NightMode(); ok {
 		_spec.SetField(usersettings.FieldNightMode, field.TypeBool, value)
-	}
-	if value, ok := usu.mutation.CreatedAt(); ok {
-		_spec.SetField(usersettings.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := usu.mutation.UpdatedAt(); ok {
 		_spec.SetField(usersettings.FieldUpdatedAt, field.TypeTime, value)
@@ -416,23 +398,17 @@ func (usuo *UserSettingsUpdateOne) SetNillableNightMode(b *bool) *UserSettingsUp
 	return usuo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (usuo *UserSettingsUpdateOne) SetCreatedAt(t time.Time) *UserSettingsUpdateOne {
-	usuo.mutation.SetCreatedAt(t)
-	return usuo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (usuo *UserSettingsUpdateOne) SetNillableCreatedAt(t *time.Time) *UserSettingsUpdateOne {
-	if t != nil {
-		usuo.SetCreatedAt(*t)
-	}
-	return usuo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (usuo *UserSettingsUpdateOne) SetUpdatedAt(t time.Time) *UserSettingsUpdateOne {
 	usuo.mutation.SetUpdatedAt(t)
+	return usuo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (usuo *UserSettingsUpdateOne) SetNillableUpdatedAt(t *time.Time) *UserSettingsUpdateOne {
+	if t != nil {
+		usuo.SetUpdatedAt(*t)
+	}
 	return usuo
 }
 
@@ -534,7 +510,6 @@ func (usuo *UserSettingsUpdateOne) Select(field string, fields ...string) *UserS
 
 // Save executes the query and returns the updated UserSettings entity.
 func (usuo *UserSettingsUpdateOne) Save(ctx context.Context) (*UserSettings, error) {
-	usuo.defaults()
 	return withHooks(ctx, usuo.sqlSave, usuo.mutation, usuo.hooks)
 }
 
@@ -557,14 +532,6 @@ func (usuo *UserSettingsUpdateOne) Exec(ctx context.Context) error {
 func (usuo *UserSettingsUpdateOne) ExecX(ctx context.Context) {
 	if err := usuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (usuo *UserSettingsUpdateOne) defaults() {
-	if _, ok := usuo.mutation.UpdatedAt(); !ok {
-		v := usersettings.UpdateDefaultUpdatedAt()
-		usuo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -618,9 +585,6 @@ func (usuo *UserSettingsUpdateOne) sqlSave(ctx context.Context) (_node *UserSett
 	}
 	if value, ok := usuo.mutation.NightMode(); ok {
 		_spec.SetField(usersettings.FieldNightMode, field.TypeBool, value)
-	}
-	if value, ok := usuo.mutation.CreatedAt(); ok {
-		_spec.SetField(usersettings.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := usuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(usersettings.FieldUpdatedAt, field.TypeTime, value)

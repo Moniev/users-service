@@ -155,12 +155,45 @@ func (c *UsersController) RemoveAccount(ctx *gin.Context) {
 	})
 }
 
+// UpdateEntrepreneurDetails godoc
+// @Summary      Updates user entrepreneur details
+// @Description  Updates existing entrepreneur details if already created. Other way creates new EntrepreneurDetails object.
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header    string            true  "Bearer token"
+// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Account removed successfully"
+// @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Removal failed"
+// @Router       /api/v1/users/details/entrepreneur/update [put]
 func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.EntrepreneurDetails) (*responses.User, error) {
 		user, err := c.UsersService.UpdateEntrepreneurDetails(reqCtx, userID, req)
 		if err != nil {
 			return nil, err
 		}
+		return &responses.User{User: user}, nil
+	})
+}
+
+// UpdateLocation godoc
+// @Summary      Updates user's location
+// @Description  Updates existing location if already created. Other way creates new EntrepreneurDetails object.
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header    string            true  "Bearer token"
+// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Account removed successfully"
+// @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Removal failed"
+// @Router       /api/v1/users/details/location/update [put]
+func (c *UsersController) UpdateLocation(ctx *gin.Context) {
+	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Location) (*responses.User, error) {
+		user, err := c.UsersService.UpdateLocation(reqCtx, userID, req)
+		if err != nil {
+			return nil, err
+		}
+
 		return &responses.User{User: user}, nil
 	})
 }

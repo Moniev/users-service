@@ -3,6 +3,7 @@
 package location
 
 import (
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 )
@@ -26,6 +27,10 @@ const (
 	FieldBuildingNumber = "building_number"
 	// FieldApartmentNumber holds the string denoting the apartment_number field in the database.
 	FieldApartmentNumber = "apartment_number"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
 	// EdgeUserDetails holds the string denoting the user_details edge name in mutations.
 	EdgeUserDetails = "user_details"
 	// Table holds the table name of the location in the database.
@@ -49,6 +54,8 @@ var Columns = []string{
 	FieldStreet,
 	FieldBuildingNumber,
 	FieldApartmentNumber,
+	FieldCreatedAt,
+	FieldUpdatedAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "locations"
@@ -72,7 +79,13 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "users-service/app/models/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// CountryValidator is a validator for the "country" field. It is called by the builders before save.
 	CountryValidator func(string) error
 	// ProvinceValidator is a validator for the "province" field. It is called by the builders before save.
@@ -128,6 +141,16 @@ func ByBuildingNumber(opts ...sql.OrderTermOption) OrderOption {
 // ByApartmentNumber orders the results by the apartment_number field.
 func ByApartmentNumber(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldApartmentNumber, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
 // ByUserDetailsField orders the results by user_details field.

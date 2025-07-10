@@ -48,25 +48,9 @@ func (sfcc *SecondFactorCodeCreate) SetCreatedAt(t time.Time) *SecondFactorCodeC
 	return sfcc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (sfcc *SecondFactorCodeCreate) SetNillableCreatedAt(t *time.Time) *SecondFactorCodeCreate {
-	if t != nil {
-		sfcc.SetCreatedAt(*t)
-	}
-	return sfcc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (sfcc *SecondFactorCodeCreate) SetUpdatedAt(t time.Time) *SecondFactorCodeCreate {
 	sfcc.mutation.SetUpdatedAt(t)
-	return sfcc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (sfcc *SecondFactorCodeCreate) SetNillableUpdatedAt(t *time.Time) *SecondFactorCodeCreate {
-	if t != nil {
-		sfcc.SetUpdatedAt(*t)
-	}
 	return sfcc
 }
 
@@ -119,7 +103,9 @@ func (sfcc *SecondFactorCodeCreate) Mutation() *SecondFactorCodeMutation {
 
 // Save creates the SecondFactorCode in the database.
 func (sfcc *SecondFactorCodeCreate) Save(ctx context.Context) (*SecondFactorCode, error) {
-	sfcc.defaults()
+	if err := sfcc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, sfcc.sqlSave, sfcc.mutation, sfcc.hooks)
 }
 
@@ -146,23 +132,16 @@ func (sfcc *SecondFactorCodeCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (sfcc *SecondFactorCodeCreate) defaults() {
+func (sfcc *SecondFactorCodeCreate) defaults() error {
 	if _, ok := sfcc.mutation.Used(); !ok {
 		v := secondfactorcode.DefaultUsed
 		sfcc.mutation.SetUsed(v)
-	}
-	if _, ok := sfcc.mutation.CreatedAt(); !ok {
-		v := secondfactorcode.DefaultCreatedAt()
-		sfcc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := sfcc.mutation.UpdatedAt(); !ok {
-		v := secondfactorcode.DefaultUpdatedAt()
-		sfcc.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := sfcc.mutation.ExpiresAt(); !ok {
 		v := secondfactorcode.DefaultExpiresAt
 		sfcc.mutation.SetExpiresAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

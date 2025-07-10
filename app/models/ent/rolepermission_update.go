@@ -99,23 +99,17 @@ func (rpu *RolePermissionUpdate) SetNillableDelete(b *bool) *RolePermissionUpdat
 	return rpu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (rpu *RolePermissionUpdate) SetCreatedAt(t time.Time) *RolePermissionUpdate {
-	rpu.mutation.SetCreatedAt(t)
-	return rpu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (rpu *RolePermissionUpdate) SetNillableCreatedAt(t *time.Time) *RolePermissionUpdate {
-	if t != nil {
-		rpu.SetCreatedAt(*t)
-	}
-	return rpu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (rpu *RolePermissionUpdate) SetUpdatedAt(t time.Time) *RolePermissionUpdate {
 	rpu.mutation.SetUpdatedAt(t)
+	return rpu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (rpu *RolePermissionUpdate) SetNillableUpdatedAt(t *time.Time) *RolePermissionUpdate {
+	if t != nil {
+		rpu.SetUpdatedAt(*t)
+	}
 	return rpu
 }
 
@@ -162,7 +156,6 @@ func (rpu *RolePermissionUpdate) RemoveUserRole(u ...*UserRole) *RolePermissionU
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (rpu *RolePermissionUpdate) Save(ctx context.Context) (int, error) {
-	rpu.defaults()
 	return withHooks(ctx, rpu.sqlSave, rpu.mutation, rpu.hooks)
 }
 
@@ -185,14 +178,6 @@ func (rpu *RolePermissionUpdate) Exec(ctx context.Context) error {
 func (rpu *RolePermissionUpdate) ExecX(ctx context.Context) {
 	if err := rpu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (rpu *RolePermissionUpdate) defaults() {
-	if _, ok := rpu.mutation.UpdatedAt(); !ok {
-		v := rolepermission.UpdateDefaultUpdatedAt()
-		rpu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -219,9 +204,6 @@ func (rpu *RolePermissionUpdate) sqlSave(ctx context.Context) (n int, err error)
 	}
 	if value, ok := rpu.mutation.Delete(); ok {
 		_spec.SetField(rolepermission.FieldDelete, field.TypeBool, value)
-	}
-	if value, ok := rpu.mutation.CreatedAt(); ok {
-		_spec.SetField(rolepermission.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := rpu.mutation.UpdatedAt(); ok {
 		_spec.SetField(rolepermission.FieldUpdatedAt, field.TypeTime, value)
@@ -361,23 +343,17 @@ func (rpuo *RolePermissionUpdateOne) SetNillableDelete(b *bool) *RolePermissionU
 	return rpuo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (rpuo *RolePermissionUpdateOne) SetCreatedAt(t time.Time) *RolePermissionUpdateOne {
-	rpuo.mutation.SetCreatedAt(t)
-	return rpuo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (rpuo *RolePermissionUpdateOne) SetNillableCreatedAt(t *time.Time) *RolePermissionUpdateOne {
-	if t != nil {
-		rpuo.SetCreatedAt(*t)
-	}
-	return rpuo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (rpuo *RolePermissionUpdateOne) SetUpdatedAt(t time.Time) *RolePermissionUpdateOne {
 	rpuo.mutation.SetUpdatedAt(t)
+	return rpuo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (rpuo *RolePermissionUpdateOne) SetNillableUpdatedAt(t *time.Time) *RolePermissionUpdateOne {
+	if t != nil {
+		rpuo.SetUpdatedAt(*t)
+	}
 	return rpuo
 }
 
@@ -437,7 +413,6 @@ func (rpuo *RolePermissionUpdateOne) Select(field string, fields ...string) *Rol
 
 // Save executes the query and returns the updated RolePermission entity.
 func (rpuo *RolePermissionUpdateOne) Save(ctx context.Context) (*RolePermission, error) {
-	rpuo.defaults()
 	return withHooks(ctx, rpuo.sqlSave, rpuo.mutation, rpuo.hooks)
 }
 
@@ -460,14 +435,6 @@ func (rpuo *RolePermissionUpdateOne) Exec(ctx context.Context) error {
 func (rpuo *RolePermissionUpdateOne) ExecX(ctx context.Context) {
 	if err := rpuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (rpuo *RolePermissionUpdateOne) defaults() {
-	if _, ok := rpuo.mutation.UpdatedAt(); !ok {
-		v := rolepermission.UpdateDefaultUpdatedAt()
-		rpuo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -511,9 +478,6 @@ func (rpuo *RolePermissionUpdateOne) sqlSave(ctx context.Context) (_node *RolePe
 	}
 	if value, ok := rpuo.mutation.Delete(); ok {
 		_spec.SetField(rolepermission.FieldDelete, field.TypeBool, value)
-	}
-	if value, ok := rpuo.mutation.CreatedAt(); ok {
-		_spec.SetField(rolepermission.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := rpuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(rolepermission.FieldUpdatedAt, field.TypeTime, value)

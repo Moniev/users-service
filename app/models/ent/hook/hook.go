@@ -20,6 +20,18 @@ func (f ActivationCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActivationCodeMutation", m)
 }
 
+// The BlacklistedTokenFunc type is an adapter to allow the use of ordinary
+// function as BlacklistedToken mutator.
+type BlacklistedTokenFunc func(context.Context, *ent.BlacklistedTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BlacklistedTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BlacklistedTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BlacklistedTokenMutation", m)
+}
+
 // The EntrepreneurDetailsFunc type is an adapter to allow the use of ordinary
 // function as EntrepreneurDetails mutator.
 type EntrepreneurDetailsFunc func(context.Context, *ent.EntrepreneurDetailsMutation) (ent.Value, error)

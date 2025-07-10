@@ -22,8 +22,11 @@ type UsersServiceInterface interface {
 	UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error)
 	UpdateSettings(ctx context.Context, userID int, req *requests.Settings) (*ent.User, error)
 	UpdateEntrepreneurDetails(ctx context.Context, userID int, req *requests.EntrepreneurDetails) (*ent.User, error)
+	UpdateLocation(ctx context.Context, userID int, req *requests.Location) (*ent.User, error)
+
 	RemoveAccount(ctx context.Context, userID int) error
 	GetUserPublic(ctx context.Context, userID int) (*ent.User, error)
+	GetUserPrivate(ctx context.Context, userID int) (*ent.User, error)
 }
 
 var _ UsersServiceInterface = (*UsersService)(nil)
@@ -130,7 +133,41 @@ func (s *UsersService) RemoveAccount(ctx context.Context, userID int) error {
 }
 
 func (s *UsersService) UpdateEntrepreneurDetails(ctx context.Context, userID int, req *requests.EntrepreneurDetails) (*ent.User, error) {
-	return nil, nil
+	user, err := s.UsersRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user")
+	}
+
+	updatedUser, err := s.UsersRepository.UpdateEntrepreneurDetails(ctx, user, req)
+	if err != nil {
+		return nil, errors.New("failed to update user details")
+	}
+
+	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
+		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce notification event")
+		return nil, errors.New("failed to send notification")
+	}
+
+	return user, nil
+}
+
+func (s UsersService) UpdateLocation(ctx context.Context, userID int, req *requests.Location) (*ent.User, error) {
+	user, err := s.UsersRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user")
+	}
+
+	updatedUser, err := s.UsersRepository.UpdateLocation(ctx, user, req)
+	if err != nil {
+		return nil, errors.New("failed to update user details")
+	}
+
+	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
+		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce notification event")
+		return nil, errors.New("failed to send notification")
+	}
+
+	return user, nil
 }
 
 func (s *UsersService) GetUserPublic(ctx context.Context, userID int) (*ent.User, error) {

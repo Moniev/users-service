@@ -1,9 +1,40 @@
 basePath: /
 definitions:
+  ent.BlacklistedToken:
+    properties:
+      created_at:
+        description: CreatedAt holds the value of the "created_at" field.
+        type: string
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.BlacklistedTokenEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the BlacklistedTokenQuery when eager-loading is set.
+      expires_at:
+        description: ExpiresAt holds the value of the "expires_at" field.
+        type: string
+      id:
+        description: ID of the ent.
+        type: integer
+      token:
+        description: Token holds the value of the "token" field.
+        type: string
+      updated_at:
+        description: UpdatedAt holds the value of the "updated_at" field.
+        type: string
+    type: object
+  ent.BlacklistedTokenEdges:
+    properties:
+      owner:
+        allOf:
+        - $ref: '#/definitions/ent.User'
+        description: Owner holds the value of the owner edge.
+    type: object
   ent.EntrepreneurDetails:
     properties:
-      business_email:
-        description: BusinessEmail holds the value of the "business_email" field.
+      business_mail:
+        description: BusinessMail holds the value of the "business_mail" field.
         type: string
       business_name:
         description: BusinessName holds the value of the "business_name" field.
@@ -56,8 +87,8 @@ definitions:
       nip:
         description: Nip holds the value of the "nip" field.
         type: string
-      offert:
-        description: Offert holds the value of the "offert" field.
+      offer:
+        description: Offer holds the value of the "offer" field.
         type: string
       updated_at:
         description: UpdatedAt holds the value of the "updated_at" field.
@@ -87,6 +118,9 @@ definitions:
       country:
         description: Country holds the value of the "country" field.
         type: string
+      created_at:
+        description: CreatedAt holds the value of the "created_at" field.
+        type: string
       edges:
         allOf:
         - $ref: '#/definitions/ent.LocationEdges'
@@ -104,6 +138,9 @@ definitions:
         type: string
       street:
         description: Street holds the value of the "street" field.
+        type: string
+      updated_at:
+        description: UpdatedAt holds the value of the "updated_at" field.
         type: string
     type: object
   ent.LocationEdges:
@@ -353,6 +390,11 @@ definitions:
     type: object
   ent.UserEdges:
     properties:
+      blacklisted_tokens:
+        description: BlacklistedTokens holds the value of the blacklisted_tokens edge.
+        items:
+          $ref: '#/definitions/ent.BlacklistedToken'
+        type: array
       user_details:
         allOf:
         - $ref: '#/definitions/ent.UserDetails'
@@ -1164,6 +1206,76 @@ paths:
       tags:
       - diagnostics
       - health
+  /api/v1/users/details/entrepreneur/update:
+    put:
+      consumes:
+      - application/json
+      description: Updates existing entrepreneur details if already created. Other
+        way creates new EntrepreneurDetails object.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Account removed successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - Removal failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Updates user entrepreneur details
+      tags:
+      - users
+  /api/v1/users/details/location/update:
+    put:
+      consumes:
+      - application/json
+      description: Updates existing location if already created. Other way creates
+        new EntrepreneurDetails object.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Account removed successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - Removal failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Updates user's location
+      tags:
+      - users
   /api/v1/users/details/update:
     patch:
       consumes:

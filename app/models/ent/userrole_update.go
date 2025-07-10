@@ -58,23 +58,17 @@ func (uru *UserRoleUpdate) SetNillableDescription(s *string) *UserRoleUpdate {
 	return uru
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uru *UserRoleUpdate) SetCreatedAt(t time.Time) *UserRoleUpdate {
-	uru.mutation.SetCreatedAt(t)
-	return uru
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uru *UserRoleUpdate) SetNillableCreatedAt(t *time.Time) *UserRoleUpdate {
-	if t != nil {
-		uru.SetCreatedAt(*t)
-	}
-	return uru
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uru *UserRoleUpdate) SetUpdatedAt(t time.Time) *UserRoleUpdate {
 	uru.mutation.SetUpdatedAt(t)
+	return uru
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uru *UserRoleUpdate) SetNillableUpdatedAt(t *time.Time) *UserRoleUpdate {
+	if t != nil {
+		uru.SetUpdatedAt(*t)
+	}
 	return uru
 }
 
@@ -157,7 +151,6 @@ func (uru *UserRoleUpdate) RemovePermissions(r ...*RolePermission) *UserRoleUpda
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (uru *UserRoleUpdate) Save(ctx context.Context) (int, error) {
-	uru.defaults()
 	return withHooks(ctx, uru.sqlSave, uru.mutation, uru.hooks)
 }
 
@@ -180,14 +173,6 @@ func (uru *UserRoleUpdate) Exec(ctx context.Context) error {
 func (uru *UserRoleUpdate) ExecX(ctx context.Context) {
 	if err := uru.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uru *UserRoleUpdate) defaults() {
-	if _, ok := uru.mutation.UpdatedAt(); !ok {
-		v := userrole.UpdateDefaultUpdatedAt()
-		uru.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -218,9 +203,6 @@ func (uru *UserRoleUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uru.mutation.Description(); ok {
 		_spec.SetField(userrole.FieldDescription, field.TypeString, value)
-	}
-	if value, ok := uru.mutation.CreatedAt(); ok {
-		_spec.SetField(userrole.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uru.mutation.UpdatedAt(); ok {
 		_spec.SetField(userrole.FieldUpdatedAt, field.TypeTime, value)
@@ -363,23 +345,17 @@ func (uruo *UserRoleUpdateOne) SetNillableDescription(s *string) *UserRoleUpdate
 	return uruo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uruo *UserRoleUpdateOne) SetCreatedAt(t time.Time) *UserRoleUpdateOne {
-	uruo.mutation.SetCreatedAt(t)
-	return uruo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uruo *UserRoleUpdateOne) SetNillableCreatedAt(t *time.Time) *UserRoleUpdateOne {
-	if t != nil {
-		uruo.SetCreatedAt(*t)
-	}
-	return uruo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uruo *UserRoleUpdateOne) SetUpdatedAt(t time.Time) *UserRoleUpdateOne {
 	uruo.mutation.SetUpdatedAt(t)
+	return uruo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uruo *UserRoleUpdateOne) SetNillableUpdatedAt(t *time.Time) *UserRoleUpdateOne {
+	if t != nil {
+		uruo.SetUpdatedAt(*t)
+	}
 	return uruo
 }
 
@@ -475,7 +451,6 @@ func (uruo *UserRoleUpdateOne) Select(field string, fields ...string) *UserRoleU
 
 // Save executes the query and returns the updated UserRole entity.
 func (uruo *UserRoleUpdateOne) Save(ctx context.Context) (*UserRole, error) {
-	uruo.defaults()
 	return withHooks(ctx, uruo.sqlSave, uruo.mutation, uruo.hooks)
 }
 
@@ -498,14 +473,6 @@ func (uruo *UserRoleUpdateOne) Exec(ctx context.Context) error {
 func (uruo *UserRoleUpdateOne) ExecX(ctx context.Context) {
 	if err := uruo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uruo *UserRoleUpdateOne) defaults() {
-	if _, ok := uruo.mutation.UpdatedAt(); !ok {
-		v := userrole.UpdateDefaultUpdatedAt()
-		uruo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -553,9 +520,6 @@ func (uruo *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, er
 	}
 	if value, ok := uruo.mutation.Description(); ok {
 		_spec.SetField(userrole.FieldDescription, field.TypeString, value)
-	}
-	if value, ok := uruo.mutation.CreatedAt(); ok {
-		_spec.SetField(userrole.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uruo.mutation.UpdatedAt(); ok {
 		_spec.SetField(userrole.FieldUpdatedAt, field.TypeTime, value)

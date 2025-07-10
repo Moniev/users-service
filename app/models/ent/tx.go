@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// ActivationCode is the client for interacting with the ActivationCode builders.
 	ActivationCode *ActivationCodeClient
+	// BlacklistedToken is the client for interacting with the BlacklistedToken builders.
+	BlacklistedToken *BlacklistedTokenClient
 	// EntrepreneurDetails is the client for interacting with the EntrepreneurDetails builders.
 	EntrepreneurDetails *EntrepreneurDetailsClient
 	// Location is the client for interacting with the Location builders.
@@ -170,6 +172,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.ActivationCode = NewActivationCodeClient(tx.config)
+	tx.BlacklistedToken = NewBlacklistedTokenClient(tx.config)
 	tx.EntrepreneurDetails = NewEntrepreneurDetailsClient(tx.config)
 	tx.Location = NewLocationClient(tx.config)
 	tx.ResetCode = NewResetCodeClient(tx.config)

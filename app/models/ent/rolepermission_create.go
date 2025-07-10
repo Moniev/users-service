@@ -57,25 +57,9 @@ func (rpc *RolePermissionCreate) SetCreatedAt(t time.Time) *RolePermissionCreate
 	return rpc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (rpc *RolePermissionCreate) SetNillableCreatedAt(t *time.Time) *RolePermissionCreate {
-	if t != nil {
-		rpc.SetCreatedAt(*t)
-	}
-	return rpc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (rpc *RolePermissionCreate) SetUpdatedAt(t time.Time) *RolePermissionCreate {
 	rpc.mutation.SetUpdatedAt(t)
-	return rpc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (rpc *RolePermissionCreate) SetNillableUpdatedAt(t *time.Time) *RolePermissionCreate {
-	if t != nil {
-		rpc.SetUpdatedAt(*t)
-	}
 	return rpc
 }
 
@@ -107,7 +91,6 @@ func (rpc *RolePermissionCreate) Mutation() *RolePermissionMutation {
 
 // Save creates the RolePermission in the database.
 func (rpc *RolePermissionCreate) Save(ctx context.Context) (*RolePermission, error) {
-	rpc.defaults()
 	return withHooks(ctx, rpc.sqlSave, rpc.mutation, rpc.hooks)
 }
 
@@ -130,18 +113,6 @@ func (rpc *RolePermissionCreate) Exec(ctx context.Context) error {
 func (rpc *RolePermissionCreate) ExecX(ctx context.Context) {
 	if err := rpc.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (rpc *RolePermissionCreate) defaults() {
-	if _, ok := rpc.mutation.CreatedAt(); !ok {
-		v := rolepermission.DefaultCreatedAt()
-		rpc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := rpc.mutation.UpdatedAt(); !ok {
-		v := rolepermission.DefaultUpdatedAt()
-		rpc.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -265,7 +236,6 @@ func (rpcb *RolePermissionCreateBulk) Save(ctx context.Context) ([]*RolePermissi
 	for i := range rpcb.builders {
 		func(i int, root context.Context) {
 			builder := rpcb.builders[i]
-			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*RolePermissionMutation)
 				if !ok {

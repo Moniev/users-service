@@ -62,25 +62,9 @@ func (usc *UserSettingsCreate) SetCreatedAt(t time.Time) *UserSettingsCreate {
 	return usc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (usc *UserSettingsCreate) SetNillableCreatedAt(t *time.Time) *UserSettingsCreate {
-	if t != nil {
-		usc.SetCreatedAt(*t)
-	}
-	return usc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (usc *UserSettingsCreate) SetUpdatedAt(t time.Time) *UserSettingsCreate {
 	usc.mutation.SetUpdatedAt(t)
-	return usc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (usc *UserSettingsCreate) SetNillableUpdatedAt(t *time.Time) *UserSettingsCreate {
-	if t != nil {
-		usc.SetUpdatedAt(*t)
-	}
 	return usc
 }
 
@@ -142,7 +126,9 @@ func (usc *UserSettingsCreate) Mutation() *UserSettingsMutation {
 
 // Save creates the UserSettings in the database.
 func (usc *UserSettingsCreate) Save(ctx context.Context) (*UserSettings, error) {
-	usc.defaults()
+	if err := usc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, usc.sqlSave, usc.mutation, usc.hooks)
 }
 
@@ -169,7 +155,7 @@ func (usc *UserSettingsCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (usc *UserSettingsCreate) defaults() {
+func (usc *UserSettingsCreate) defaults() error {
 	if _, ok := usc.mutation.TwoFactor(); !ok {
 		v := usersettings.DefaultTwoFactor
 		usc.mutation.SetTwoFactor(v)
@@ -178,14 +164,7 @@ func (usc *UserSettingsCreate) defaults() {
 		v := usersettings.DefaultNightMode
 		usc.mutation.SetNightMode(v)
 	}
-	if _, ok := usc.mutation.CreatedAt(); !ok {
-		v := usersettings.DefaultCreatedAt()
-		usc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := usc.mutation.UpdatedAt(); !ok {
-		v := usersettings.DefaultUpdatedAt()
-		usc.mutation.SetUpdatedAt(v)
-	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

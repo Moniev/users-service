@@ -74,9 +74,11 @@ type UserEdges struct {
 	UserActions []*UserAction `json:"-"`
 	// UserRoles holds the value of the user_roles edge.
 	UserRoles []*UserRole `json:"user_roles"`
+	// BlacklistedTokens holds the value of the blacklisted_tokens edge.
+	BlacklistedTokens []*BlacklistedToken `json:"blacklisted_tokens"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [9]bool
+	loadedTypes [10]bool
 }
 
 // UserDetailsOrErr returns the UserDetails value or an error if the edge
@@ -170,6 +172,15 @@ func (e UserEdges) UserRolesOrErr() ([]*UserRole, error) {
 		return e.UserRoles, nil
 	}
 	return nil, &NotLoadedError{edge: "user_roles"}
+}
+
+// BlacklistedTokensOrErr returns the BlacklistedTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) BlacklistedTokensOrErr() ([]*BlacklistedToken, error) {
+	if e.loadedTypes[9] {
+		return e.BlacklistedTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "blacklisted_tokens"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -342,6 +353,11 @@ func (u *User) QueryUserActions() *UserActionQuery {
 // QueryUserRoles queries the "user_roles" edge of the User entity.
 func (u *User) QueryUserRoles() *UserRoleQuery {
 	return NewUserClient(u.config).QueryUserRoles(u)
+}
+
+// QueryBlacklistedTokens queries the "blacklisted_tokens" edge of the User entity.
+func (u *User) QueryBlacklistedTokens() *BlacklistedTokenQuery {
+	return NewUserClient(u.config).QueryBlacklistedTokens(u)
 }
 
 // Update returns a builder for updating this User.

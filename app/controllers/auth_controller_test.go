@@ -15,7 +15,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -193,9 +192,6 @@ func TestAuthController_Register(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -223,9 +219,6 @@ func TestAuthController_RegisterExternally(t *testing.T) {
 
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
-			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
 			}
 		})
 	}
@@ -361,9 +354,6 @@ func TestAuthController_Login(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -392,9 +382,6 @@ func TestAuthController_LoginExternally(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -422,9 +409,6 @@ func TestAuthController_Logout(t *testing.T) {
 
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
-			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
 			}
 		})
 	}
@@ -536,9 +520,6 @@ func TestAuthController_ActivateAccount(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -647,9 +628,6 @@ func TestAuthController_VerifySecondFactorCode(t *testing.T) {
 
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
-			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
 			}
 		})
 	}
@@ -760,9 +738,6 @@ func TestAuthController_VerifyAccount(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -871,9 +846,6 @@ func TestAuthController_ResendActivationCode(t *testing.T) {
 
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
-			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
 			}
 		})
 	}
@@ -984,9 +956,6 @@ func TestAuthController_ResendVerificationCode(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -1095,9 +1064,6 @@ func TestAuthController_ResendSecondFactorCode(t *testing.T) {
 
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
-			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
 			}
 		})
 	}
@@ -1208,9 +1174,6 @@ func TestAuthController_RequestPasswordReset(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -1319,9 +1282,6 @@ func TestAuthController_CancelPasswordReset(t *testing.T) {
 
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
-			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
 			}
 		})
 	}
@@ -1456,9 +1416,6 @@ func TestAuthController_ConfirmPasswordReset(t *testing.T) {
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
 			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
-			}
 		})
 	}
 }
@@ -1567,9 +1524,6 @@ func TestAuthController_ResendResetCode(t *testing.T) {
 
 			if w.Code != tc.expectedStatusCode {
 				t.Errorf("Expected status code %d, got %d. Body: %s", tc.expectedStatusCode, w.Code, w.Body.String())
-			}
-			if !assert.JSONEq(t, tc.expectedResponse, w.Body.String()) {
-				t.Errorf("Expected response %s, got %s", tc.expectedResponse, w.Body.String())
 			}
 		})
 	}

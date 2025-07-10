@@ -85,23 +85,17 @@ func (udu *UserDetailsUpdate) ClearLastName() *UserDetailsUpdate {
 	return udu
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (udu *UserDetailsUpdate) SetCreatedAt(t time.Time) *UserDetailsUpdate {
-	udu.mutation.SetCreatedAt(t)
-	return udu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (udu *UserDetailsUpdate) SetNillableCreatedAt(t *time.Time) *UserDetailsUpdate {
-	if t != nil {
-		udu.SetCreatedAt(*t)
-	}
-	return udu
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (udu *UserDetailsUpdate) SetUpdatedAt(t time.Time) *UserDetailsUpdate {
 	udu.mutation.SetUpdatedAt(t)
+	return udu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (udu *UserDetailsUpdate) SetNillableUpdatedAt(t *time.Time) *UserDetailsUpdate {
+	if t != nil {
+		udu.SetUpdatedAt(*t)
+	}
 	return udu
 }
 
@@ -190,7 +184,6 @@ func (udu *UserDetailsUpdate) ClearEntrepreneurDetails() *UserDetailsUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (udu *UserDetailsUpdate) Save(ctx context.Context) (int, error) {
-	udu.defaults()
 	return withHooks(ctx, udu.sqlSave, udu.mutation, udu.hooks)
 }
 
@@ -213,14 +206,6 @@ func (udu *UserDetailsUpdate) Exec(ctx context.Context) error {
 func (udu *UserDetailsUpdate) ExecX(ctx context.Context) {
 	if err := udu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (udu *UserDetailsUpdate) defaults() {
-	if _, ok := udu.mutation.UpdatedAt(); !ok {
-		v := userdetails.UpdateDefaultUpdatedAt()
-		udu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -263,9 +248,6 @@ func (udu *UserDetailsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if udu.mutation.LastNameCleared() {
 		_spec.ClearField(userdetails.FieldLastName, field.TypeString)
-	}
-	if value, ok := udu.mutation.CreatedAt(); ok {
-		_spec.SetField(userdetails.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := udu.mutation.UpdatedAt(); ok {
 		_spec.SetField(userdetails.FieldUpdatedAt, field.TypeTime, value)
@@ -447,23 +429,17 @@ func (uduo *UserDetailsUpdateOne) ClearLastName() *UserDetailsUpdateOne {
 	return uduo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uduo *UserDetailsUpdateOne) SetCreatedAt(t time.Time) *UserDetailsUpdateOne {
-	uduo.mutation.SetCreatedAt(t)
-	return uduo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uduo *UserDetailsUpdateOne) SetNillableCreatedAt(t *time.Time) *UserDetailsUpdateOne {
-	if t != nil {
-		uduo.SetCreatedAt(*t)
-	}
-	return uduo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uduo *UserDetailsUpdateOne) SetUpdatedAt(t time.Time) *UserDetailsUpdateOne {
 	uduo.mutation.SetUpdatedAt(t)
+	return uduo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uduo *UserDetailsUpdateOne) SetNillableUpdatedAt(t *time.Time) *UserDetailsUpdateOne {
+	if t != nil {
+		uduo.SetUpdatedAt(*t)
+	}
 	return uduo
 }
 
@@ -565,7 +541,6 @@ func (uduo *UserDetailsUpdateOne) Select(field string, fields ...string) *UserDe
 
 // Save executes the query and returns the updated UserDetails entity.
 func (uduo *UserDetailsUpdateOne) Save(ctx context.Context) (*UserDetails, error) {
-	uduo.defaults()
 	return withHooks(ctx, uduo.sqlSave, uduo.mutation, uduo.hooks)
 }
 
@@ -588,14 +563,6 @@ func (uduo *UserDetailsUpdateOne) Exec(ctx context.Context) error {
 func (uduo *UserDetailsUpdateOne) ExecX(ctx context.Context) {
 	if err := uduo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uduo *UserDetailsUpdateOne) defaults() {
-	if _, ok := uduo.mutation.UpdatedAt(); !ok {
-		v := userdetails.UpdateDefaultUpdatedAt()
-		uduo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -655,9 +622,6 @@ func (uduo *UserDetailsUpdateOne) sqlSave(ctx context.Context) (_node *UserDetai
 	}
 	if uduo.mutation.LastNameCleared() {
 		_spec.ClearField(userdetails.FieldLastName, field.TypeString)
-	}
-	if value, ok := uduo.mutation.CreatedAt(); ok {
-		_spec.SetField(userdetails.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uduo.mutation.UpdatedAt(); ok {
 		_spec.SetField(userdetails.FieldUpdatedAt, field.TypeTime, value)

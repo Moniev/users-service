@@ -124,3 +124,18 @@ func (r *EntrepreneurDetails) Valid() error {
 
 	return r.Device.Valid()
 }
+
+type Location struct {
+	Country         string `json:"country"`
+	Province        string `json:"province"`
+	City            string `json:"city"`
+	PostalCode      string `json:"postal_code"`
+	Street          string `json:"street"`
+	BuildingNumber  string `json:"building_number"`
+	ApartmentNumber string `json:"apartment_number"`
+	Device
+}
+
+func (r *Location) Valid() error {
+	return r.Device.Valid()
+}

@@ -32,6 +32,29 @@ var (
 			},
 		},
 	}
+	// BlacklistedTokensColumns holds the columns for the "blacklisted_tokens" table.
+	BlacklistedTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "token", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "blacklisted_token_owner", Type: field.TypeInt, Nullable: true},
+	}
+	// BlacklistedTokensTable holds the schema information for the "blacklisted_tokens" table.
+	BlacklistedTokensTable = &schema.Table{
+		Name:       "blacklisted_tokens",
+		Columns:    BlacklistedTokensColumns,
+		PrimaryKey: []*schema.Column{BlacklistedTokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "blacklisted_tokens_users_owner",
+				Columns:    []*schema.Column{BlacklistedTokensColumns[5]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// EntrepreneurDetailsColumns holds the columns for the "entrepreneur_details" table.
 	EntrepreneurDetailsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -39,7 +62,7 @@ var (
 		{Name: "nip", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "krs", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "offert", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "offer", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "income", Type: field.TypeFloat64, Nullable: true},
 		{Name: "costs", Type: field.TypeFloat64, Nullable: true},
 		{Name: "funding_capital", Type: field.TypeFloat64, Nullable: true},
@@ -47,7 +70,7 @@ var (
 		{Name: "management_council_members", Type: field.TypeJSON, Nullable: true},
 		{Name: "decision_makers", Type: field.TypeJSON, Nullable: true},
 		{Name: "business_phone_number", Type: field.TypeString, Nullable: true},
-		{Name: "business_email", Type: field.TypeString, Nullable: true},
+		{Name: "business_mail", Type: field.TypeString, Nullable: true},
 		{Name: "website_address", Type: field.TypeString, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -77,6 +100,8 @@ var (
 		{Name: "street", Type: field.TypeString, Nullable: true},
 		{Name: "building_number", Type: field.TypeInt},
 		{Name: "apartment_number", Type: field.TypeInt},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "user_details_locations", Type: field.TypeInt},
 	}
 	// LocationsTable holds the schema information for the "locations" table.
@@ -87,7 +112,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "locations_user_details_locations",
-				Columns:    []*schema.Column{LocationsColumns[8]},
+				Columns:    []*schema.Column{LocationsColumns[10]},
 				RefColumns: []*schema.Column{UserDetailsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -409,6 +434,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivationCodesTable,
+		BlacklistedTokensTable,
 		EntrepreneurDetailsTable,
 		LocationsTable,
 		ResetCodesTable,
@@ -429,6 +455,7 @@ var (
 
 func init() {
 	ActivationCodesTable.ForeignKeys[0].RefTable = UsersTable
+	BlacklistedTokensTable.ForeignKeys[0].RefTable = UsersTable
 	EntrepreneurDetailsTable.ForeignKeys[0].RefTable = UserDetailsTable
 	LocationsTable.ForeignKeys[0].RefTable = UserDetailsTable
 	ResetCodesTable.ForeignKeys[0].RefTable = UsersTable

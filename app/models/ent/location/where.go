@@ -3,6 +3,7 @@
 package location
 
 import (
+	"time"
 	"users-service/app/models/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
@@ -87,6 +88,16 @@ func BuildingNumber(v int) predicate.Location {
 // ApartmentNumber applies equality check predicate on the "apartment_number" field. It's identical to ApartmentNumberEQ.
 func ApartmentNumber(v int) predicate.Location {
 	return predicate.Location(sql.FieldEQ(FieldApartmentNumber, v))
+}
+
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // CountryEQ applies the EQ predicate on the "country" field.
@@ -502,6 +513,86 @@ func ApartmentNumberLT(v int) predicate.Location {
 // ApartmentNumberLTE applies the LTE predicate on the "apartment_number" field.
 func ApartmentNumberLTE(v int) predicate.Location {
 	return predicate.Location(sql.FieldLTE(FieldApartmentNumber, v))
+}
+
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldNEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Location {
+	return predicate.Location(sql.FieldIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Location {
+	return predicate.Location(sql.FieldNotIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldGT(FieldCreatedAt, v))
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldGTE(FieldCreatedAt, v))
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldLT(FieldCreatedAt, v))
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Location {
+	return predicate.Location(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Location {
+	return predicate.Location(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.Location {
+	return predicate.Location(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // HasUserDetails applies the HasEdge predicate on the "user_details" edge.

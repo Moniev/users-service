@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/blacklistedtoken"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
@@ -117,25 +118,9 @@ func (uc *UserCreate) SetCreatedAt(t time.Time) *UserCreate {
 	return uc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uc *UserCreate) SetNillableCreatedAt(t *time.Time) *UserCreate {
-	if t != nil {
-		uc.SetCreatedAt(*t)
-	}
-	return uc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uc *UserCreate) SetUpdatedAt(t time.Time) *UserCreate {
 	uc.mutation.SetUpdatedAt(t)
-	return uc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (uc *UserCreate) SetNillableUpdatedAt(t *time.Time) *UserCreate {
-	if t != nil {
-		uc.SetUpdatedAt(*t)
-	}
 	return uc
 }
 
@@ -322,6 +307,21 @@ func (uc *UserCreate) AddUserRoles(u ...*UserRole) *UserCreate {
 	return uc.AddUserRoleIDs(ids...)
 }
 
+// AddBlacklistedTokenIDs adds the "blacklisted_tokens" edge to the BlacklistedToken entity by IDs.
+func (uc *UserCreate) AddBlacklistedTokenIDs(ids ...int) *UserCreate {
+	uc.mutation.AddBlacklistedTokenIDs(ids...)
+	return uc
+}
+
+// AddBlacklistedTokens adds the "blacklisted_tokens" edges to the BlacklistedToken entity.
+func (uc *UserCreate) AddBlacklistedTokens(b ...*BlacklistedToken) *UserCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uc.AddBlacklistedTokenIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uc *UserCreate) Mutation() *UserMutation {
 	return uc.mutation
@@ -329,7 +329,9 @@ func (uc *UserCreate) Mutation() *UserMutation {
 
 // Save creates the User in the database.
 func (uc *UserCreate) Save(ctx context.Context) (*User, error) {
-	uc.defaults()
+	if err := uc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, uc.sqlSave, uc.mutation, uc.hooks)
 }
 
@@ -356,7 +358,7 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (uc *UserCreate) defaults() {
+func (uc *UserCreate) defaults() error {
 	if _, ok := uc.mutation.Active(); !ok {
 		v := user.DefaultActive
 		uc.mutation.SetActive(v)
@@ -373,14 +375,6 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultRemoved
 		uc.mutation.SetRemoved(v)
 	}
-	if _, ok := uc.mutation.CreatedAt(); !ok {
-		v := user.DefaultCreatedAt()
-		uc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := uc.mutation.UpdatedAt(); !ok {
-		v := user.DefaultUpdatedAt()
-		uc.mutation.SetUpdatedAt(v)
-	}
 	if _, ok := uc.mutation.SubscriptionIds(); !ok {
 		v := user.DefaultSubscriptionIds
 		uc.mutation.SetSubscriptionIds(v)
@@ -393,6 +387,7 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultOrganizationIds
 		uc.mutation.SetOrganizationIds(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -657,6 +652,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userrole.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.BlacklistedTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.BlacklistedTokensTable,
+			Columns: []string{user.BlacklistedTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(blacklistedtoken.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

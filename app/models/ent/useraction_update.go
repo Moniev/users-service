@@ -71,23 +71,17 @@ func (uau *UserActionUpdate) SetNillableDetails(s *string) *UserActionUpdate {
 	return uau
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uau *UserActionUpdate) SetCreatedAt(t time.Time) *UserActionUpdate {
-	uau.mutation.SetCreatedAt(t)
-	return uau
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uau *UserActionUpdate) SetNillableCreatedAt(t *time.Time) *UserActionUpdate {
-	if t != nil {
-		uau.SetCreatedAt(*t)
-	}
-	return uau
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uau *UserActionUpdate) SetUpdatedAt(t time.Time) *UserActionUpdate {
 	uau.mutation.SetUpdatedAt(t)
+	return uau
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uau *UserActionUpdate) SetNillableUpdatedAt(t *time.Time) *UserActionUpdate {
+	if t != nil {
+		uau.SetUpdatedAt(*t)
+	}
 	return uau
 }
 
@@ -134,7 +128,6 @@ func (uau *UserActionUpdate) RemoveAuthor(u ...*User) *UserActionUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (uau *UserActionUpdate) Save(ctx context.Context) (int, error) {
-	uau.defaults()
 	return withHooks(ctx, uau.sqlSave, uau.mutation, uau.hooks)
 }
 
@@ -160,14 +153,6 @@ func (uau *UserActionUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (uau *UserActionUpdate) defaults() {
-	if _, ok := uau.mutation.UpdatedAt(); !ok {
-		v := useraction.UpdateDefaultUpdatedAt()
-		uau.mutation.SetUpdatedAt(v)
-	}
-}
-
 func (uau *UserActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(useraction.Table, useraction.Columns, sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt))
 	if ps := uau.mutation.predicates; len(ps) > 0 {
@@ -185,9 +170,6 @@ func (uau *UserActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uau.mutation.Details(); ok {
 		_spec.SetField(useraction.FieldDetails, field.TypeString, value)
-	}
-	if value, ok := uau.mutation.CreatedAt(); ok {
-		_spec.SetField(useraction.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uau.mutation.UpdatedAt(); ok {
 		_spec.SetField(useraction.FieldUpdatedAt, field.TypeTime, value)
@@ -299,23 +281,17 @@ func (uauo *UserActionUpdateOne) SetNillableDetails(s *string) *UserActionUpdate
 	return uauo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (uauo *UserActionUpdateOne) SetCreatedAt(t time.Time) *UserActionUpdateOne {
-	uauo.mutation.SetCreatedAt(t)
-	return uauo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uauo *UserActionUpdateOne) SetNillableCreatedAt(t *time.Time) *UserActionUpdateOne {
-	if t != nil {
-		uauo.SetCreatedAt(*t)
-	}
-	return uauo
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uauo *UserActionUpdateOne) SetUpdatedAt(t time.Time) *UserActionUpdateOne {
 	uauo.mutation.SetUpdatedAt(t)
+	return uauo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uauo *UserActionUpdateOne) SetNillableUpdatedAt(t *time.Time) *UserActionUpdateOne {
+	if t != nil {
+		uauo.SetUpdatedAt(*t)
+	}
 	return uauo
 }
 
@@ -375,7 +351,6 @@ func (uauo *UserActionUpdateOne) Select(field string, fields ...string) *UserAct
 
 // Save executes the query and returns the updated UserAction entity.
 func (uauo *UserActionUpdateOne) Save(ctx context.Context) (*UserAction, error) {
-	uauo.defaults()
 	return withHooks(ctx, uauo.sqlSave, uauo.mutation, uauo.hooks)
 }
 
@@ -398,14 +373,6 @@ func (uauo *UserActionUpdateOne) Exec(ctx context.Context) error {
 func (uauo *UserActionUpdateOne) ExecX(ctx context.Context) {
 	if err := uauo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uauo *UserActionUpdateOne) defaults() {
-	if _, ok := uauo.mutation.UpdatedAt(); !ok {
-		v := useraction.UpdateDefaultUpdatedAt()
-		uauo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -443,9 +410,6 @@ func (uauo *UserActionUpdateOne) sqlSave(ctx context.Context) (_node *UserAction
 	}
 	if value, ok := uauo.mutation.Details(); ok {
 		_spec.SetField(useraction.FieldDetails, field.TypeString, value)
-	}
-	if value, ok := uauo.mutation.CreatedAt(); ok {
-		_spec.SetField(useraction.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := uauo.mutation.UpdatedAt(); ok {
 		_spec.SetField(useraction.FieldUpdatedAt, field.TypeTime, value)

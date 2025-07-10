@@ -12,6 +12,7 @@ import (
 	"users-service/app/models/ent/migrate"
 
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/blacklistedtoken"
 	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/resetcode"
@@ -38,6 +39,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// ActivationCode is the client for interacting with the ActivationCode builders.
 	ActivationCode *ActivationCodeClient
+	// BlacklistedToken is the client for interacting with the BlacklistedToken builders.
+	BlacklistedToken *BlacklistedTokenClient
 	// EntrepreneurDetails is the client for interacting with the EntrepreneurDetails builders.
 	EntrepreneurDetails *EntrepreneurDetailsClient
 	// Location is the client for interacting with the Location builders.
@@ -74,6 +77,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.ActivationCode = NewActivationCodeClient(c.config)
+	c.BlacklistedToken = NewBlacklistedTokenClient(c.config)
 	c.EntrepreneurDetails = NewEntrepreneurDetailsClient(c.config)
 	c.Location = NewLocationClient(c.config)
 	c.ResetCode = NewResetCodeClient(c.config)
@@ -179,6 +183,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:                 ctx,
 		config:              cfg,
 		ActivationCode:      NewActivationCodeClient(cfg),
+		BlacklistedToken:    NewBlacklistedTokenClient(cfg),
 		EntrepreneurDetails: NewEntrepreneurDetailsClient(cfg),
 		Location:            NewLocationClient(cfg),
 		ResetCode:           NewResetCodeClient(cfg),
@@ -211,6 +216,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:                 ctx,
 		config:              cfg,
 		ActivationCode:      NewActivationCodeClient(cfg),
+		BlacklistedToken:    NewBlacklistedTokenClient(cfg),
 		EntrepreneurDetails: NewEntrepreneurDetailsClient(cfg),
 		Location:            NewLocationClient(cfg),
 		ResetCode:           NewResetCodeClient(cfg),
@@ -252,9 +258,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ActivationCode, c.EntrepreneurDetails, c.Location, c.ResetCode,
-		c.RolePermission, c.SecondFactorCode, c.User, c.UserAction, c.UserDetails,
-		c.UserDevice, c.UserRole, c.UserSettings, c.VerificationCode,
+		c.ActivationCode, c.BlacklistedToken, c.EntrepreneurDetails, c.Location,
+		c.ResetCode, c.RolePermission, c.SecondFactorCode, c.User, c.UserAction,
+		c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings, c.VerificationCode,
 	} {
 		n.Use(hooks...)
 	}
@@ -264,9 +270,9 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ActivationCode, c.EntrepreneurDetails, c.Location, c.ResetCode,
-		c.RolePermission, c.SecondFactorCode, c.User, c.UserAction, c.UserDetails,
-		c.UserDevice, c.UserRole, c.UserSettings, c.VerificationCode,
+		c.ActivationCode, c.BlacklistedToken, c.EntrepreneurDetails, c.Location,
+		c.ResetCode, c.RolePermission, c.SecondFactorCode, c.User, c.UserAction,
+		c.UserDetails, c.UserDevice, c.UserRole, c.UserSettings, c.VerificationCode,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -277,6 +283,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *ActivationCodeMutation:
 		return c.ActivationCode.mutate(ctx, m)
+	case *BlacklistedTokenMutation:
+		return c.BlacklistedToken.mutate(ctx, m)
 	case *EntrepreneurDetailsMutation:
 		return c.EntrepreneurDetails.mutate(ctx, m)
 	case *LocationMutation:
@@ -432,7 +440,8 @@ func (c *ActivationCodeClient) QueryOwner(ac *ActivationCode) *UserQuery {
 
 // Hooks returns the client hooks.
 func (c *ActivationCodeClient) Hooks() []Hook {
-	return c.hooks.ActivationCode
+	hooks := c.hooks.ActivationCode
+	return append(hooks[:len(hooks):len(hooks)], activationcode.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -452,6 +461,156 @@ func (c *ActivationCodeClient) mutate(ctx context.Context, m *ActivationCodeMuta
 		return (&ActivationCodeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ActivationCode mutation op: %q", m.Op())
+	}
+}
+
+// BlacklistedTokenClient is a client for the BlacklistedToken schema.
+type BlacklistedTokenClient struct {
+	config
+}
+
+// NewBlacklistedTokenClient returns a client for the BlacklistedToken from the given config.
+func NewBlacklistedTokenClient(c config) *BlacklistedTokenClient {
+	return &BlacklistedTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `blacklistedtoken.Hooks(f(g(h())))`.
+func (c *BlacklistedTokenClient) Use(hooks ...Hook) {
+	c.hooks.BlacklistedToken = append(c.hooks.BlacklistedToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `blacklistedtoken.Intercept(f(g(h())))`.
+func (c *BlacklistedTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BlacklistedToken = append(c.inters.BlacklistedToken, interceptors...)
+}
+
+// Create returns a builder for creating a BlacklistedToken entity.
+func (c *BlacklistedTokenClient) Create() *BlacklistedTokenCreate {
+	mutation := newBlacklistedTokenMutation(c.config, OpCreate)
+	return &BlacklistedTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BlacklistedToken entities.
+func (c *BlacklistedTokenClient) CreateBulk(builders ...*BlacklistedTokenCreate) *BlacklistedTokenCreateBulk {
+	return &BlacklistedTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BlacklistedTokenClient) MapCreateBulk(slice any, setFunc func(*BlacklistedTokenCreate, int)) *BlacklistedTokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BlacklistedTokenCreateBulk{err: fmt.Errorf("calling to BlacklistedTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BlacklistedTokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BlacklistedTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BlacklistedToken.
+func (c *BlacklistedTokenClient) Update() *BlacklistedTokenUpdate {
+	mutation := newBlacklistedTokenMutation(c.config, OpUpdate)
+	return &BlacklistedTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BlacklistedTokenClient) UpdateOne(bt *BlacklistedToken) *BlacklistedTokenUpdateOne {
+	mutation := newBlacklistedTokenMutation(c.config, OpUpdateOne, withBlacklistedToken(bt))
+	return &BlacklistedTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BlacklistedTokenClient) UpdateOneID(id int) *BlacklistedTokenUpdateOne {
+	mutation := newBlacklistedTokenMutation(c.config, OpUpdateOne, withBlacklistedTokenID(id))
+	return &BlacklistedTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BlacklistedToken.
+func (c *BlacklistedTokenClient) Delete() *BlacklistedTokenDelete {
+	mutation := newBlacklistedTokenMutation(c.config, OpDelete)
+	return &BlacklistedTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BlacklistedTokenClient) DeleteOne(bt *BlacklistedToken) *BlacklistedTokenDeleteOne {
+	return c.DeleteOneID(bt.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BlacklistedTokenClient) DeleteOneID(id int) *BlacklistedTokenDeleteOne {
+	builder := c.Delete().Where(blacklistedtoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BlacklistedTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for BlacklistedToken.
+func (c *BlacklistedTokenClient) Query() *BlacklistedTokenQuery {
+	return &BlacklistedTokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBlacklistedToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BlacklistedToken entity by its id.
+func (c *BlacklistedTokenClient) Get(ctx context.Context, id int) (*BlacklistedToken, error) {
+	return c.Query().Where(blacklistedtoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BlacklistedTokenClient) GetX(ctx context.Context, id int) *BlacklistedToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryOwner queries the owner edge of a BlacklistedToken.
+func (c *BlacklistedTokenClient) QueryOwner(bt *BlacklistedToken) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := bt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(blacklistedtoken.Table, blacklistedtoken.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, blacklistedtoken.OwnerTable, blacklistedtoken.OwnerColumn),
+		)
+		fromV = sqlgraph.Neighbors(bt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BlacklistedTokenClient) Hooks() []Hook {
+	hooks := c.hooks.BlacklistedToken
+	return append(hooks[:len(hooks):len(hooks)], blacklistedtoken.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *BlacklistedTokenClient) Interceptors() []Interceptor {
+	return c.inters.BlacklistedToken
+}
+
+func (c *BlacklistedTokenClient) mutate(ctx context.Context, m *BlacklistedTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BlacklistedTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BlacklistedTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BlacklistedTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BlacklistedTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BlacklistedToken mutation op: %q", m.Op())
 	}
 }
 
@@ -731,7 +890,8 @@ func (c *LocationClient) QueryUserDetails(l *Location) *UserDetailsQuery {
 
 // Hooks returns the client hooks.
 func (c *LocationClient) Hooks() []Hook {
-	return c.hooks.Location
+	hooks := c.hooks.Location
+	return append(hooks[:len(hooks):len(hooks)], location.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -880,7 +1040,8 @@ func (c *ResetCodeClient) QueryOwner(rc *ResetCode) *UserQuery {
 
 // Hooks returns the client hooks.
 func (c *ResetCodeClient) Hooks() []Hook {
-	return c.hooks.ResetCode
+	hooks := c.hooks.ResetCode
+	return append(hooks[:len(hooks):len(hooks)], resetcode.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -1029,7 +1190,8 @@ func (c *RolePermissionClient) QueryUserRole(rp *RolePermission) *UserRoleQuery 
 
 // Hooks returns the client hooks.
 func (c *RolePermissionClient) Hooks() []Hook {
-	return c.hooks.RolePermission
+	hooks := c.hooks.RolePermission
+	return append(hooks[:len(hooks):len(hooks)], rolepermission.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -1194,7 +1356,8 @@ func (c *SecondFactorCodeClient) QueryTargetUserDevice(sfc *SecondFactorCode) *U
 
 // Hooks returns the client hooks.
 func (c *SecondFactorCodeClient) Hooks() []Hook {
-	return c.hooks.SecondFactorCode
+	hooks := c.hooks.SecondFactorCode
+	return append(hooks[:len(hooks):len(hooks)], secondfactorcode.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -1469,9 +1632,26 @@ func (c *UserClient) QueryUserRoles(u *User) *UserRoleQuery {
 	return query
 }
 
+// QueryBlacklistedTokens queries the blacklisted_tokens edge of a User.
+func (c *UserClient) QueryBlacklistedTokens(u *User) *BlacklistedTokenQuery {
+	query := (&BlacklistedTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(blacklistedtoken.Table, blacklistedtoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.BlacklistedTokensTable, user.BlacklistedTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
-	return c.hooks.User
+	hooks := c.hooks.User
+	return append(hooks[:len(hooks):len(hooks)], user.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -1620,7 +1800,8 @@ func (c *UserActionClient) QueryAuthor(ua *UserAction) *UserQuery {
 
 // Hooks returns the client hooks.
 func (c *UserActionClient) Hooks() []Hook {
-	return c.hooks.UserAction
+	hooks := c.hooks.UserAction
+	return append(hooks[:len(hooks):len(hooks)], useraction.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -1801,7 +1982,8 @@ func (c *UserDetailsClient) QueryEntrepreneurDetails(ud *UserDetails) *Entrepren
 
 // Hooks returns the client hooks.
 func (c *UserDetailsClient) Hooks() []Hook {
-	return c.hooks.UserDetails
+	hooks := c.hooks.UserDetails
+	return append(hooks[:len(hooks):len(hooks)], userdetails.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -1982,7 +2164,8 @@ func (c *UserDeviceClient) QuerySecondFactorCodes(ud *UserDevice) *SecondFactorC
 
 // Hooks returns the client hooks.
 func (c *UserDeviceClient) Hooks() []Hook {
-	return c.hooks.UserDevice
+	hooks := c.hooks.UserDevice
+	return append(hooks[:len(hooks):len(hooks)], userdevice.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -2147,7 +2330,8 @@ func (c *UserRoleClient) QueryPermissions(ur *UserRole) *RolePermissionQuery {
 
 // Hooks returns the client hooks.
 func (c *UserRoleClient) Hooks() []Hook {
-	return c.hooks.UserRole
+	hooks := c.hooks.UserRole
+	return append(hooks[:len(hooks):len(hooks)], userrole.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -2328,7 +2512,8 @@ func (c *UserSettingsClient) QueryNotificationTargetDevices(us *UserSettings) *U
 
 // Hooks returns the client hooks.
 func (c *UserSettingsClient) Hooks() []Hook {
-	return c.hooks.UserSettings
+	hooks := c.hooks.UserSettings
+	return append(hooks[:len(hooks):len(hooks)], usersettings.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -2504,13 +2689,13 @@ func (c *VerificationCodeClient) mutate(ctx context.Context, m *VerificationCode
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ActivationCode, EntrepreneurDetails, Location, ResetCode, RolePermission,
-		SecondFactorCode, User, UserAction, UserDetails, UserDevice, UserRole,
-		UserSettings, VerificationCode []ent.Hook
+		ActivationCode, BlacklistedToken, EntrepreneurDetails, Location, ResetCode,
+		RolePermission, SecondFactorCode, User, UserAction, UserDetails, UserDevice,
+		UserRole, UserSettings, VerificationCode []ent.Hook
 	}
 	inters struct {
-		ActivationCode, EntrepreneurDetails, Location, ResetCode, RolePermission,
-		SecondFactorCode, User, UserAction, UserDetails, UserDevice, UserRole,
-		UserSettings, VerificationCode []ent.Interceptor
+		ActivationCode, BlacklistedToken, EntrepreneurDetails, Location, ResetCode,
+		RolePermission, SecondFactorCode, User, UserAction, UserDetails, UserDevice,
+		UserRole, UserSettings, VerificationCode []ent.Interceptor
 	}
 )

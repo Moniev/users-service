@@ -40,10 +40,12 @@ func (m *MockUsersRepository) CreateSecondFactorCode(ctx context.Context, user *
 	if args.Get(0) != nil {
 		r0 = args.Get(0).(*ent.User)
 	}
+
 	var r1 *ent.SecondFactorCode
 	if args.Get(1) != nil {
 		r1 = args.Get(1).(*ent.SecondFactorCode)
 	}
+
 	return r0, r1, args.Error(2)
 }
 
@@ -179,6 +181,7 @@ func (m *MockUsersRepository) RemoveSecondFactorCode(ctx context.Context, user *
 	if args.Get(0) != nil {
 		r0 = args.Get(0).(*ent.User)
 	}
+
 	return r0, args.Error(1)
 }
 
@@ -190,4 +193,34 @@ func (m *MockUsersRepository) RemoveAccount(ctx context.Context, user *ent.User)
 func (m *MockUsersRepository) Ping() error {
 	args := m.Called()
 	return args.Error(0)
+}
+
+func (m *MockUsersRepository) UpdateEntrepreneurDetails(
+	ctx context.Context,
+	user *ent.User,
+	req *requests.EntrepreneurDetails,
+) (*ent.User, error) {
+	args := m.Called(ctx, user, req)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) UpdateLocation(
+	ctx context.Context,
+	user *ent.User,
+	req *requests.Location,
+) (*ent.User, error) {
+	args := m.Called(ctx, user, req)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
 }

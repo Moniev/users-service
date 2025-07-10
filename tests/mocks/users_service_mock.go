@@ -19,6 +19,7 @@ func (m *MockUsersService) UpdateUser(ctx context.Context, userID int, req *requ
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*ent.User), args.Error(1)
+
 }
 
 func (m *MockUsersService) UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error) {
@@ -56,6 +57,32 @@ func (m *MockUsersService) UpdateEntrepreneurDetails(
 	req *requests.EntrepreneurDetails,
 ) (*ent.User, error) {
 	args := m.Called(ctx, userID, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*ent.User), args.Error(1)
+}
+
+func (m *MockUsersService) UpdateLocation(
+	ctx context.Context,
+	userID int,
+	req *requests.Location,
+) (*ent.User, error) {
+
+	args := m.Called(ctx, userID, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*ent.User), args.Error(1)
+}
+
+func (m *MockUsersService) GetUserPrivate(
+	ctx context.Context,
+	userID int,
+) (*ent.User, error) {
+	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

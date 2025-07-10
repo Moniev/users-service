@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/blacklistedtoken"
 	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/predicate"
@@ -37,6 +38,7 @@ const (
 
 	// Node types.
 	TypeActivationCode      = "ActivationCode"
+	TypeBlacklistedToken    = "BlacklistedToken"
 	TypeEntrepreneurDetails = "EntrepreneurDetails"
 	TypeLocation            = "Location"
 	TypeResetCode           = "ResetCode"
@@ -666,6 +668,567 @@ func (m *ActivationCodeMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ActivationCode edge %s", name)
 }
 
+// BlacklistedTokenMutation represents an operation that mutates the BlacklistedToken nodes in the graph.
+type BlacklistedTokenMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	token         *string
+	created_at    *time.Time
+	updated_at    *time.Time
+	expires_at    *time.Time
+	clearedFields map[string]struct{}
+	owner         *int
+	clearedowner  bool
+	done          bool
+	oldValue      func(context.Context) (*BlacklistedToken, error)
+	predicates    []predicate.BlacklistedToken
+}
+
+var _ ent.Mutation = (*BlacklistedTokenMutation)(nil)
+
+// blacklistedtokenOption allows management of the mutation configuration using functional options.
+type blacklistedtokenOption func(*BlacklistedTokenMutation)
+
+// newBlacklistedTokenMutation creates new mutation for the BlacklistedToken entity.
+func newBlacklistedTokenMutation(c config, op Op, opts ...blacklistedtokenOption) *BlacklistedTokenMutation {
+	m := &BlacklistedTokenMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBlacklistedToken,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBlacklistedTokenID sets the ID field of the mutation.
+func withBlacklistedTokenID(id int) blacklistedtokenOption {
+	return func(m *BlacklistedTokenMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BlacklistedToken
+		)
+		m.oldValue = func(ctx context.Context) (*BlacklistedToken, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BlacklistedToken.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBlacklistedToken sets the old BlacklistedToken of the mutation.
+func withBlacklistedToken(node *BlacklistedToken) blacklistedtokenOption {
+	return func(m *BlacklistedTokenMutation) {
+		m.oldValue = func(context.Context) (*BlacklistedToken, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BlacklistedTokenMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BlacklistedTokenMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of BlacklistedToken entities.
+func (m *BlacklistedTokenMutation) SetID(id int) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BlacklistedTokenMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BlacklistedTokenMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BlacklistedToken.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetToken sets the "token" field.
+func (m *BlacklistedTokenMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *BlacklistedTokenMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the BlacklistedToken entity.
+// If the BlacklistedToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlacklistedTokenMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *BlacklistedTokenMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BlacklistedTokenMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BlacklistedTokenMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BlacklistedToken entity.
+// If the BlacklistedToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlacklistedTokenMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BlacklistedTokenMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *BlacklistedTokenMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *BlacklistedTokenMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the BlacklistedToken entity.
+// If the BlacklistedToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlacklistedTokenMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *BlacklistedTokenMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *BlacklistedTokenMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *BlacklistedTokenMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the BlacklistedToken entity.
+// If the BlacklistedToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlacklistedTokenMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *BlacklistedTokenMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by id.
+func (m *BlacklistedTokenMutation) SetOwnerID(id int) {
+	m.owner = &id
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (m *BlacklistedTokenMutation) ClearOwner() {
+	m.clearedowner = true
+}
+
+// OwnerCleared reports if the "owner" edge to the User entity was cleared.
+func (m *BlacklistedTokenMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// OwnerID returns the "owner" edge ID in the mutation.
+func (m *BlacklistedTokenMutation) OwnerID() (id int, exists bool) {
+	if m.owner != nil {
+		return *m.owner, true
+	}
+	return
+}
+
+// OwnerIDs returns the "owner" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OwnerID instead. It exists only for internal usage by the builders.
+func (m *BlacklistedTokenMutation) OwnerIDs() (ids []int) {
+	if id := m.owner; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOwner resets all changes to the "owner" edge.
+func (m *BlacklistedTokenMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
+}
+
+// Where appends a list predicates to the BlacklistedTokenMutation builder.
+func (m *BlacklistedTokenMutation) Where(ps ...predicate.BlacklistedToken) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BlacklistedTokenMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BlacklistedTokenMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BlacklistedToken, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BlacklistedTokenMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BlacklistedTokenMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BlacklistedToken).
+func (m *BlacklistedTokenMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BlacklistedTokenMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.token != nil {
+		fields = append(fields, blacklistedtoken.FieldToken)
+	}
+	if m.created_at != nil {
+		fields = append(fields, blacklistedtoken.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, blacklistedtoken.FieldUpdatedAt)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, blacklistedtoken.FieldExpiresAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BlacklistedTokenMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case blacklistedtoken.FieldToken:
+		return m.Token()
+	case blacklistedtoken.FieldCreatedAt:
+		return m.CreatedAt()
+	case blacklistedtoken.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case blacklistedtoken.FieldExpiresAt:
+		return m.ExpiresAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BlacklistedTokenMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case blacklistedtoken.FieldToken:
+		return m.OldToken(ctx)
+	case blacklistedtoken.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case blacklistedtoken.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case blacklistedtoken.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown BlacklistedToken field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BlacklistedTokenMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case blacklistedtoken.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case blacklistedtoken.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case blacklistedtoken.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case blacklistedtoken.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BlacklistedToken field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BlacklistedTokenMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BlacklistedTokenMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BlacklistedTokenMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown BlacklistedToken numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BlacklistedTokenMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BlacklistedTokenMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BlacklistedTokenMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown BlacklistedToken nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BlacklistedTokenMutation) ResetField(name string) error {
+	switch name {
+	case blacklistedtoken.FieldToken:
+		m.ResetToken()
+		return nil
+	case blacklistedtoken.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case blacklistedtoken.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case blacklistedtoken.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown BlacklistedToken field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BlacklistedTokenMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.owner != nil {
+		edges = append(edges, blacklistedtoken.EdgeOwner)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BlacklistedTokenMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case blacklistedtoken.EdgeOwner:
+		if id := m.owner; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BlacklistedTokenMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BlacklistedTokenMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BlacklistedTokenMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedowner {
+		edges = append(edges, blacklistedtoken.EdgeOwner)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BlacklistedTokenMutation) EdgeCleared(name string) bool {
+	switch name {
+	case blacklistedtoken.EdgeOwner:
+		return m.clearedowner
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BlacklistedTokenMutation) ClearEdge(name string) error {
+	switch name {
+	case blacklistedtoken.EdgeOwner:
+		m.ClearOwner()
+		return nil
+	}
+	return fmt.Errorf("unknown BlacklistedToken unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BlacklistedTokenMutation) ResetEdge(name string) error {
+	switch name {
+	case blacklistedtoken.EdgeOwner:
+		m.ResetOwner()
+		return nil
+	}
+	return fmt.Errorf("unknown BlacklistedToken edge %s", name)
+}
+
 // EntrepreneurDetailsMutation represents an operation that mutates the EntrepreneurDetails nodes in the graph.
 type EntrepreneurDetailsMutation struct {
 	config
@@ -676,7 +1239,7 @@ type EntrepreneurDetailsMutation struct {
 	nip                              *string
 	krs                              *string
 	description                      *string
-	offert                           *string
+	offer                            *string
 	income                           *float64
 	addincome                        *float64
 	costs                            *float64
@@ -689,7 +1252,7 @@ type EntrepreneurDetailsMutation struct {
 	decision_makers                  *[]string
 	appenddecision_makers            []string
 	business_phone_number            *string
-	business_email                   *string
+	business_mail                    *string
 	website_address                  *string
 	created_at                       *time.Time
 	updated_at                       *time.Time
@@ -1001,53 +1564,53 @@ func (m *EntrepreneurDetailsMutation) ResetDescription() {
 	delete(m.clearedFields, entrepreneurdetails.FieldDescription)
 }
 
-// SetOffert sets the "offert" field.
-func (m *EntrepreneurDetailsMutation) SetOffert(s string) {
-	m.offert = &s
+// SetOffer sets the "offer" field.
+func (m *EntrepreneurDetailsMutation) SetOffer(s string) {
+	m.offer = &s
 }
 
-// Offert returns the value of the "offert" field in the mutation.
-func (m *EntrepreneurDetailsMutation) Offert() (r string, exists bool) {
-	v := m.offert
+// Offer returns the value of the "offer" field in the mutation.
+func (m *EntrepreneurDetailsMutation) Offer() (r string, exists bool) {
+	v := m.offer
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldOffert returns the old "offert" field's value of the EntrepreneurDetails entity.
+// OldOffer returns the old "offer" field's value of the EntrepreneurDetails entity.
 // If the EntrepreneurDetails object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EntrepreneurDetailsMutation) OldOffert(ctx context.Context) (v *string, err error) {
+func (m *EntrepreneurDetailsMutation) OldOffer(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOffert is only allowed on UpdateOne operations")
+		return v, errors.New("OldOffer is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOffert requires an ID field in the mutation")
+		return v, errors.New("OldOffer requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOffert: %w", err)
+		return v, fmt.Errorf("querying old value for OldOffer: %w", err)
 	}
-	return oldValue.Offert, nil
+	return oldValue.Offer, nil
 }
 
-// ClearOffert clears the value of the "offert" field.
-func (m *EntrepreneurDetailsMutation) ClearOffert() {
-	m.offert = nil
-	m.clearedFields[entrepreneurdetails.FieldOffert] = struct{}{}
+// ClearOffer clears the value of the "offer" field.
+func (m *EntrepreneurDetailsMutation) ClearOffer() {
+	m.offer = nil
+	m.clearedFields[entrepreneurdetails.FieldOffer] = struct{}{}
 }
 
-// OffertCleared returns if the "offert" field was cleared in this mutation.
-func (m *EntrepreneurDetailsMutation) OffertCleared() bool {
-	_, ok := m.clearedFields[entrepreneurdetails.FieldOffert]
+// OfferCleared returns if the "offer" field was cleared in this mutation.
+func (m *EntrepreneurDetailsMutation) OfferCleared() bool {
+	_, ok := m.clearedFields[entrepreneurdetails.FieldOffer]
 	return ok
 }
 
-// ResetOffert resets all changes to the "offert" field.
-func (m *EntrepreneurDetailsMutation) ResetOffert() {
-	m.offert = nil
-	delete(m.clearedFields, entrepreneurdetails.FieldOffert)
+// ResetOffer resets all changes to the "offer" field.
+func (m *EntrepreneurDetailsMutation) ResetOffer() {
+	m.offer = nil
+	delete(m.clearedFields, entrepreneurdetails.FieldOffer)
 }
 
 // SetIncome sets the "income" field.
@@ -1488,53 +2051,53 @@ func (m *EntrepreneurDetailsMutation) ResetBusinessPhoneNumber() {
 	delete(m.clearedFields, entrepreneurdetails.FieldBusinessPhoneNumber)
 }
 
-// SetBusinessEmail sets the "business_email" field.
-func (m *EntrepreneurDetailsMutation) SetBusinessEmail(s string) {
-	m.business_email = &s
+// SetBusinessMail sets the "business_mail" field.
+func (m *EntrepreneurDetailsMutation) SetBusinessMail(s string) {
+	m.business_mail = &s
 }
 
-// BusinessEmail returns the value of the "business_email" field in the mutation.
-func (m *EntrepreneurDetailsMutation) BusinessEmail() (r string, exists bool) {
-	v := m.business_email
+// BusinessMail returns the value of the "business_mail" field in the mutation.
+func (m *EntrepreneurDetailsMutation) BusinessMail() (r string, exists bool) {
+	v := m.business_mail
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldBusinessEmail returns the old "business_email" field's value of the EntrepreneurDetails entity.
+// OldBusinessMail returns the old "business_mail" field's value of the EntrepreneurDetails entity.
 // If the EntrepreneurDetails object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EntrepreneurDetailsMutation) OldBusinessEmail(ctx context.Context) (v *string, err error) {
+func (m *EntrepreneurDetailsMutation) OldBusinessMail(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBusinessEmail is only allowed on UpdateOne operations")
+		return v, errors.New("OldBusinessMail is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBusinessEmail requires an ID field in the mutation")
+		return v, errors.New("OldBusinessMail requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBusinessEmail: %w", err)
+		return v, fmt.Errorf("querying old value for OldBusinessMail: %w", err)
 	}
-	return oldValue.BusinessEmail, nil
+	return oldValue.BusinessMail, nil
 }
 
-// ClearBusinessEmail clears the value of the "business_email" field.
-func (m *EntrepreneurDetailsMutation) ClearBusinessEmail() {
-	m.business_email = nil
-	m.clearedFields[entrepreneurdetails.FieldBusinessEmail] = struct{}{}
+// ClearBusinessMail clears the value of the "business_mail" field.
+func (m *EntrepreneurDetailsMutation) ClearBusinessMail() {
+	m.business_mail = nil
+	m.clearedFields[entrepreneurdetails.FieldBusinessMail] = struct{}{}
 }
 
-// BusinessEmailCleared returns if the "business_email" field was cleared in this mutation.
-func (m *EntrepreneurDetailsMutation) BusinessEmailCleared() bool {
-	_, ok := m.clearedFields[entrepreneurdetails.FieldBusinessEmail]
+// BusinessMailCleared returns if the "business_mail" field was cleared in this mutation.
+func (m *EntrepreneurDetailsMutation) BusinessMailCleared() bool {
+	_, ok := m.clearedFields[entrepreneurdetails.FieldBusinessMail]
 	return ok
 }
 
-// ResetBusinessEmail resets all changes to the "business_email" field.
-func (m *EntrepreneurDetailsMutation) ResetBusinessEmail() {
-	m.business_email = nil
-	delete(m.clearedFields, entrepreneurdetails.FieldBusinessEmail)
+// ResetBusinessMail resets all changes to the "business_mail" field.
+func (m *EntrepreneurDetailsMutation) ResetBusinessMail() {
+	m.business_mail = nil
+	delete(m.clearedFields, entrepreneurdetails.FieldBusinessMail)
 }
 
 // SetWebsiteAddress sets the "website_address" field.
@@ -1744,8 +2307,8 @@ func (m *EntrepreneurDetailsMutation) Fields() []string {
 	if m.description != nil {
 		fields = append(fields, entrepreneurdetails.FieldDescription)
 	}
-	if m.offert != nil {
-		fields = append(fields, entrepreneurdetails.FieldOffert)
+	if m.offer != nil {
+		fields = append(fields, entrepreneurdetails.FieldOffer)
 	}
 	if m.income != nil {
 		fields = append(fields, entrepreneurdetails.FieldIncome)
@@ -1768,8 +2331,8 @@ func (m *EntrepreneurDetailsMutation) Fields() []string {
 	if m.business_phone_number != nil {
 		fields = append(fields, entrepreneurdetails.FieldBusinessPhoneNumber)
 	}
-	if m.business_email != nil {
-		fields = append(fields, entrepreneurdetails.FieldBusinessEmail)
+	if m.business_mail != nil {
+		fields = append(fields, entrepreneurdetails.FieldBusinessMail)
 	}
 	if m.website_address != nil {
 		fields = append(fields, entrepreneurdetails.FieldWebsiteAddress)
@@ -1796,8 +2359,8 @@ func (m *EntrepreneurDetailsMutation) Field(name string) (ent.Value, bool) {
 		return m.Krs()
 	case entrepreneurdetails.FieldDescription:
 		return m.Description()
-	case entrepreneurdetails.FieldOffert:
-		return m.Offert()
+	case entrepreneurdetails.FieldOffer:
+		return m.Offer()
 	case entrepreneurdetails.FieldIncome:
 		return m.Income()
 	case entrepreneurdetails.FieldCosts:
@@ -1812,8 +2375,8 @@ func (m *EntrepreneurDetailsMutation) Field(name string) (ent.Value, bool) {
 		return m.DecisionMakers()
 	case entrepreneurdetails.FieldBusinessPhoneNumber:
 		return m.BusinessPhoneNumber()
-	case entrepreneurdetails.FieldBusinessEmail:
-		return m.BusinessEmail()
+	case entrepreneurdetails.FieldBusinessMail:
+		return m.BusinessMail()
 	case entrepreneurdetails.FieldWebsiteAddress:
 		return m.WebsiteAddress()
 	case entrepreneurdetails.FieldCreatedAt:
@@ -1837,8 +2400,8 @@ func (m *EntrepreneurDetailsMutation) OldField(ctx context.Context, name string)
 		return m.OldKrs(ctx)
 	case entrepreneurdetails.FieldDescription:
 		return m.OldDescription(ctx)
-	case entrepreneurdetails.FieldOffert:
-		return m.OldOffert(ctx)
+	case entrepreneurdetails.FieldOffer:
+		return m.OldOffer(ctx)
 	case entrepreneurdetails.FieldIncome:
 		return m.OldIncome(ctx)
 	case entrepreneurdetails.FieldCosts:
@@ -1853,8 +2416,8 @@ func (m *EntrepreneurDetailsMutation) OldField(ctx context.Context, name string)
 		return m.OldDecisionMakers(ctx)
 	case entrepreneurdetails.FieldBusinessPhoneNumber:
 		return m.OldBusinessPhoneNumber(ctx)
-	case entrepreneurdetails.FieldBusinessEmail:
-		return m.OldBusinessEmail(ctx)
+	case entrepreneurdetails.FieldBusinessMail:
+		return m.OldBusinessMail(ctx)
 	case entrepreneurdetails.FieldWebsiteAddress:
 		return m.OldWebsiteAddress(ctx)
 	case entrepreneurdetails.FieldCreatedAt:
@@ -1898,12 +2461,12 @@ func (m *EntrepreneurDetailsMutation) SetField(name string, value ent.Value) err
 		}
 		m.SetDescription(v)
 		return nil
-	case entrepreneurdetails.FieldOffert:
+	case entrepreneurdetails.FieldOffer:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetOffert(v)
+		m.SetOffer(v)
 		return nil
 	case entrepreneurdetails.FieldIncome:
 		v, ok := value.(float64)
@@ -1954,12 +2517,12 @@ func (m *EntrepreneurDetailsMutation) SetField(name string, value ent.Value) err
 		}
 		m.SetBusinessPhoneNumber(v)
 		return nil
-	case entrepreneurdetails.FieldBusinessEmail:
+	case entrepreneurdetails.FieldBusinessMail:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetBusinessEmail(v)
+		m.SetBusinessMail(v)
 		return nil
 	case entrepreneurdetails.FieldWebsiteAddress:
 		v, ok := value.(string)
@@ -2063,8 +2626,8 @@ func (m *EntrepreneurDetailsMutation) ClearedFields() []string {
 	if m.FieldCleared(entrepreneurdetails.FieldDescription) {
 		fields = append(fields, entrepreneurdetails.FieldDescription)
 	}
-	if m.FieldCleared(entrepreneurdetails.FieldOffert) {
-		fields = append(fields, entrepreneurdetails.FieldOffert)
+	if m.FieldCleared(entrepreneurdetails.FieldOffer) {
+		fields = append(fields, entrepreneurdetails.FieldOffer)
 	}
 	if m.FieldCleared(entrepreneurdetails.FieldIncome) {
 		fields = append(fields, entrepreneurdetails.FieldIncome)
@@ -2087,8 +2650,8 @@ func (m *EntrepreneurDetailsMutation) ClearedFields() []string {
 	if m.FieldCleared(entrepreneurdetails.FieldBusinessPhoneNumber) {
 		fields = append(fields, entrepreneurdetails.FieldBusinessPhoneNumber)
 	}
-	if m.FieldCleared(entrepreneurdetails.FieldBusinessEmail) {
-		fields = append(fields, entrepreneurdetails.FieldBusinessEmail)
+	if m.FieldCleared(entrepreneurdetails.FieldBusinessMail) {
+		fields = append(fields, entrepreneurdetails.FieldBusinessMail)
 	}
 	if m.FieldCleared(entrepreneurdetails.FieldWebsiteAddress) {
 		fields = append(fields, entrepreneurdetails.FieldWebsiteAddress)
@@ -2119,8 +2682,8 @@ func (m *EntrepreneurDetailsMutation) ClearField(name string) error {
 	case entrepreneurdetails.FieldDescription:
 		m.ClearDescription()
 		return nil
-	case entrepreneurdetails.FieldOffert:
-		m.ClearOffert()
+	case entrepreneurdetails.FieldOffer:
+		m.ClearOffer()
 		return nil
 	case entrepreneurdetails.FieldIncome:
 		m.ClearIncome()
@@ -2143,8 +2706,8 @@ func (m *EntrepreneurDetailsMutation) ClearField(name string) error {
 	case entrepreneurdetails.FieldBusinessPhoneNumber:
 		m.ClearBusinessPhoneNumber()
 		return nil
-	case entrepreneurdetails.FieldBusinessEmail:
-		m.ClearBusinessEmail()
+	case entrepreneurdetails.FieldBusinessMail:
+		m.ClearBusinessMail()
 		return nil
 	case entrepreneurdetails.FieldWebsiteAddress:
 		m.ClearWebsiteAddress()
@@ -2169,8 +2732,8 @@ func (m *EntrepreneurDetailsMutation) ResetField(name string) error {
 	case entrepreneurdetails.FieldDescription:
 		m.ResetDescription()
 		return nil
-	case entrepreneurdetails.FieldOffert:
-		m.ResetOffert()
+	case entrepreneurdetails.FieldOffer:
+		m.ResetOffer()
 		return nil
 	case entrepreneurdetails.FieldIncome:
 		m.ResetIncome()
@@ -2193,8 +2756,8 @@ func (m *EntrepreneurDetailsMutation) ResetField(name string) error {
 	case entrepreneurdetails.FieldBusinessPhoneNumber:
 		m.ResetBusinessPhoneNumber()
 		return nil
-	case entrepreneurdetails.FieldBusinessEmail:
-		m.ResetBusinessEmail()
+	case entrepreneurdetails.FieldBusinessMail:
+		m.ResetBusinessMail()
 		return nil
 	case entrepreneurdetails.FieldWebsiteAddress:
 		m.ResetWebsiteAddress()
@@ -2298,6 +2861,8 @@ type LocationMutation struct {
 	addbuilding_number  *int
 	apartment_number    *int
 	addapartment_number *int
+	created_at          *time.Time
+	updated_at          *time.Time
 	clearedFields       map[string]struct{}
 	user_details        *int
 	cleareduser_details bool
@@ -2715,6 +3280,78 @@ func (m *LocationMutation) ResetApartmentNumber() {
 	m.addapartment_number = nil
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (m *LocationMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *LocationMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *LocationMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *LocationMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *LocationMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *LocationMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
 // SetUserDetailsID sets the "user_details" edge to the UserDetails entity by id.
 func (m *LocationMutation) SetUserDetailsID(id int) {
 	m.user_details = &id
@@ -2788,7 +3425,7 @@ func (m *LocationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LocationMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.country != nil {
 		fields = append(fields, location.FieldCountry)
 	}
@@ -2809,6 +3446,12 @@ func (m *LocationMutation) Fields() []string {
 	}
 	if m.apartment_number != nil {
 		fields = append(fields, location.FieldApartmentNumber)
+	}
+	if m.created_at != nil {
+		fields = append(fields, location.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, location.FieldUpdatedAt)
 	}
 	return fields
 }
@@ -2832,6 +3475,10 @@ func (m *LocationMutation) Field(name string) (ent.Value, bool) {
 		return m.BuildingNumber()
 	case location.FieldApartmentNumber:
 		return m.ApartmentNumber()
+	case location.FieldCreatedAt:
+		return m.CreatedAt()
+	case location.FieldUpdatedAt:
+		return m.UpdatedAt()
 	}
 	return nil, false
 }
@@ -2855,6 +3502,10 @@ func (m *LocationMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldBuildingNumber(ctx)
 	case location.FieldApartmentNumber:
 		return m.OldApartmentNumber(ctx)
+	case location.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case location.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Location field %s", name)
 }
@@ -2912,6 +3563,20 @@ func (m *LocationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetApartmentNumber(v)
+		return nil
+	case location.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case location.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Location field %s", name)
@@ -3018,6 +3683,12 @@ func (m *LocationMutation) ResetField(name string) error {
 		return nil
 	case location.FieldApartmentNumber:
 		m.ResetApartmentNumber()
+		return nil
+	case location.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case location.FieldUpdatedAt:
+		m.ResetUpdatedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Location field %s", name)
@@ -5124,6 +5795,9 @@ type UserMutation struct {
 	user_roles                map[int]struct{}
 	removeduser_roles         map[int]struct{}
 	cleareduser_roles         bool
+	blacklisted_tokens        map[int]struct{}
+	removedblacklisted_tokens map[int]struct{}
+	clearedblacklisted_tokens bool
 	done                      bool
 	oldValue                  func(context.Context) (*User, error)
 	predicates                []predicate.User
@@ -6119,6 +6793,60 @@ func (m *UserMutation) ResetUserRoles() {
 	m.removeduser_roles = nil
 }
 
+// AddBlacklistedTokenIDs adds the "blacklisted_tokens" edge to the BlacklistedToken entity by ids.
+func (m *UserMutation) AddBlacklistedTokenIDs(ids ...int) {
+	if m.blacklisted_tokens == nil {
+		m.blacklisted_tokens = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.blacklisted_tokens[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBlacklistedTokens clears the "blacklisted_tokens" edge to the BlacklistedToken entity.
+func (m *UserMutation) ClearBlacklistedTokens() {
+	m.clearedblacklisted_tokens = true
+}
+
+// BlacklistedTokensCleared reports if the "blacklisted_tokens" edge to the BlacklistedToken entity was cleared.
+func (m *UserMutation) BlacklistedTokensCleared() bool {
+	return m.clearedblacklisted_tokens
+}
+
+// RemoveBlacklistedTokenIDs removes the "blacklisted_tokens" edge to the BlacklistedToken entity by IDs.
+func (m *UserMutation) RemoveBlacklistedTokenIDs(ids ...int) {
+	if m.removedblacklisted_tokens == nil {
+		m.removedblacklisted_tokens = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.blacklisted_tokens, ids[i])
+		m.removedblacklisted_tokens[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBlacklistedTokens returns the removed IDs of the "blacklisted_tokens" edge to the BlacklistedToken entity.
+func (m *UserMutation) RemovedBlacklistedTokensIDs() (ids []int) {
+	for id := range m.removedblacklisted_tokens {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BlacklistedTokensIDs returns the "blacklisted_tokens" edge IDs in the mutation.
+func (m *UserMutation) BlacklistedTokensIDs() (ids []int) {
+	for id := range m.blacklisted_tokens {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBlacklistedTokens resets all changes to the "blacklisted_tokens" edge.
+func (m *UserMutation) ResetBlacklistedTokens() {
+	m.blacklisted_tokens = nil
+	m.clearedblacklisted_tokens = false
+	m.removedblacklisted_tokens = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -6448,7 +7176,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 10)
 	if m.user_details != nil {
 		edges = append(edges, user.EdgeUserDetails)
 	}
@@ -6475,6 +7203,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.user_roles != nil {
 		edges = append(edges, user.EdgeUserRoles)
+	}
+	if m.blacklisted_tokens != nil {
+		edges = append(edges, user.EdgeBlacklistedTokens)
 	}
 	return edges
 }
@@ -6525,13 +7256,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeBlacklistedTokens:
+		ids := make([]ent.Value, 0, len(m.blacklisted_tokens))
+		for id := range m.blacklisted_tokens {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 10)
 	if m.removeduser_devices != nil {
 		edges = append(edges, user.EdgeUserDevices)
 	}
@@ -6540,6 +7277,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removeduser_roles != nil {
 		edges = append(edges, user.EdgeUserRoles)
+	}
+	if m.removedblacklisted_tokens != nil {
+		edges = append(edges, user.EdgeBlacklistedTokens)
 	}
 	return edges
 }
@@ -6566,13 +7306,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeBlacklistedTokens:
+		ids := make([]ent.Value, 0, len(m.removedblacklisted_tokens))
+		for id := range m.removedblacklisted_tokens {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 10)
 	if m.cleareduser_details {
 		edges = append(edges, user.EdgeUserDetails)
 	}
@@ -6600,6 +7346,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.cleareduser_roles {
 		edges = append(edges, user.EdgeUserRoles)
 	}
+	if m.clearedblacklisted_tokens {
+		edges = append(edges, user.EdgeBlacklistedTokens)
+	}
 	return edges
 }
 
@@ -6625,6 +7374,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.cleareduser_actions
 	case user.EdgeUserRoles:
 		return m.cleareduser_roles
+	case user.EdgeBlacklistedTokens:
+		return m.clearedblacklisted_tokens
 	}
 	return false
 }
@@ -6685,6 +7436,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeUserRoles:
 		m.ResetUserRoles()
+		return nil
+	case user.EdgeBlacklistedTokens:
+		m.ResetBlacklistedTokens()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/userdetails"
@@ -146,6 +147,20 @@ func (lu *LocationUpdate) AddApartmentNumber(i int) *LocationUpdate {
 	return lu
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (lu *LocationUpdate) SetUpdatedAt(t time.Time) *LocationUpdate {
+	lu.mutation.SetUpdatedAt(t)
+	return lu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (lu *LocationUpdate) SetNillableUpdatedAt(t *time.Time) *LocationUpdate {
+	if t != nil {
+		lu.SetUpdatedAt(*t)
+	}
+	return lu
+}
+
 // SetUserDetailsID sets the "user_details" edge to the UserDetails entity by ID.
 func (lu *LocationUpdate) SetUserDetailsID(id int) *LocationUpdate {
 	lu.mutation.SetUserDetailsID(id)
@@ -274,6 +289,9 @@ func (lu *LocationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := lu.mutation.AddedApartmentNumber(); ok {
 		_spec.AddField(location.FieldApartmentNumber, field.TypeInt, value)
+	}
+	if value, ok := lu.mutation.UpdatedAt(); ok {
+		_spec.SetField(location.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if lu.mutation.UserDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -442,6 +460,20 @@ func (luo *LocationUpdateOne) AddApartmentNumber(i int) *LocationUpdateOne {
 	return luo
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (luo *LocationUpdateOne) SetUpdatedAt(t time.Time) *LocationUpdateOne {
+	luo.mutation.SetUpdatedAt(t)
+	return luo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (luo *LocationUpdateOne) SetNillableUpdatedAt(t *time.Time) *LocationUpdateOne {
+	if t != nil {
+		luo.SetUpdatedAt(*t)
+	}
+	return luo
+}
+
 // SetUserDetailsID sets the "user_details" edge to the UserDetails entity by ID.
 func (luo *LocationUpdateOne) SetUserDetailsID(id int) *LocationUpdateOne {
 	luo.mutation.SetUserDetailsID(id)
@@ -600,6 +632,9 @@ func (luo *LocationUpdateOne) sqlSave(ctx context.Context) (_node *Location, err
 	}
 	if value, ok := luo.mutation.AddedApartmentNumber(); ok {
 		_spec.AddField(location.FieldApartmentNumber, field.TypeInt, value)
+	}
+	if value, ok := luo.mutation.UpdatedAt(); ok {
+		_spec.SetField(location.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if luo.mutation.UserDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{

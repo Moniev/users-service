@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"time"
 
 	"entgo.io/ent"
@@ -64,12 +65,10 @@ func (UserDevice) Fields() []ent.Field {
 			Default(time.Now).
 			UpdateDefault(time.Now),
 		field.Time("created_at").
-			StructTag(`json:"created_at"`).
-			Default(time.Now),
+			Immutable().
+			StructTag(`json:"created_at"`),
 		field.Time("updated_at").
-			StructTag(`json:"updated_at"`).
-			Default(time.Now).
-			UpdateDefault(time.Now),
+			StructTag(`json:"updated_at"`),
 	}
 }
 
@@ -88,5 +87,29 @@ func (UserDevice) Edges() []ent.Edge {
 			Ref("target_user_device").
 			Unique().
 			StructTag(`json:"second_factor_codes"`),
+	}
+}
+
+func (UserDevice) Hooks() []ent.Hook {
+	return []ent.Hook{
+		func(next ent.Mutator) ent.Mutator {
+			return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+				if m.Op().Is(ent.OpCreate) {
+					if err := m.SetField("created_at", time.Now().UTC()); err != nil {
+						return nil, err
+					}
+
+					if err := m.SetField("updated_at", time.Now().UTC()); err != nil {
+						return nil, err
+					}
+
+				} else if m.Op().Is(ent.OpUpdate) || m.Op().Is(ent.OpUpdateOne) {
+					if err := m.SetField("updated_at", time.Now().UTC()); err != nil {
+						return nil, err
+					}
+				}
+				return next.Mutate(ctx, m)
+			})
+		},
 	}
 }

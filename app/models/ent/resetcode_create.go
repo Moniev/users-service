@@ -33,25 +33,9 @@ func (rcc *ResetCodeCreate) SetCreatedAt(t time.Time) *ResetCodeCreate {
 	return rcc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (rcc *ResetCodeCreate) SetNillableCreatedAt(t *time.Time) *ResetCodeCreate {
-	if t != nil {
-		rcc.SetCreatedAt(*t)
-	}
-	return rcc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (rcc *ResetCodeCreate) SetUpdatedAt(t time.Time) *ResetCodeCreate {
 	rcc.mutation.SetUpdatedAt(t)
-	return rcc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (rcc *ResetCodeCreate) SetNillableUpdatedAt(t *time.Time) *ResetCodeCreate {
-	if t != nil {
-		rcc.SetUpdatedAt(*t)
-	}
 	return rcc
 }
 
@@ -93,7 +77,9 @@ func (rcc *ResetCodeCreate) Mutation() *ResetCodeMutation {
 
 // Save creates the ResetCode in the database.
 func (rcc *ResetCodeCreate) Save(ctx context.Context) (*ResetCode, error) {
-	rcc.defaults()
+	if err := rcc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, rcc.sqlSave, rcc.mutation, rcc.hooks)
 }
 
@@ -120,19 +106,12 @@ func (rcc *ResetCodeCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (rcc *ResetCodeCreate) defaults() {
-	if _, ok := rcc.mutation.CreatedAt(); !ok {
-		v := resetcode.DefaultCreatedAt()
-		rcc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := rcc.mutation.UpdatedAt(); !ok {
-		v := resetcode.DefaultUpdatedAt()
-		rcc.mutation.SetUpdatedAt(v)
-	}
+func (rcc *ResetCodeCreate) defaults() error {
 	if _, ok := rcc.mutation.ExpiresAt(); !ok {
 		v := resetcode.DefaultExpiresAt
 		rcc.mutation.SetExpiresAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

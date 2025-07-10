@@ -47,25 +47,9 @@ func (acc *ActivationCodeCreate) SetCreatedAt(t time.Time) *ActivationCodeCreate
 	return acc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (acc *ActivationCodeCreate) SetNillableCreatedAt(t *time.Time) *ActivationCodeCreate {
-	if t != nil {
-		acc.SetCreatedAt(*t)
-	}
-	return acc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (acc *ActivationCodeCreate) SetUpdatedAt(t time.Time) *ActivationCodeCreate {
 	acc.mutation.SetUpdatedAt(t)
-	return acc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (acc *ActivationCodeCreate) SetNillableUpdatedAt(t *time.Time) *ActivationCodeCreate {
-	if t != nil {
-		acc.SetUpdatedAt(*t)
-	}
 	return acc
 }
 
@@ -107,7 +91,9 @@ func (acc *ActivationCodeCreate) Mutation() *ActivationCodeMutation {
 
 // Save creates the ActivationCode in the database.
 func (acc *ActivationCodeCreate) Save(ctx context.Context) (*ActivationCode, error) {
-	acc.defaults()
+	if err := acc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, acc.sqlSave, acc.mutation, acc.hooks)
 }
 
@@ -134,23 +120,16 @@ func (acc *ActivationCodeCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (acc *ActivationCodeCreate) defaults() {
+func (acc *ActivationCodeCreate) defaults() error {
 	if _, ok := acc.mutation.Used(); !ok {
 		v := activationcode.DefaultUsed
 		acc.mutation.SetUsed(v)
-	}
-	if _, ok := acc.mutation.CreatedAt(); !ok {
-		v := activationcode.DefaultCreatedAt()
-		acc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := acc.mutation.UpdatedAt(); !ok {
-		v := activationcode.DefaultUpdatedAt()
-		acc.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := acc.mutation.ExpiresAt(); !ok {
 		v := activationcode.DefaultExpiresAt
 		acc.mutation.SetExpiresAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

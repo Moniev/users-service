@@ -45,25 +45,9 @@ func (uac *UserActionCreate) SetCreatedAt(t time.Time) *UserActionCreate {
 	return uac
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uac *UserActionCreate) SetNillableCreatedAt(t *time.Time) *UserActionCreate {
-	if t != nil {
-		uac.SetCreatedAt(*t)
-	}
-	return uac
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (uac *UserActionCreate) SetUpdatedAt(t time.Time) *UserActionCreate {
 	uac.mutation.SetUpdatedAt(t)
-	return uac
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (uac *UserActionCreate) SetNillableUpdatedAt(t *time.Time) *UserActionCreate {
-	if t != nil {
-		uac.SetUpdatedAt(*t)
-	}
 	return uac
 }
 
@@ -95,7 +79,6 @@ func (uac *UserActionCreate) Mutation() *UserActionMutation {
 
 // Save creates the UserAction in the database.
 func (uac *UserActionCreate) Save(ctx context.Context) (*UserAction, error) {
-	uac.defaults()
 	return withHooks(ctx, uac.sqlSave, uac.mutation, uac.hooks)
 }
 
@@ -118,18 +101,6 @@ func (uac *UserActionCreate) Exec(ctx context.Context) error {
 func (uac *UserActionCreate) ExecX(ctx context.Context) {
 	if err := uac.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uac *UserActionCreate) defaults() {
-	if _, ok := uac.mutation.CreatedAt(); !ok {
-		v := useraction.DefaultCreatedAt()
-		uac.mutation.SetCreatedAt(v)
-	}
-	if _, ok := uac.mutation.UpdatedAt(); !ok {
-		v := useraction.DefaultUpdatedAt()
-		uac.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -242,7 +213,6 @@ func (uacb *UserActionCreateBulk) Save(ctx context.Context) ([]*UserAction, erro
 	for i := range uacb.builders {
 		func(i int, root context.Context) {
 			builder := uacb.builders[i]
-			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*UserActionMutation)
 				if !ok {

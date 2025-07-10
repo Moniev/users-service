@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/blacklistedtoken"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/secondfactorcode"
@@ -28,19 +29,20 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []user.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.User
-	withUserDetails      *UserDetailsQuery
-	withUserSettings     *UserSettingsQuery
-	withActivationCode   *ActivationCodeQuery
-	withVerificationCode *VerificationCodeQuery
-	withSecondFactorCode *SecondFactorCodeQuery
-	withResetCode        *ResetCodeQuery
-	withUserDevices      *UserDeviceQuery
-	withUserActions      *UserActionQuery
-	withUserRoles        *UserRoleQuery
+	ctx                   *QueryContext
+	order                 []user.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.User
+	withUserDetails       *UserDetailsQuery
+	withUserSettings      *UserSettingsQuery
+	withActivationCode    *ActivationCodeQuery
+	withVerificationCode  *VerificationCodeQuery
+	withSecondFactorCode  *SecondFactorCodeQuery
+	withResetCode         *ResetCodeQuery
+	withUserDevices       *UserDeviceQuery
+	withUserActions       *UserActionQuery
+	withUserRoles         *UserRoleQuery
+	withBlacklistedTokens *BlacklistedTokenQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -275,6 +277,28 @@ func (uq *UserQuery) QueryUserRoles() *UserRoleQuery {
 	return query
 }
 
+// QueryBlacklistedTokens chains the current query on the "blacklisted_tokens" edge.
+func (uq *UserQuery) QueryBlacklistedTokens() *BlacklistedTokenQuery {
+	query := (&BlacklistedTokenClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(blacklistedtoken.Table, blacklistedtoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.BlacklistedTokensTable, user.BlacklistedTokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first User entity from the query.
 // Returns a *NotFoundError when no User was found.
 func (uq *UserQuery) First(ctx context.Context) (*User, error) {
@@ -462,20 +486,21 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:               uq.config,
-		ctx:                  uq.ctx.Clone(),
-		order:                append([]user.OrderOption{}, uq.order...),
-		inters:               append([]Interceptor{}, uq.inters...),
-		predicates:           append([]predicate.User{}, uq.predicates...),
-		withUserDetails:      uq.withUserDetails.Clone(),
-		withUserSettings:     uq.withUserSettings.Clone(),
-		withActivationCode:   uq.withActivationCode.Clone(),
-		withVerificationCode: uq.withVerificationCode.Clone(),
-		withSecondFactorCode: uq.withSecondFactorCode.Clone(),
-		withResetCode:        uq.withResetCode.Clone(),
-		withUserDevices:      uq.withUserDevices.Clone(),
-		withUserActions:      uq.withUserActions.Clone(),
-		withUserRoles:        uq.withUserRoles.Clone(),
+		config:                uq.config,
+		ctx:                   uq.ctx.Clone(),
+		order:                 append([]user.OrderOption{}, uq.order...),
+		inters:                append([]Interceptor{}, uq.inters...),
+		predicates:            append([]predicate.User{}, uq.predicates...),
+		withUserDetails:       uq.withUserDetails.Clone(),
+		withUserSettings:      uq.withUserSettings.Clone(),
+		withActivationCode:    uq.withActivationCode.Clone(),
+		withVerificationCode:  uq.withVerificationCode.Clone(),
+		withSecondFactorCode:  uq.withSecondFactorCode.Clone(),
+		withResetCode:         uq.withResetCode.Clone(),
+		withUserDevices:       uq.withUserDevices.Clone(),
+		withUserActions:       uq.withUserActions.Clone(),
+		withUserRoles:         uq.withUserRoles.Clone(),
+		withBlacklistedTokens: uq.withBlacklistedTokens.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -581,6 +606,17 @@ func (uq *UserQuery) WithUserRoles(opts ...func(*UserRoleQuery)) *UserQuery {
 	return uq
 }
 
+// WithBlacklistedTokens tells the query-builder to eager-load the nodes that are connected to
+// the "blacklisted_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithBlacklistedTokens(opts ...func(*BlacklistedTokenQuery)) *UserQuery {
+	query := (&BlacklistedTokenClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withBlacklistedTokens = query
+	return uq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -659,7 +695,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [9]bool{
+		loadedTypes = [10]bool{
 			uq.withUserDetails != nil,
 			uq.withUserSettings != nil,
 			uq.withActivationCode != nil,
@@ -669,6 +705,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			uq.withUserDevices != nil,
 			uq.withUserActions != nil,
 			uq.withUserRoles != nil,
+			uq.withBlacklistedTokens != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -743,6 +780,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadUserRoles(ctx, query, nodes,
 			func(n *User) { n.Edges.UserRoles = []*UserRole{} },
 			func(n *User, e *UserRole) { n.Edges.UserRoles = append(n.Edges.UserRoles, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withBlacklistedTokens; query != nil {
+		if err := uq.loadBlacklistedTokens(ctx, query, nodes,
+			func(n *User) { n.Edges.BlacklistedTokens = []*BlacklistedToken{} },
+			func(n *User, e *BlacklistedToken) { n.Edges.BlacklistedTokens = append(n.Edges.BlacklistedTokens, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1067,6 +1111,37 @@ func (uq *UserQuery) loadUserRoles(ctx context.Context, query *UserRoleQuery, no
 		for kn := range nodes {
 			assign(kn, n)
 		}
+	}
+	return nil
+}
+func (uq *UserQuery) loadBlacklistedTokens(ctx context.Context, query *BlacklistedTokenQuery, nodes []*User, init func(*User), assign func(*User, *BlacklistedToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.BlacklistedToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.BlacklistedTokensColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.blacklisted_token_owner
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "blacklisted_token_owner" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "blacklisted_token_owner" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

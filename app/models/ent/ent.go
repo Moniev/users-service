@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sync"
 	"users-service/app/models/ent/activationcode"
+	"users-service/app/models/ent/blacklistedtoken"
 	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
 	"users-service/app/models/ent/resetcode"
@@ -86,6 +87,7 @@ func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			activationcode.Table:      activationcode.ValidColumn,
+			blacklistedtoken.Table:    blacklistedtoken.ValidColumn,
 			entrepreneurdetails.Table: entrepreneurdetails.ValidColumn,
 			location.Table:            location.ValidColumn,
 			resetcode.Table:           resetcode.ValidColumn,

@@ -63,25 +63,9 @@ func (udc *UserDetailsCreate) SetCreatedAt(t time.Time) *UserDetailsCreate {
 	return udc
 }
 
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (udc *UserDetailsCreate) SetNillableCreatedAt(t *time.Time) *UserDetailsCreate {
-	if t != nil {
-		udc.SetCreatedAt(*t)
-	}
-	return udc
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (udc *UserDetailsCreate) SetUpdatedAt(t time.Time) *UserDetailsCreate {
 	udc.mutation.SetUpdatedAt(t)
-	return udc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (udc *UserDetailsCreate) SetNillableUpdatedAt(t *time.Time) *UserDetailsCreate {
-	if t != nil {
-		udc.SetUpdatedAt(*t)
-	}
 	return udc
 }
 
@@ -143,7 +127,6 @@ func (udc *UserDetailsCreate) Mutation() *UserDetailsMutation {
 
 // Save creates the UserDetails in the database.
 func (udc *UserDetailsCreate) Save(ctx context.Context) (*UserDetails, error) {
-	udc.defaults()
 	return withHooks(ctx, udc.sqlSave, udc.mutation, udc.hooks)
 }
 
@@ -166,18 +149,6 @@ func (udc *UserDetailsCreate) Exec(ctx context.Context) error {
 func (udc *UserDetailsCreate) ExecX(ctx context.Context) {
 	if err := udc.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (udc *UserDetailsCreate) defaults() {
-	if _, ok := udc.mutation.CreatedAt(); !ok {
-		v := userdetails.DefaultCreatedAt()
-		udc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := udc.mutation.UpdatedAt(); !ok {
-		v := userdetails.DefaultUpdatedAt()
-		udc.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -322,7 +293,6 @@ func (udcb *UserDetailsCreateBulk) Save(ctx context.Context) ([]*UserDetails, er
 	for i := range udcb.builders {
 		func(i int, root context.Context) {
 			builder := udcb.builders[i]
-			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*UserDetailsMutation)
 				if !ok {
