@@ -29,8 +29,6 @@ RUN curl -fsSL -o /app/wait-for-it.sh https://raw.githubusercontent.com/vishnubo
 
 COPY ./app/docs/swagger.json .
 COPY ./app/docs/swagger.yaml .
-COPY ./app/docs/openapi.json .
-COPY ./app/docs/openapi.yaml .
 
 RUN cat <<EOF > /app/start.sh
 #!/bin/sh

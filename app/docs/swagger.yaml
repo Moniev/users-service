@@ -712,16 +712,16 @@ definitions:
         $ref: '#/definitions/ent.User'
     type: object
 externalDocs:
-  description: OpenAPI 3.0 Specification
-  url: https://not-yet-hosted/specification
-host: users-service-users-service.svc.cluster.local:8000
+  description: OpenAPI 3.0.0 Specification
+  url: https://not-yet-hosted.com/specification
+host: users-service.users-service.svc.cluster.local:8000
 info:
   contact:
     email: m0niev@gmail.com
     name: API Support
-    url: http://not-yet-hosted/support
+    url: http://not-yet-hosted.com/support
   description: Main users management microservice responsible for user related operations.
-  termsOfService: http://not-yet-hosted/terms/
+  termsOfService: http://not-yet-hosted.com/terms/
   title: Users Service API
   version: 1.0.0
 paths:

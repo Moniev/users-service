@@ -40,7 +40,7 @@ generate-mocks:
 
 generate-swagger:
 	@echo "--- Generating Swagger documentation ---"
-	@swag init -g ./app/cmd/main.go -o app/docs
+	@swag init -g ./app/cmd/main.go -o ./app/docs
 
 
 # ==============================================================================

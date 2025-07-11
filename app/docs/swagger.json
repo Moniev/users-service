@@ -7,15 +7,15 @@
     "info": {
         "description": "Main users management microservice responsible for user related operations.",
         "title": "Users Service API",
-        "termsOfService": "http://not-yet-hosted/terms/",
+        "termsOfService": "http://not-yet-hosted.com/terms/",
         "contact": {
             "name": "API Support",
-            "url": "http://not-yet-hosted/support",
+            "url": "http://not-yet-hosted.com/support",
             "email": "m0niev@gmail.com"
         },
         "version": "1.0.0"
     },
-    "host": "users-service-users-service.svc.cluster.local:8000",
+    "host": "users-service.users-service.svc.cluster.local:8000",
     "basePath": "/",
     "paths": {
         "/api/v1/auth/activation/account": {
@@ -2221,7 +2221,7 @@
         }
     },
     "externalDocs": {
-        "description": "OpenAPI 3.0 Specification",
-        "url": "https://not-yet-hosted/specification"
+        "description": "OpenAPI 3.0.0 Specification",
+        "url": "https://not-yet-hosted.com/specification"
     }
 }

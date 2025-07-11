@@ -9,10 +9,10 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://not-yet-hosted/terms/",
+        "termsOfService": "http://not-yet-hosted.com/terms/",
         "contact": {
             "name": "API Support",
-            "url": "http://not-yet-hosted/support",
+            "url": "http://not-yet-hosted.com/support",
             "email": "m0niev@gmail.com"
         },
         "version": "{{.Version}}"
@@ -2223,15 +2223,15 @@ const docTemplate = `{
         }
     },
     "externalDocs": {
-        "description": "OpenAPI 3.0 Specification",
-        "url": "https://not-yet-hosted/specification"
+        "description": "OpenAPI 3.0.0 Specification",
+        "url": "https://not-yet-hosted.com/specification"
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0.0",
-	Host:             "users-service-users-service.svc.cluster.local:8000",
+	Host:             "users-service.users-service.svc.cluster.local:8000",
 	BasePath:         "/",
 	Schemes:          []string{"http", "https"},
 	Title:            "Users Service API",
