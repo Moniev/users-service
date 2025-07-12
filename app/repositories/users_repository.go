@@ -45,6 +45,7 @@ type UsersRepositoryInterface interface {
 	FindOrCreateDevice(ctx context.Context, userID int, req *requests.Device) (*ent.UserDevice, error)
 
 	ActivateAccount(ctx context.Context, code string) (*ent.User, error)
+	AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error)
 	VerifyAccount(ctx context.Context, code string) (*ent.User, error)
 	UpdateUser(ctx context.Context, user *ent.User, req *requests.User) (*ent.User, error)
 	UpdateUsersPassword(ctx context.Context, user *ent.User, hashedPassword string) (*ent.User, error)
@@ -56,6 +57,7 @@ type UsersRepositoryInterface interface {
 	RemoveResetCode(ctx context.Context, user *ent.User) (*ent.User, error)
 	RemoveSecondFactorCode(ctx context.Context, user *ent.User) (*ent.User, error)
 	RemoveAccount(ctx context.Context, user *ent.User) error
+	RemoveSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error)
 
 	Ping() error
 }
@@ -1140,7 +1142,7 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(ctx context.Context, user *e
 }
 
 func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, req *requests.Location) (*ent.User, error) {
-	r.Logger.Info().Int("userID", user.ID).Msg("Attempting to update user location")
+	r.Logger.Debug().Int("userID", user.ID).Msg("Attempting to update user location")
 	var updatedUser *ent.User
 	var err error
 
@@ -1170,6 +1172,93 @@ func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, re
 		}
 
 		r.Logger.Debug().Int("userID", user.ID).Msg("User account marked as removed in DB")
+
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Transaction failed for RemoveAccount")
+		return nil, errors.New("failed to remove user")
+	}
+
+	payload, err := r.CacheStore.CacheUser(updatedUser)
+	if err != nil {
+		return nil, errors.New("failed to cache user")
+	}
+
+	cacheKeys := utils.GetUserKeys(updatedUser)
+	for _, key := range cacheKeys {
+		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
+			return nil, errors.New("failed to set user cache")
+		}
+	}
+
+	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
+
+	return nil, nil
+}
+
+func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error) {
+	r.Logger.Debug().Int("userID", user.ID).Msg("Attempting to add user's subscriptions")
+	var updatedUser *ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		newSubIDs := append(user.SubscriptionIds, subIDs...)
+
+		if _, err := tx.User.
+			UpdateOneID(user.ID).
+			SetSubscriptionIds(newSubIDs).
+			Save(ctx); err != nil {
+			return errors.New("failed update user")
+		}
+
+		updatedUser, err = GetUserByID(ctx, tx, user.ID)
+		if err != nil {
+			return errors.New("failed to fetch updated user")
+		}
+
+		return nil
+
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Transaction failed for RemoveAccount")
+		return nil, errors.New("failed to remove user")
+	}
+
+	payload, err := r.CacheStore.CacheUser(updatedUser)
+	if err != nil {
+		return nil, errors.New("failed to cache user")
+	}
+
+	cacheKeys := utils.GetUserKeys(updatedUser)
+	for _, key := range cacheKeys {
+		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
+			return nil, errors.New("failed to set user cache")
+		}
+	}
+
+	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
+
+	return nil, nil
+}
+
+func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error) {
+	r.Logger.Debug().Int("userID", user.ID).Msg("Attempting to revoke user's subscriptions")
+	var updatedUser *ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		newSubIDs := utils.RemoveIDs(user.SubscriptionIds, subIDs)
+
+		if _, err := tx.User.
+			UpdateOneID(user.ID).
+			SetSubscriptionIds(newSubIDs).
+			Save(ctx); err != nil {
+			return errors.New("failed update user")
+		}
+
+		updatedUser, err = GetUserByID(ctx, tx, user.ID)
+		if err != nil {
+			return errors.New("failed to fetch updated user")
+		}
 
 		return nil
 	}); err != nil {

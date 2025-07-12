@@ -87,11 +87,13 @@ func (m *ConsumerManager) GetConsumer(topic string) (handlers.ConsumerInterface,
 	m.Logger.Debug().Str("topic", topic).Msg("Attempting to get consumer")
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
 	consumer, exists := m.ActiveConsumers[topic]
 	if exists {
 		m.Logger.Debug().Str("topic", topic).Msg("Consumer found")
 	} else {
 		m.Logger.Warn().Str("topic", topic).Msg("Consumer not found")
 	}
+
 	return consumer, exists
 }

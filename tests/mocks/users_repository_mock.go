@@ -224,3 +224,35 @@ func (m *MockUsersRepository) UpdateLocation(
 
 	return r0, args.Error(1)
 }
+
+func (m *MockUsersRepository) AddSubscriptions(
+	ctx context.Context,
+	user *ent.User,
+	subIDs []int,
+) (*ent.User, error) {
+
+	args := m.Called(ctx, user, subIDs)
+
+	var r0 *ent.User
+	if args.Get(0) == nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) RemoveSubscriptions(
+	ctx context.Context,
+	user *ent.User,
+	subIDs []int,
+) (*ent.User, error) {
+
+	args := m.Called(ctx, user, subIDs)
+
+	var r0 *ent.User
+	if args.Get(0) == nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}

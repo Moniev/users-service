@@ -68,3 +68,11 @@ type ResetPasswordEvent struct {
 	ExpiresAt    time.Time `json:"expires_at"`
 	TargetDevice string    `json:"target_device"`
 }
+
+type SubscriptionEvent struct {
+	BaseEvent
+	EventType       string `json:"event_type"`
+	Action          string `json:"action"`
+	SubscriptionIDs []int  `json:"subscription_id"`
+	UserID          int    `json:"user_id"`
+}

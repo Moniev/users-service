@@ -80,9 +80,8 @@ func NewApp(settings *Settings) *gin.Engine {
 		var handler handlers.MessageHandler
 
 		switch topic {
-		case "user.events", "user.actions":
+		case "user.events", "user.actions", "user.subscription":
 			handler = userActionHandler
-		case "notifications":
 		default:
 			logger.Warn().Str("topic", topic).Msg("No handler registered for topic")
 		}
@@ -92,6 +91,7 @@ func NewApp(settings *Settings) *gin.Engine {
 			if err != nil {
 				logger.Fatal().Err(err).Str("topic", topic).Msg("Failed to create consumer")
 			}
+
 			consumerManager.Register(topic, consumerWrapper)
 		}
 	}
