@@ -229,30 +229,27 @@ func (m *MockUsersRepository) AddSubscriptions(
 	ctx context.Context,
 	user *ent.User,
 	subIDs []int,
-) (*ent.User, error) {
-
+) error {
 	args := m.Called(ctx, user, subIDs)
-
-	var r0 *ent.User
-	if args.Get(0) == nil {
-		r0 = args.Get(0).(*ent.User)
-	}
-
-	return r0, args.Error(1)
+	return args.Error(0)
 }
 
 func (m *MockUsersRepository) RemoveSubscriptions(
 	ctx context.Context,
 	user *ent.User,
 	subIDs []int,
-) (*ent.User, error) {
+) error {
 
 	args := m.Called(ctx, user, subIDs)
+	return args.Error(0)
+}
 
-	var r0 *ent.User
-	if args.Get(0) == nil {
-		r0 = args.Get(0).(*ent.User)
-	}
+func (m *MockUsersRepository) CreateUserAction(
+	ctx context.Context,
+	user *ent.User,
+	action, originDevice, details string,
+) error {
 
-	return r0, args.Error(1)
+	args := m.Called(ctx, user, action, originDevice, details)
+	return args.Error(0)
 }

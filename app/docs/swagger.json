@@ -1568,6 +1568,62 @@
                 }
             }
         },
+        "ent.UserAction": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "Action holds the value of the \"action\" field.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt holds the value of the \"created_at\" field.",
+                    "type": "string"
+                },
+                "details": {
+                    "description": "Details holds the value of the \"details\" field.",
+                    "type": "string"
+                },
+                "edges": {
+                    "description": "Edges holds the relations/edges for other nodes in the graph.\nThe values are being populated by the UserActionQuery when eager-loading is set.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.UserActionEdges"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "ID of the ent.",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "Type holds the value of the \"type\" field.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt holds the value of the \"updated_at\" field.",
+                    "type": "string"
+                }
+            }
+        },
+        "ent.UserActionEdges": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "description": "Author holds the value of the author edge.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ent.User"
+                    }
+                },
+                "author_device": {
+                    "description": "AuthorDevice holds the value of the author_device edge.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ent.UserDevice"
+                    }
+                }
+            }
+        },
         "ent.UserDetails": {
             "type": "object",
             "properties": {
@@ -1716,6 +1772,13 @@
                             "$ref": "#/definitions/ent.SecondFactorCode"
                         }
                     ]
+                },
+                "user_actions": {
+                    "description": "UserActions holds the value of the user_actions edge.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ent.UserAction"
+                    }
                 },
                 "user_settings_2fa": {
                     "description": "UserSettings2fa holds the value of the user_settings_2fa edge.",

@@ -280,6 +280,46 @@ definitions:
         description: Verified holds the value of the "verified" field.
         type: boolean
     type: object
+  ent.UserAction:
+    properties:
+      action:
+        description: Action holds the value of the "action" field.
+        type: string
+      created_at:
+        description: CreatedAt holds the value of the "created_at" field.
+        type: string
+      details:
+        description: Details holds the value of the "details" field.
+        type: string
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.UserActionEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the UserActionQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: integer
+      type:
+        description: Type holds the value of the "type" field.
+        type: string
+      updated_at:
+        description: UpdatedAt holds the value of the "updated_at" field.
+        type: string
+    type: object
+  ent.UserActionEdges:
+    properties:
+      author:
+        description: Author holds the value of the author edge.
+        items:
+          $ref: '#/definitions/ent.User'
+        type: array
+      author_device:
+        description: AuthorDevice holds the value of the author_device edge.
+        items:
+          $ref: '#/definitions/ent.UserDevice'
+        type: array
+    type: object
   ent.UserDetails:
     properties:
       created_at:
@@ -383,6 +423,11 @@ definitions:
         - $ref: '#/definitions/ent.SecondFactorCode'
         description: SecondFactorCodes holds the value of the second_factor_codes
           edge.
+      user_actions:
+        description: UserActions holds the value of the user_actions edge.
+        items:
+          $ref: '#/definitions/ent.UserAction'
+        type: array
       user_settings_2fa:
         allOf:
         - $ref: '#/definitions/ent.UserSettings'
