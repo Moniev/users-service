@@ -9,6 +9,7 @@ import (
 	"time"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/useraction"
+	"users-service/app/models/ent/userdevice"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -72,6 +73,21 @@ func (uac *UserActionCreate) AddAuthor(u ...*User) *UserActionCreate {
 	return uac.AddAuthorIDs(ids...)
 }
 
+// AddAuthorDeviceIDs adds the "author_device" edge to the UserDevice entity by IDs.
+func (uac *UserActionCreate) AddAuthorDeviceIDs(ids ...int) *UserActionCreate {
+	uac.mutation.AddAuthorDeviceIDs(ids...)
+	return uac
+}
+
+// AddAuthorDevice adds the "author_device" edges to the UserDevice entity.
+func (uac *UserActionCreate) AddAuthorDevice(u ...*UserDevice) *UserActionCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return uac.AddAuthorDeviceIDs(ids...)
+}
+
 // Mutation returns the UserActionMutation object of the builder.
 func (uac *UserActionCreate) Mutation() *UserActionMutation {
 	return uac.mutation
@@ -123,6 +139,9 @@ func (uac *UserActionCreate) check() error {
 	}
 	if len(uac.mutation.AuthorIDs()) == 0 {
 		return &ValidationError{Name: "author", err: errors.New(`ent: missing required edge "UserAction.author"`)}
+	}
+	if len(uac.mutation.AuthorDeviceIDs()) == 0 {
+		return &ValidationError{Name: "author_device", err: errors.New(`ent: missing required edge "UserAction.author_device"`)}
 	}
 	return nil
 }
@@ -185,6 +204,22 @@ func (uac *UserActionCreate) createSpec() (*UserAction, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uac.mutation.AuthorDeviceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   useraction.AuthorDeviceTable,
+			Columns: useraction.AuthorDevicePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userdevice.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

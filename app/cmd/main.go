@@ -12,7 +12,7 @@
 // @externalDocs.description OpenAPI 3.0.0 Specification
 // @externalDocs.url https://not-yet-hosted.com/specification
 // @schemes http https
-// @swagger 2.0
+// @openapi 3.0.0
 
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header

@@ -9,6 +9,7 @@ import (
 	"time"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
+	"users-service/app/models/ent/useraction"
 	"users-service/app/models/ent/userdevice"
 	"users-service/app/models/ent/usersettings"
 
@@ -222,6 +223,21 @@ func (udc *UserDeviceCreate) SetSecondFactorCodes(s *SecondFactorCode) *UserDevi
 	return udc.SetSecondFactorCodesID(s.ID)
 }
 
+// AddUserActionIDs adds the "user_actions" edge to the UserAction entity by IDs.
+func (udc *UserDeviceCreate) AddUserActionIDs(ids ...int) *UserDeviceCreate {
+	udc.mutation.AddUserActionIDs(ids...)
+	return udc
+}
+
+// AddUserActions adds the "user_actions" edges to the UserAction entity.
+func (udc *UserDeviceCreate) AddUserActions(u ...*UserAction) *UserDeviceCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return udc.AddUserActionIDs(ids...)
+}
+
 // Mutation returns the UserDeviceMutation object of the builder.
 func (udc *UserDeviceCreate) Mutation() *UserDeviceMutation {
 	return udc.mutation
@@ -420,6 +436,22 @@ func (udc *UserDeviceCreate) createSpec() (*UserDevice, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.second_factor_code_target_user_device = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := udc.mutation.UserActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   userdevice.UserActionsTable,
+			Columns: userdevice.UserActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

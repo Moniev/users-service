@@ -45,6 +45,8 @@ const (
 	EdgeUserSettings2fa = "user_settings_2fa"
 	// EdgeSecondFactorCodes holds the string denoting the second_factor_codes edge name in mutations.
 	EdgeSecondFactorCodes = "second_factor_codes"
+	// EdgeUserActions holds the string denoting the user_actions edge name in mutations.
+	EdgeUserActions = "user_actions"
 	// Table holds the table name of the userdevice in the database.
 	Table = "user_devices"
 	// OwnerTable is the table that holds the owner relation/edge.
@@ -68,6 +70,11 @@ const (
 	SecondFactorCodesInverseTable = "second_factor_codes"
 	// SecondFactorCodesColumn is the table column denoting the second_factor_codes relation/edge.
 	SecondFactorCodesColumn = "second_factor_code_target_user_device"
+	// UserActionsTable is the table that holds the user_actions relation/edge. The primary key declared below.
+	UserActionsTable = "user_device_user_actions"
+	// UserActionsInverseTable is the table name for the UserAction entity.
+	// It exists in this package in order to avoid circular dependency with the "useraction" package.
+	UserActionsInverseTable = "user_actions"
 )
 
 // Columns holds all SQL columns for userdevice fields.
@@ -95,6 +102,12 @@ var ForeignKeys = []string{
 	"user_settings_second_factor_target",
 	"user_settings_notification_target_devices",
 }
+
+var (
+	// UserActionsPrimaryKey and UserActionsColumn2 are the table columns denoting the
+	// primary key for the user_actions relation (M2M).
+	UserActionsPrimaryKey = []string{"user_device_id", "user_action_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -214,6 +227,20 @@ func BySecondFactorCodesField(field string, opts ...sql.OrderTermOption) OrderOp
 		sqlgraph.OrderByNeighborTerms(s, newSecondFactorCodesStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByUserActionsCount orders the results by user_actions count.
+func ByUserActionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUserActionsStep(), opts...)
+	}
+}
+
+// ByUserActions orders the results by user_actions terms.
+func ByUserActions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserActionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOwnerStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -233,5 +260,12 @@ func newSecondFactorCodesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SecondFactorCodesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, true, SecondFactorCodesTable, SecondFactorCodesColumn),
+	)
+}
+func newUserActionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserActionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, UserActionsTable, UserActionsPrimaryKey...),
 	)
 }

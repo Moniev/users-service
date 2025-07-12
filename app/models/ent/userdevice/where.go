@@ -969,6 +969,29 @@ func HasSecondFactorCodesWith(preds ...predicate.SecondFactorCode) predicate.Use
 	})
 }
 
+// HasUserActions applies the HasEdge predicate on the "user_actions" edge.
+func HasUserActions() predicate.UserDevice {
+	return predicate.UserDevice(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, UserActionsTable, UserActionsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUserActionsWith applies the HasEdge predicate on the "user_actions" edge with a given conditions (other predicates).
+func HasUserActionsWith(preds ...predicate.UserAction) predicate.UserDevice {
+	return predicate.UserDevice(func(s *sql.Selector) {
+		step := newUserActionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserDevice) predicate.UserDevice {
 	return predicate.UserDevice(sql.AndPredicates(predicates...))

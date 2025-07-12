@@ -12,49 +12,57 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type UserActionHandler struct {
+type SubscriptionActionHandler struct {
 	UsersRepository repositories.UsersRepositoryInterface
 	Logger          zerolog.Logger
 }
 
-func NewUserActionHandler(
+func NewSubscriptionActionHandler(
 	usersRepository repositories.UsersRepositoryInterface,
 	logger zerolog.Logger,
-) *UserActionHandler {
+) *SubscriptionActionHandler {
 
-	return &UserActionHandler{
+	return &SubscriptionActionHandler{
 		UsersRepository: usersRepository,
 		Logger:          logger,
 	}
 }
 
-type UserEventHandlerInterface interface {
+type SubscriptionEventHandlerInterface interface {
 	Handle(ctx context.Context, msg *kafka.Message) error
 }
 
-func (h *UserActionHandler) Handle(ctx context.Context, msg *kafka.Message) error {
+func (h *SubscriptionActionHandler) Handle(ctx context.Context, msg *kafka.Message) error {
 	var baseEvent events.BaseEvent
 	if err := json.Unmarshal(msg.Value, &baseEvent); err != nil {
 		return fmt.Errorf("failed to unmarshal base event: %w", err)
 	}
 
-	if len(baseEvent.EventType) >= 12 && baseEvent.EventType[:12] == "user.action." {
-		var event events.UserActionEvent
+	if len(baseEvent.EventType) >= 18 && baseEvent.EventType[:18] == "user.subscription." {
+		var event events.SubscriptionEvent
 		if err := json.Unmarshal(msg.Value, &event); err != nil {
 			return fmt.Errorf("failed to unmarshal user action event: %w", err)
 		}
 
 		switch event.Action {
-
 		case "":
 			return errors.New("invalid user action event: missing action")
-		case "action":
+
+		case "remove":
 			user, err := h.UsersRepository.GetUserByID(ctx, event.UserID)
 			if err != nil {
 				return err
 			}
 
-			return h.UsersRepository.CreateUserAction(ctx, user, event.Action, event.OriginDevice, event.Details)
+			return h.UsersRepository.RemoveSubscriptions(ctx, user, event.SubscriptionIDs)
+
+		case "add":
+			user, err := h.UsersRepository.GetUserByID(ctx, event.UserID)
+			if err != nil {
+				return err
+			}
+
+			return h.UsersRepository.AddSubscriptions(ctx, user, event.SubscriptionIDs)
 		}
 
 		h.Logger.Debug().
@@ -66,6 +74,6 @@ func (h *UserActionHandler) Handle(ctx context.Context, msg *kafka.Message) erro
 		return nil
 	}
 
-	h.Logger.Warn().Str("event_type", baseEvent.EventType).Msg("Unknown event type received by UserActionHandler")
+	h.Logger.Warn().Str("event_type", baseEvent.EventType).Msg("Unknown event type received by SubscriptionActionHandler")
 	return nil
 }

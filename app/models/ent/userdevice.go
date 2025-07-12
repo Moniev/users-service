@@ -62,9 +62,11 @@ type UserDeviceEdges struct {
 	UserSettings2fa *UserSettings `json:"user_settings_2fa,omitempty"`
 	// SecondFactorCodes holds the value of the second_factor_codes edge.
 	SecondFactorCodes *SecondFactorCode `json:"second_factor_codes"`
+	// UserActions holds the value of the user_actions edge.
+	UserActions []*UserAction `json:"user_actions"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -98,6 +100,15 @@ func (e UserDeviceEdges) SecondFactorCodesOrErr() (*SecondFactorCode, error) {
 		return nil, &NotFoundError{label: secondfactorcode.Label}
 	}
 	return nil, &NotLoadedError{edge: "second_factor_codes"}
+}
+
+// UserActionsOrErr returns the UserActions value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserDeviceEdges) UserActionsOrErr() ([]*UserAction, error) {
+	if e.loadedTypes[3] {
+		return e.UserActions, nil
+	}
+	return nil, &NotLoadedError{edge: "user_actions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -266,6 +277,11 @@ func (ud *UserDevice) QueryUserSettings2fa() *UserSettingsQuery {
 // QuerySecondFactorCodes queries the "second_factor_codes" edge of the UserDevice entity.
 func (ud *UserDevice) QuerySecondFactorCodes() *SecondFactorCodeQuery {
 	return NewUserDeviceClient(ud.config).QuerySecondFactorCodes(ud)
+}
+
+// QueryUserActions queries the "user_actions" edge of the UserDevice entity.
+func (ud *UserDevice) QueryUserActions() *UserActionQuery {
+	return NewUserDeviceClient(ud.config).QueryUserActions(ud)
 }
 
 // Update returns a builder for updating this UserDevice.

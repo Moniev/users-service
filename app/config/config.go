@@ -72,7 +72,6 @@ func NewApp(settings *Settings) *gin.Engine {
 
 	cacheStore := infrastructure.NewCacheStore(redisClient, logger, settings.EncryptionSecretKey)
 	usersRepo := repositories.NewUsersRepository(cacheStore, entClient, driver, logger)
-	userActionHandler := services.NewUserActionHandler(usersRepo, logger)
 	consumerManager := infrastructure.NewConsumerManager(logger)
 
 	for _, topic := range topics {
@@ -80,8 +79,10 @@ func NewApp(settings *Settings) *gin.Engine {
 		var handler handlers.MessageHandler
 
 		switch topic {
-		case "user.events", "user.actions", "user.subscription":
-			handler = userActionHandler
+		case "user.events", "user.actions":
+			handler = services.NewUserActionHandler(usersRepo, logger)
+		case "user.subscription":
+			handler = services.NewSubscriptionActionHandler(usersRepo, logger)
 		default:
 			logger.Warn().Str("topic", topic).Msg("No handler registered for topic")
 		}

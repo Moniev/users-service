@@ -10,6 +10,7 @@ import (
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
+	"users-service/app/models/ent/useraction"
 	"users-service/app/models/ent/userdevice"
 	"users-service/app/models/ent/usersettings"
 
@@ -274,6 +275,21 @@ func (udu *UserDeviceUpdate) SetSecondFactorCodes(s *SecondFactorCode) *UserDevi
 	return udu.SetSecondFactorCodesID(s.ID)
 }
 
+// AddUserActionIDs adds the "user_actions" edge to the UserAction entity by IDs.
+func (udu *UserDeviceUpdate) AddUserActionIDs(ids ...int) *UserDeviceUpdate {
+	udu.mutation.AddUserActionIDs(ids...)
+	return udu
+}
+
+// AddUserActions adds the "user_actions" edges to the UserAction entity.
+func (udu *UserDeviceUpdate) AddUserActions(u ...*UserAction) *UserDeviceUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return udu.AddUserActionIDs(ids...)
+}
+
 // Mutation returns the UserDeviceMutation object of the builder.
 func (udu *UserDeviceUpdate) Mutation() *UserDeviceMutation {
 	return udu.mutation
@@ -295,6 +311,27 @@ func (udu *UserDeviceUpdate) ClearUserSettings2fa() *UserDeviceUpdate {
 func (udu *UserDeviceUpdate) ClearSecondFactorCodes() *UserDeviceUpdate {
 	udu.mutation.ClearSecondFactorCodes()
 	return udu
+}
+
+// ClearUserActions clears all "user_actions" edges to the UserAction entity.
+func (udu *UserDeviceUpdate) ClearUserActions() *UserDeviceUpdate {
+	udu.mutation.ClearUserActions()
+	return udu
+}
+
+// RemoveUserActionIDs removes the "user_actions" edge to UserAction entities by IDs.
+func (udu *UserDeviceUpdate) RemoveUserActionIDs(ids ...int) *UserDeviceUpdate {
+	udu.mutation.RemoveUserActionIDs(ids...)
+	return udu
+}
+
+// RemoveUserActions removes "user_actions" edges to UserAction entities.
+func (udu *UserDeviceUpdate) RemoveUserActions(u ...*UserAction) *UserDeviceUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return udu.RemoveUserActionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -501,6 +538,51 @@ func (udu *UserDeviceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(secondfactorcode.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if udu.mutation.UserActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   userdevice.UserActionsTable,
+			Columns: userdevice.UserActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := udu.mutation.RemovedUserActionsIDs(); len(nodes) > 0 && !udu.mutation.UserActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   userdevice.UserActionsTable,
+			Columns: userdevice.UserActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := udu.mutation.UserActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   userdevice.UserActionsTable,
+			Columns: userdevice.UserActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -771,6 +853,21 @@ func (uduo *UserDeviceUpdateOne) SetSecondFactorCodes(s *SecondFactorCode) *User
 	return uduo.SetSecondFactorCodesID(s.ID)
 }
 
+// AddUserActionIDs adds the "user_actions" edge to the UserAction entity by IDs.
+func (uduo *UserDeviceUpdateOne) AddUserActionIDs(ids ...int) *UserDeviceUpdateOne {
+	uduo.mutation.AddUserActionIDs(ids...)
+	return uduo
+}
+
+// AddUserActions adds the "user_actions" edges to the UserAction entity.
+func (uduo *UserDeviceUpdateOne) AddUserActions(u ...*UserAction) *UserDeviceUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return uduo.AddUserActionIDs(ids...)
+}
+
 // Mutation returns the UserDeviceMutation object of the builder.
 func (uduo *UserDeviceUpdateOne) Mutation() *UserDeviceMutation {
 	return uduo.mutation
@@ -792,6 +889,27 @@ func (uduo *UserDeviceUpdateOne) ClearUserSettings2fa() *UserDeviceUpdateOne {
 func (uduo *UserDeviceUpdateOne) ClearSecondFactorCodes() *UserDeviceUpdateOne {
 	uduo.mutation.ClearSecondFactorCodes()
 	return uduo
+}
+
+// ClearUserActions clears all "user_actions" edges to the UserAction entity.
+func (uduo *UserDeviceUpdateOne) ClearUserActions() *UserDeviceUpdateOne {
+	uduo.mutation.ClearUserActions()
+	return uduo
+}
+
+// RemoveUserActionIDs removes the "user_actions" edge to UserAction entities by IDs.
+func (uduo *UserDeviceUpdateOne) RemoveUserActionIDs(ids ...int) *UserDeviceUpdateOne {
+	uduo.mutation.RemoveUserActionIDs(ids...)
+	return uduo
+}
+
+// RemoveUserActions removes "user_actions" edges to UserAction entities.
+func (uduo *UserDeviceUpdateOne) RemoveUserActions(u ...*UserAction) *UserDeviceUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return uduo.RemoveUserActionIDs(ids...)
 }
 
 // Where appends a list predicates to the UserDeviceUpdate builder.
@@ -1028,6 +1146,51 @@ func (uduo *UserDeviceUpdateOne) sqlSave(ctx context.Context) (_node *UserDevice
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(secondfactorcode.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uduo.mutation.UserActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   userdevice.UserActionsTable,
+			Columns: userdevice.UserActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uduo.mutation.RemovedUserActionsIDs(); len(nodes) > 0 && !uduo.mutation.UserActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   userdevice.UserActionsTable,
+			Columns: userdevice.UserActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uduo.mutation.UserActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   userdevice.UserActionsTable,
+			Columns: userdevice.UserActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useraction.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

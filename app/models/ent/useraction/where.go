@@ -378,6 +378,29 @@ func HasAuthorWith(preds ...predicate.User) predicate.UserAction {
 	})
 }
 
+// HasAuthorDevice applies the HasEdge predicate on the "author_device" edge.
+func HasAuthorDevice() predicate.UserAction {
+	return predicate.UserAction(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, AuthorDeviceTable, AuthorDevicePrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAuthorDeviceWith applies the HasEdge predicate on the "author_device" edge with a given conditions (other predicates).
+func HasAuthorDeviceWith(preds ...predicate.UserDevice) predicate.UserAction {
+	return predicate.UserAction(func(s *sql.Selector) {
+		step := newAuthorDeviceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserAction) predicate.UserAction {
 	return predicate.UserAction(sql.AndPredicates(predicates...))

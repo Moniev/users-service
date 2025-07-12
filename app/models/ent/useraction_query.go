@@ -10,6 +10,7 @@ import (
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/useraction"
+	"users-service/app/models/ent/userdevice"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -20,11 +21,12 @@ import (
 // UserActionQuery is the builder for querying UserAction entities.
 type UserActionQuery struct {
 	config
-	ctx        *QueryContext
-	order      []useraction.OrderOption
-	inters     []Interceptor
-	predicates []predicate.UserAction
-	withAuthor *UserQuery
+	ctx              *QueryContext
+	order            []useraction.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.UserAction
+	withAuthor       *UserQuery
+	withAuthorDevice *UserDeviceQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,6 +78,28 @@ func (uaq *UserActionQuery) QueryAuthor() *UserQuery {
 			sqlgraph.From(useraction.Table, useraction.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, useraction.AuthorTable, useraction.AuthorPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uaq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAuthorDevice chains the current query on the "author_device" edge.
+func (uaq *UserActionQuery) QueryAuthorDevice() *UserDeviceQuery {
+	query := (&UserDeviceClient{config: uaq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uaq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uaq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useraction.Table, useraction.FieldID, selector),
+			sqlgraph.To(userdevice.Table, userdevice.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, useraction.AuthorDeviceTable, useraction.AuthorDevicePrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(uaq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,12 +294,13 @@ func (uaq *UserActionQuery) Clone() *UserActionQuery {
 		return nil
 	}
 	return &UserActionQuery{
-		config:     uaq.config,
-		ctx:        uaq.ctx.Clone(),
-		order:      append([]useraction.OrderOption{}, uaq.order...),
-		inters:     append([]Interceptor{}, uaq.inters...),
-		predicates: append([]predicate.UserAction{}, uaq.predicates...),
-		withAuthor: uaq.withAuthor.Clone(),
+		config:           uaq.config,
+		ctx:              uaq.ctx.Clone(),
+		order:            append([]useraction.OrderOption{}, uaq.order...),
+		inters:           append([]Interceptor{}, uaq.inters...),
+		predicates:       append([]predicate.UserAction{}, uaq.predicates...),
+		withAuthor:       uaq.withAuthor.Clone(),
+		withAuthorDevice: uaq.withAuthorDevice.Clone(),
 		// clone intermediate query.
 		sql:  uaq.sql.Clone(),
 		path: uaq.path,
@@ -290,6 +315,17 @@ func (uaq *UserActionQuery) WithAuthor(opts ...func(*UserQuery)) *UserActionQuer
 		opt(query)
 	}
 	uaq.withAuthor = query
+	return uaq
+}
+
+// WithAuthorDevice tells the query-builder to eager-load the nodes that are connected to
+// the "author_device" edge. The optional arguments are used to configure the query builder of the edge.
+func (uaq *UserActionQuery) WithAuthorDevice(opts ...func(*UserDeviceQuery)) *UserActionQuery {
+	query := (&UserDeviceClient{config: uaq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uaq.withAuthorDevice = query
 	return uaq
 }
 
@@ -371,8 +407,9 @@ func (uaq *UserActionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*UserAction{}
 		_spec       = uaq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			uaq.withAuthor != nil,
+			uaq.withAuthorDevice != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -397,6 +434,13 @@ func (uaq *UserActionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		if err := uaq.loadAuthor(ctx, query, nodes,
 			func(n *UserAction) { n.Edges.Author = []*User{} },
 			func(n *UserAction, e *User) { n.Edges.Author = append(n.Edges.Author, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uaq.withAuthorDevice; query != nil {
+		if err := uaq.loadAuthorDevice(ctx, query, nodes,
+			func(n *UserAction) { n.Edges.AuthorDevice = []*UserDevice{} },
+			func(n *UserAction, e *UserDevice) { n.Edges.AuthorDevice = append(n.Edges.AuthorDevice, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -457,6 +501,67 @@ func (uaq *UserActionQuery) loadAuthor(ctx context.Context, query *UserQuery, no
 		nodes, ok := nids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected "author" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (uaq *UserActionQuery) loadAuthorDevice(ctx context.Context, query *UserDeviceQuery, nodes []*UserAction, init func(*UserAction), assign func(*UserAction, *UserDevice)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*UserAction)
+	nids := make(map[int]map[*UserAction]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(useraction.AuthorDeviceTable)
+		s.Join(joinT).On(s.C(userdevice.FieldID), joinT.C(useraction.AuthorDevicePrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(useraction.AuthorDevicePrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(useraction.AuthorDevicePrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*UserAction]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*UserDevice](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "author_device" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)

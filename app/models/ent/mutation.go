@@ -7447,21 +7447,24 @@ func (m *UserMutation) ResetEdge(name string) error {
 // UserActionMutation represents an operation that mutates the UserAction nodes in the graph.
 type UserActionMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	_type         *string
-	action        *string
-	details       *string
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	author        map[int]struct{}
-	removedauthor map[int]struct{}
-	clearedauthor bool
-	done          bool
-	oldValue      func(context.Context) (*UserAction, error)
-	predicates    []predicate.UserAction
+	op                   Op
+	typ                  string
+	id                   *int
+	_type                *string
+	action               *string
+	details              *string
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	author               map[int]struct{}
+	removedauthor        map[int]struct{}
+	clearedauthor        bool
+	author_device        map[int]struct{}
+	removedauthor_device map[int]struct{}
+	clearedauthor_device bool
+	done                 bool
+	oldValue             func(context.Context) (*UserAction, error)
+	predicates           []predicate.UserAction
 }
 
 var _ ent.Mutation = (*UserActionMutation)(nil)
@@ -7802,6 +7805,60 @@ func (m *UserActionMutation) ResetAuthor() {
 	m.removedauthor = nil
 }
 
+// AddAuthorDeviceIDs adds the "author_device" edge to the UserDevice entity by ids.
+func (m *UserActionMutation) AddAuthorDeviceIDs(ids ...int) {
+	if m.author_device == nil {
+		m.author_device = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.author_device[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAuthorDevice clears the "author_device" edge to the UserDevice entity.
+func (m *UserActionMutation) ClearAuthorDevice() {
+	m.clearedauthor_device = true
+}
+
+// AuthorDeviceCleared reports if the "author_device" edge to the UserDevice entity was cleared.
+func (m *UserActionMutation) AuthorDeviceCleared() bool {
+	return m.clearedauthor_device
+}
+
+// RemoveAuthorDeviceIDs removes the "author_device" edge to the UserDevice entity by IDs.
+func (m *UserActionMutation) RemoveAuthorDeviceIDs(ids ...int) {
+	if m.removedauthor_device == nil {
+		m.removedauthor_device = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.author_device, ids[i])
+		m.removedauthor_device[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAuthorDevice returns the removed IDs of the "author_device" edge to the UserDevice entity.
+func (m *UserActionMutation) RemovedAuthorDeviceIDs() (ids []int) {
+	for id := range m.removedauthor_device {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AuthorDeviceIDs returns the "author_device" edge IDs in the mutation.
+func (m *UserActionMutation) AuthorDeviceIDs() (ids []int) {
+	for id := range m.author_device {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAuthorDevice resets all changes to the "author_device" edge.
+func (m *UserActionMutation) ResetAuthorDevice() {
+	m.author_device = nil
+	m.clearedauthor_device = false
+	m.removedauthor_device = nil
+}
+
 // Where appends a list predicates to the UserActionMutation builder.
 func (m *UserActionMutation) Where(ps ...predicate.UserAction) {
 	m.predicates = append(m.predicates, ps...)
@@ -8003,9 +8060,12 @@ func (m *UserActionMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserActionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.author != nil {
 		edges = append(edges, useraction.EdgeAuthor)
+	}
+	if m.author_device != nil {
+		edges = append(edges, useraction.EdgeAuthorDevice)
 	}
 	return edges
 }
@@ -8020,15 +8080,24 @@ func (m *UserActionMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case useraction.EdgeAuthorDevice:
+		ids := make([]ent.Value, 0, len(m.author_device))
+		for id := range m.author_device {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserActionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedauthor != nil {
 		edges = append(edges, useraction.EdgeAuthor)
+	}
+	if m.removedauthor_device != nil {
+		edges = append(edges, useraction.EdgeAuthorDevice)
 	}
 	return edges
 }
@@ -8043,15 +8112,24 @@ func (m *UserActionMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case useraction.EdgeAuthorDevice:
+		ids := make([]ent.Value, 0, len(m.removedauthor_device))
+		for id := range m.removedauthor_device {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserActionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedauthor {
 		edges = append(edges, useraction.EdgeAuthor)
+	}
+	if m.clearedauthor_device {
+		edges = append(edges, useraction.EdgeAuthorDevice)
 	}
 	return edges
 }
@@ -8062,6 +8140,8 @@ func (m *UserActionMutation) EdgeCleared(name string) bool {
 	switch name {
 	case useraction.EdgeAuthor:
 		return m.clearedauthor
+	case useraction.EdgeAuthorDevice:
+		return m.clearedauthor_device
 	}
 	return false
 }
@@ -8080,6 +8160,9 @@ func (m *UserActionMutation) ResetEdge(name string) error {
 	switch name {
 	case useraction.EdgeAuthor:
 		m.ResetAuthor()
+		return nil
+	case useraction.EdgeAuthorDevice:
+		m.ResetAuthorDevice()
 		return nil
 	}
 	return fmt.Errorf("unknown UserAction edge %s", name)
@@ -8910,6 +8993,9 @@ type UserDeviceMutation struct {
 	cleareduser_settings_2fa   bool
 	second_factor_codes        *int
 	clearedsecond_factor_codes bool
+	user_actions               map[int]struct{}
+	removeduser_actions        map[int]struct{}
+	cleareduser_actions        bool
 	done                       bool
 	oldValue                   func(context.Context) (*UserDevice, error)
 	predicates                 []predicate.UserDevice
@@ -9672,6 +9758,60 @@ func (m *UserDeviceMutation) ResetSecondFactorCodes() {
 	m.clearedsecond_factor_codes = false
 }
 
+// AddUserActionIDs adds the "user_actions" edge to the UserAction entity by ids.
+func (m *UserDeviceMutation) AddUserActionIDs(ids ...int) {
+	if m.user_actions == nil {
+		m.user_actions = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.user_actions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUserActions clears the "user_actions" edge to the UserAction entity.
+func (m *UserDeviceMutation) ClearUserActions() {
+	m.cleareduser_actions = true
+}
+
+// UserActionsCleared reports if the "user_actions" edge to the UserAction entity was cleared.
+func (m *UserDeviceMutation) UserActionsCleared() bool {
+	return m.cleareduser_actions
+}
+
+// RemoveUserActionIDs removes the "user_actions" edge to the UserAction entity by IDs.
+func (m *UserDeviceMutation) RemoveUserActionIDs(ids ...int) {
+	if m.removeduser_actions == nil {
+		m.removeduser_actions = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.user_actions, ids[i])
+		m.removeduser_actions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUserActions returns the removed IDs of the "user_actions" edge to the UserAction entity.
+func (m *UserDeviceMutation) RemovedUserActionsIDs() (ids []int) {
+	for id := range m.removeduser_actions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UserActionsIDs returns the "user_actions" edge IDs in the mutation.
+func (m *UserDeviceMutation) UserActionsIDs() (ids []int) {
+	for id := range m.user_actions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUserActions resets all changes to the "user_actions" edge.
+func (m *UserDeviceMutation) ResetUserActions() {
+	m.user_actions = nil
+	m.cleareduser_actions = false
+	m.removeduser_actions = nil
+}
+
 // Where appends a list predicates to the UserDeviceMutation builder.
 func (m *UserDeviceMutation) Where(ps ...predicate.UserDevice) {
 	m.predicates = append(m.predicates, ps...)
@@ -10043,7 +10183,7 @@ func (m *UserDeviceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserDeviceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.owner != nil {
 		edges = append(edges, userdevice.EdgeOwner)
 	}
@@ -10052,6 +10192,9 @@ func (m *UserDeviceMutation) AddedEdges() []string {
 	}
 	if m.second_factor_codes != nil {
 		edges = append(edges, userdevice.EdgeSecondFactorCodes)
+	}
+	if m.user_actions != nil {
+		edges = append(edges, userdevice.EdgeUserActions)
 	}
 	return edges
 }
@@ -10072,25 +10215,42 @@ func (m *UserDeviceMutation) AddedIDs(name string) []ent.Value {
 		if id := m.second_factor_codes; id != nil {
 			return []ent.Value{*id}
 		}
+	case userdevice.EdgeUserActions:
+		ids := make([]ent.Value, 0, len(m.user_actions))
+		for id := range m.user_actions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserDeviceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.removeduser_actions != nil {
+		edges = append(edges, userdevice.EdgeUserActions)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserDeviceMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case userdevice.EdgeUserActions:
+		ids := make([]ent.Value, 0, len(m.removeduser_actions))
+		for id := range m.removeduser_actions {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserDeviceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedowner {
 		edges = append(edges, userdevice.EdgeOwner)
 	}
@@ -10099,6 +10259,9 @@ func (m *UserDeviceMutation) ClearedEdges() []string {
 	}
 	if m.clearedsecond_factor_codes {
 		edges = append(edges, userdevice.EdgeSecondFactorCodes)
+	}
+	if m.cleareduser_actions {
+		edges = append(edges, userdevice.EdgeUserActions)
 	}
 	return edges
 }
@@ -10113,6 +10276,8 @@ func (m *UserDeviceMutation) EdgeCleared(name string) bool {
 		return m.cleareduser_settings_2fa
 	case userdevice.EdgeSecondFactorCodes:
 		return m.clearedsecond_factor_codes
+	case userdevice.EdgeUserActions:
+		return m.cleareduser_actions
 	}
 	return false
 }
@@ -10146,6 +10311,9 @@ func (m *UserDeviceMutation) ResetEdge(name string) error {
 		return nil
 	case userdevice.EdgeSecondFactorCodes:
 		m.ResetSecondFactorCodes()
+		return nil
+	case userdevice.EdgeUserActions:
+		m.ResetUserActions()
 		return nil
 	}
 	return fmt.Errorf("unknown UserDevice edge %s", name)

@@ -87,6 +87,8 @@ func (UserDevice) Edges() []ent.Edge {
 			Ref("target_user_device").
 			Unique().
 			StructTag(`json:"second_factor_codes"`),
+		edge.To("user_actions", UserAction.Type).
+			StructTag(`json:"user_actions"`),
 	}
 }
 

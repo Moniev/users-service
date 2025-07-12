@@ -39,6 +39,10 @@ func (UserAction) Edges() []ent.Edge {
 			Ref("user_actions").
 			Required().
 			StructTag(`json:"author"`),
+		edge.From("author_device", UserDevice.Type).
+			Ref("user_actions").
+			Required().
+			StructTag(`json:"author_device"`),
 	}
 }
 

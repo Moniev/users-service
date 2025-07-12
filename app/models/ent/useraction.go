@@ -37,9 +37,11 @@ type UserAction struct {
 type UserActionEdges struct {
 	// Author holds the value of the author edge.
 	Author []*User `json:"author"`
+	// AuthorDevice holds the value of the author_device edge.
+	AuthorDevice []*UserDevice `json:"author_device"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // AuthorOrErr returns the Author value or an error if the edge
@@ -49,6 +51,15 @@ func (e UserActionEdges) AuthorOrErr() ([]*User, error) {
 		return e.Author, nil
 	}
 	return nil, &NotLoadedError{edge: "author"}
+}
+
+// AuthorDeviceOrErr returns the AuthorDevice value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserActionEdges) AuthorDeviceOrErr() ([]*UserDevice, error) {
+	if e.loadedTypes[1] {
+		return e.AuthorDevice, nil
+	}
+	return nil, &NotLoadedError{edge: "author_device"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -129,6 +140,11 @@ func (ua *UserAction) Value(name string) (ent.Value, error) {
 // QueryAuthor queries the "author" edge of the UserAction entity.
 func (ua *UserAction) QueryAuthor() *UserQuery {
 	return NewUserActionClient(ua.config).QueryAuthor(ua)
+}
+
+// QueryAuthorDevice queries the "author_device" edge of the UserAction entity.
+func (ua *UserAction) QueryAuthorDevice() *UserDeviceQuery {
+	return NewUserActionClient(ua.config).QueryAuthorDevice(ua)
 }
 
 // Update returns a builder for updating this UserAction.

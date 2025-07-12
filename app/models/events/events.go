@@ -55,10 +55,9 @@ type NotificationEvent struct {
 
 type UserActionEvent struct {
 	BaseEvent
-	Action        string      `json:"action"`
-	Details       interface{} `json:"details,omitempty"`
-	OriginDevice  string      `json:"origin_device,omitempty"`
-	TargetDevices []string    `json:"target_devices,omitempty"`
+	Action       string `json:"action"`
+	Details      string `json:"details,omitempty"`
+	OriginDevice string `json:"origin_device,omitempty"`
 }
 
 type ResetPasswordEvent struct {
@@ -71,7 +70,6 @@ type ResetPasswordEvent struct {
 
 type SubscriptionEvent struct {
 	BaseEvent
-	EventType       string `json:"event_type"`
 	Action          string `json:"action"`
 	SubscriptionIDs []int  `json:"subscription_id"`
 	UserID          int    `json:"user_id"`

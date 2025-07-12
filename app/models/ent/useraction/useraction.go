@@ -25,6 +25,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeAuthor holds the string denoting the author edge name in mutations.
 	EdgeAuthor = "author"
+	// EdgeAuthorDevice holds the string denoting the author_device edge name in mutations.
+	EdgeAuthorDevice = "author_device"
 	// Table holds the table name of the useraction in the database.
 	Table = "user_actions"
 	// AuthorTable is the table that holds the author relation/edge. The primary key declared below.
@@ -32,6 +34,11 @@ const (
 	// AuthorInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	AuthorInverseTable = "users"
+	// AuthorDeviceTable is the table that holds the author_device relation/edge. The primary key declared below.
+	AuthorDeviceTable = "user_device_user_actions"
+	// AuthorDeviceInverseTable is the table name for the UserDevice entity.
+	// It exists in this package in order to avoid circular dependency with the "userdevice" package.
+	AuthorDeviceInverseTable = "user_devices"
 )
 
 // Columns holds all SQL columns for useraction fields.
@@ -48,6 +55,9 @@ var (
 	// AuthorPrimaryKey and AuthorColumn2 are the table columns denoting the
 	// primary key for the author relation (M2M).
 	AuthorPrimaryKey = []string{"user_id", "user_action_id"}
+	// AuthorDevicePrimaryKey and AuthorDeviceColumn2 are the table columns denoting the
+	// primary key for the author_device relation (M2M).
+	AuthorDevicePrimaryKey = []string{"user_device_id", "user_action_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -115,10 +125,31 @@ func ByAuthor(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAuthorStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByAuthorDeviceCount orders the results by author_device count.
+func ByAuthorDeviceCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAuthorDeviceStep(), opts...)
+	}
+}
+
+// ByAuthorDevice orders the results by author_device terms.
+func ByAuthorDevice(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAuthorDeviceStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newAuthorStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AuthorInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, true, AuthorTable, AuthorPrimaryKey...),
+	)
+}
+func newAuthorDeviceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AuthorDeviceInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, AuthorDeviceTable, AuthorDevicePrimaryKey...),
 	)
 }

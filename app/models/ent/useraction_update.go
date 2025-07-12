@@ -10,6 +10,7 @@ import (
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/useraction"
+	"users-service/app/models/ent/userdevice"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -100,6 +101,21 @@ func (uau *UserActionUpdate) AddAuthor(u ...*User) *UserActionUpdate {
 	return uau.AddAuthorIDs(ids...)
 }
 
+// AddAuthorDeviceIDs adds the "author_device" edge to the UserDevice entity by IDs.
+func (uau *UserActionUpdate) AddAuthorDeviceIDs(ids ...int) *UserActionUpdate {
+	uau.mutation.AddAuthorDeviceIDs(ids...)
+	return uau
+}
+
+// AddAuthorDevice adds the "author_device" edges to the UserDevice entity.
+func (uau *UserActionUpdate) AddAuthorDevice(u ...*UserDevice) *UserActionUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return uau.AddAuthorDeviceIDs(ids...)
+}
+
 // Mutation returns the UserActionMutation object of the builder.
 func (uau *UserActionUpdate) Mutation() *UserActionMutation {
 	return uau.mutation
@@ -124,6 +140,27 @@ func (uau *UserActionUpdate) RemoveAuthor(u ...*User) *UserActionUpdate {
 		ids[i] = u[i].ID
 	}
 	return uau.RemoveAuthorIDs(ids...)
+}
+
+// ClearAuthorDevice clears all "author_device" edges to the UserDevice entity.
+func (uau *UserActionUpdate) ClearAuthorDevice() *UserActionUpdate {
+	uau.mutation.ClearAuthorDevice()
+	return uau
+}
+
+// RemoveAuthorDeviceIDs removes the "author_device" edge to UserDevice entities by IDs.
+func (uau *UserActionUpdate) RemoveAuthorDeviceIDs(ids ...int) *UserActionUpdate {
+	uau.mutation.RemoveAuthorDeviceIDs(ids...)
+	return uau
+}
+
+// RemoveAuthorDevice removes "author_device" edges to UserDevice entities.
+func (uau *UserActionUpdate) RemoveAuthorDevice(u ...*UserDevice) *UserActionUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return uau.RemoveAuthorDeviceIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -212,6 +249,51 @@ func (uau *UserActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uau.mutation.AuthorDeviceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   useraction.AuthorDeviceTable,
+			Columns: useraction.AuthorDevicePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userdevice.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uau.mutation.RemovedAuthorDeviceIDs(); len(nodes) > 0 && !uau.mutation.AuthorDeviceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   useraction.AuthorDeviceTable,
+			Columns: useraction.AuthorDevicePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userdevice.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uau.mutation.AuthorDeviceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   useraction.AuthorDeviceTable,
+			Columns: useraction.AuthorDevicePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userdevice.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -310,6 +392,21 @@ func (uauo *UserActionUpdateOne) AddAuthor(u ...*User) *UserActionUpdateOne {
 	return uauo.AddAuthorIDs(ids...)
 }
 
+// AddAuthorDeviceIDs adds the "author_device" edge to the UserDevice entity by IDs.
+func (uauo *UserActionUpdateOne) AddAuthorDeviceIDs(ids ...int) *UserActionUpdateOne {
+	uauo.mutation.AddAuthorDeviceIDs(ids...)
+	return uauo
+}
+
+// AddAuthorDevice adds the "author_device" edges to the UserDevice entity.
+func (uauo *UserActionUpdateOne) AddAuthorDevice(u ...*UserDevice) *UserActionUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return uauo.AddAuthorDeviceIDs(ids...)
+}
+
 // Mutation returns the UserActionMutation object of the builder.
 func (uauo *UserActionUpdateOne) Mutation() *UserActionMutation {
 	return uauo.mutation
@@ -334,6 +431,27 @@ func (uauo *UserActionUpdateOne) RemoveAuthor(u ...*User) *UserActionUpdateOne {
 		ids[i] = u[i].ID
 	}
 	return uauo.RemoveAuthorIDs(ids...)
+}
+
+// ClearAuthorDevice clears all "author_device" edges to the UserDevice entity.
+func (uauo *UserActionUpdateOne) ClearAuthorDevice() *UserActionUpdateOne {
+	uauo.mutation.ClearAuthorDevice()
+	return uauo
+}
+
+// RemoveAuthorDeviceIDs removes the "author_device" edge to UserDevice entities by IDs.
+func (uauo *UserActionUpdateOne) RemoveAuthorDeviceIDs(ids ...int) *UserActionUpdateOne {
+	uauo.mutation.RemoveAuthorDeviceIDs(ids...)
+	return uauo
+}
+
+// RemoveAuthorDevice removes "author_device" edges to UserDevice entities.
+func (uauo *UserActionUpdateOne) RemoveAuthorDevice(u ...*UserDevice) *UserActionUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return uauo.RemoveAuthorDeviceIDs(ids...)
 }
 
 // Where appends a list predicates to the UserActionUpdate builder.
@@ -452,6 +570,51 @@ func (uauo *UserActionUpdateOne) sqlSave(ctx context.Context) (_node *UserAction
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uauo.mutation.AuthorDeviceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   useraction.AuthorDeviceTable,
+			Columns: useraction.AuthorDevicePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userdevice.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uauo.mutation.RemovedAuthorDeviceIDs(); len(nodes) > 0 && !uauo.mutation.AuthorDeviceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   useraction.AuthorDeviceTable,
+			Columns: useraction.AuthorDevicePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userdevice.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uauo.mutation.AuthorDeviceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   useraction.AuthorDeviceTable,
+			Columns: useraction.AuthorDevicePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userdevice.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

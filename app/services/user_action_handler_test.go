@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestUserActionHandler(t *testing.T) (*UserActionHandler, *mocks.MockUsersRepository) {
+func newTestUserEventHandler(t *testing.T) (*UserActionHandler, *mocks.MockUsersRepository) {
 	mockRepo := new(mocks.MockUsersRepository)
 	logger := zerolog.Nop()
 
@@ -98,7 +98,7 @@ func TestUserActionHandler_Handle(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			handler, mockRepo := newTestUserActionHandler(t)
+			handler, mockRepo := newTestUserEventHandler(t)
 			tc.setupMocks(mockRepo)
 
 			err := handler.Handle(ctx, tc.message)

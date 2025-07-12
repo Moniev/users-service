@@ -1798,6 +1798,22 @@ func (c *UserActionClient) QueryAuthor(ua *UserAction) *UserQuery {
 	return query
 }
 
+// QueryAuthorDevice queries the author_device edge of a UserAction.
+func (c *UserActionClient) QueryAuthorDevice(ua *UserAction) *UserDeviceQuery {
+	query := (&UserDeviceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ua.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useraction.Table, useraction.FieldID, id),
+			sqlgraph.To(userdevice.Table, userdevice.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, useraction.AuthorDeviceTable, useraction.AuthorDevicePrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(ua.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserActionClient) Hooks() []Hook {
 	hooks := c.hooks.UserAction
@@ -2155,6 +2171,22 @@ func (c *UserDeviceClient) QuerySecondFactorCodes(ud *UserDevice) *SecondFactorC
 			sqlgraph.From(userdevice.Table, userdevice.FieldID, id),
 			sqlgraph.To(secondfactorcode.Table, secondfactorcode.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, userdevice.SecondFactorCodesTable, userdevice.SecondFactorCodesColumn),
+		)
+		fromV = sqlgraph.Neighbors(ud.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserActions queries the user_actions edge of a UserDevice.
+func (c *UserDeviceClient) QueryUserActions(ud *UserDevice) *UserActionQuery {
+	query := (&UserActionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ud.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userdevice.Table, userdevice.FieldID, id),
+			sqlgraph.To(useraction.Table, useraction.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, userdevice.UserActionsTable, userdevice.UserActionsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(ud.driver.Dialect(), step)
 		return fromV, nil

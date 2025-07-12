@@ -4,11 +4,13 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 	"users-service/app/models/ent/predicate"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
+	"users-service/app/models/ent/useraction"
 	"users-service/app/models/ent/userdevice"
 	"users-service/app/models/ent/usersettings"
 
@@ -28,6 +30,7 @@ type UserDeviceQuery struct {
 	withOwner             *UserQuery
 	withUserSettings2fa   *UserSettingsQuery
 	withSecondFactorCodes *SecondFactorCodeQuery
+	withUserActions       *UserActionQuery
 	withFKs               bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -124,6 +127,28 @@ func (udq *UserDeviceQuery) QuerySecondFactorCodes() *SecondFactorCodeQuery {
 			sqlgraph.From(userdevice.Table, userdevice.FieldID, selector),
 			sqlgraph.To(secondfactorcode.Table, secondfactorcode.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, userdevice.SecondFactorCodesTable, userdevice.SecondFactorCodesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(udq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUserActions chains the current query on the "user_actions" edge.
+func (udq *UserDeviceQuery) QueryUserActions() *UserActionQuery {
+	query := (&UserActionClient{config: udq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := udq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := udq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userdevice.Table, userdevice.FieldID, selector),
+			sqlgraph.To(useraction.Table, useraction.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, userdevice.UserActionsTable, userdevice.UserActionsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(udq.driver.Dialect(), step)
 		return fromU, nil
@@ -326,6 +351,7 @@ func (udq *UserDeviceQuery) Clone() *UserDeviceQuery {
 		withOwner:             udq.withOwner.Clone(),
 		withUserSettings2fa:   udq.withUserSettings2fa.Clone(),
 		withSecondFactorCodes: udq.withSecondFactorCodes.Clone(),
+		withUserActions:       udq.withUserActions.Clone(),
 		// clone intermediate query.
 		sql:  udq.sql.Clone(),
 		path: udq.path,
@@ -362,6 +388,17 @@ func (udq *UserDeviceQuery) WithSecondFactorCodes(opts ...func(*SecondFactorCode
 		opt(query)
 	}
 	udq.withSecondFactorCodes = query
+	return udq
+}
+
+// WithUserActions tells the query-builder to eager-load the nodes that are connected to
+// the "user_actions" edge. The optional arguments are used to configure the query builder of the edge.
+func (udq *UserDeviceQuery) WithUserActions(opts ...func(*UserActionQuery)) *UserDeviceQuery {
+	query := (&UserActionClient{config: udq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	udq.withUserActions = query
 	return udq
 }
 
@@ -444,10 +481,11 @@ func (udq *UserDeviceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		nodes       = []*UserDevice{}
 		withFKs     = udq.withFKs
 		_spec       = udq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			udq.withOwner != nil,
 			udq.withUserSettings2fa != nil,
 			udq.withSecondFactorCodes != nil,
+			udq.withUserActions != nil,
 		}
 	)
 	if udq.withOwner != nil || udq.withUserSettings2fa != nil || udq.withSecondFactorCodes != nil {
@@ -489,6 +527,13 @@ func (udq *UserDeviceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if query := udq.withSecondFactorCodes; query != nil {
 		if err := udq.loadSecondFactorCodes(ctx, query, nodes, nil,
 			func(n *UserDevice, e *SecondFactorCode) { n.Edges.SecondFactorCodes = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := udq.withUserActions; query != nil {
+		if err := udq.loadUserActions(ctx, query, nodes,
+			func(n *UserDevice) { n.Edges.UserActions = []*UserAction{} },
+			func(n *UserDevice, e *UserAction) { n.Edges.UserActions = append(n.Edges.UserActions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -587,6 +632,67 @@ func (udq *UserDeviceQuery) loadSecondFactorCodes(ctx context.Context, query *Se
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (udq *UserDeviceQuery) loadUserActions(ctx context.Context, query *UserActionQuery, nodes []*UserDevice, init func(*UserDevice), assign func(*UserDevice, *UserAction)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*UserDevice)
+	nids := make(map[int]map[*UserDevice]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(userdevice.UserActionsTable)
+		s.Join(joinT).On(s.C(useraction.FieldID), joinT.C(userdevice.UserActionsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(userdevice.UserActionsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(userdevice.UserActionsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*UserDevice]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*UserAction](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "user_actions" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
 		}
 	}
 	return nil

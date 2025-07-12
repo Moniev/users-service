@@ -431,6 +431,31 @@ var (
 			},
 		},
 	}
+	// UserDeviceUserActionsColumns holds the columns for the "user_device_user_actions" table.
+	UserDeviceUserActionsColumns = []*schema.Column{
+		{Name: "user_device_id", Type: field.TypeInt},
+		{Name: "user_action_id", Type: field.TypeInt},
+	}
+	// UserDeviceUserActionsTable holds the schema information for the "user_device_user_actions" table.
+	UserDeviceUserActionsTable = &schema.Table{
+		Name:       "user_device_user_actions",
+		Columns:    UserDeviceUserActionsColumns,
+		PrimaryKey: []*schema.Column{UserDeviceUserActionsColumns[0], UserDeviceUserActionsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_device_user_actions_user_device_id",
+				Columns:    []*schema.Column{UserDeviceUserActionsColumns[0]},
+				RefColumns: []*schema.Column{UserDevicesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_device_user_actions_user_action_id",
+				Columns:    []*schema.Column{UserDeviceUserActionsColumns[1]},
+				RefColumns: []*schema.Column{UserActionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivationCodesTable,
@@ -450,6 +475,7 @@ var (
 		RolePermissionUserRoleTable,
 		UserUserActionsTable,
 		UserUserRolesTable,
+		UserDeviceUserActionsTable,
 	}
 )
 
@@ -473,4 +499,6 @@ func init() {
 	UserUserActionsTable.ForeignKeys[1].RefTable = UserActionsTable
 	UserUserRolesTable.ForeignKeys[0].RefTable = UsersTable
 	UserUserRolesTable.ForeignKeys[1].RefTable = UserRolesTable
+	UserDeviceUserActionsTable.ForeignKeys[0].RefTable = UserDevicesTable
+	UserDeviceUserActionsTable.ForeignKeys[1].RefTable = UserActionsTable
 }

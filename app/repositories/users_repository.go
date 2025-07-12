@@ -34,6 +34,7 @@ type UsersRepositoryInterface interface {
 	CreateUser(ctx context.Context, req *requests.Register, hashedPassword string) (*ent.User, *ent.ActivationCode, error)
 	CreateResetCode(ctx context.Context, user *ent.User) (*ent.ResetCode, error)
 	CreateSecondFactorCode(ctx context.Context, user *ent.User, device *ent.UserDevice) (*ent.User, *ent.SecondFactorCode, error)
+	CreateUserAction(ctx context.Context, user *ent.User, action, originDevice, details string) error
 
 	GetUserByID(ctx context.Context, ID int) (*ent.User, error)
 	GetUserByMail(ctx context.Context, mail string) (*ent.User, error)
@@ -45,7 +46,7 @@ type UsersRepositoryInterface interface {
 	FindOrCreateDevice(ctx context.Context, userID int, req *requests.Device) (*ent.UserDevice, error)
 
 	ActivateAccount(ctx context.Context, code string) (*ent.User, error)
-	AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error)
+	AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) error
 	VerifyAccount(ctx context.Context, code string) (*ent.User, error)
 	UpdateUser(ctx context.Context, user *ent.User, req *requests.User) (*ent.User, error)
 	UpdateUsersPassword(ctx context.Context, user *ent.User, hashedPassword string) (*ent.User, error)
@@ -57,7 +58,7 @@ type UsersRepositoryInterface interface {
 	RemoveResetCode(ctx context.Context, user *ent.User) (*ent.User, error)
 	RemoveSecondFactorCode(ctx context.Context, user *ent.User) (*ent.User, error)
 	RemoveAccount(ctx context.Context, user *ent.User) error
-	RemoveSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error)
+	RemoveSubscriptions(ctx context.Context, user *ent.User, subIDs []int) error
 
 	Ping() error
 }
@@ -1196,7 +1197,7 @@ func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, re
 	return nil, nil
 }
 
-func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error) {
+func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) error {
 	r.Logger.Debug().Int("userID", user.ID).Msg("Attempting to add user's subscriptions")
 	var updatedUser *ent.User
 	var err error
@@ -1220,27 +1221,27 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Transaction failed for RemoveAccount")
-		return nil, errors.New("failed to remove user")
+		return errors.New("failed to remove user")
 	}
 
 	payload, err := r.CacheStore.CacheUser(updatedUser)
 	if err != nil {
-		return nil, errors.New("failed to cache user")
+		return errors.New("failed to cache user")
 	}
 
 	cacheKeys := utils.GetUserKeys(updatedUser)
 	for _, key := range cacheKeys {
 		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
+			return errors.New("failed to set user cache")
 		}
 	}
 
 	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
 
-	return nil, nil
+	return nil
 }
 
-func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.User, subIDs []int) (*ent.User, error) {
+func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.User, subIDs []int) error {
 	r.Logger.Debug().Int("userID", user.ID).Msg("Attempting to revoke user's subscriptions")
 	var updatedUser *ent.User
 	var err error
@@ -1263,24 +1264,70 @@ func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.Use
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Transaction failed for RemoveAccount")
-		return nil, errors.New("failed to remove user")
+		return errors.New("failed to remove user")
 	}
 
 	payload, err := r.CacheStore.CacheUser(updatedUser)
 	if err != nil {
-		return nil, errors.New("failed to cache user")
+		return errors.New("failed to cache user")
 	}
 
 	cacheKeys := utils.GetUserKeys(updatedUser)
 	for _, key := range cacheKeys {
 		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
+			return errors.New("failed to set user cache")
 		}
 	}
 
 	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
 
-	return nil, nil
+	return nil
+}
+
+func (r *UsersRepository) CreateUserAction(
+	ctx context.Context,
+	user *ent.User,
+	action, originDevice, details string,
+) error {
+	r.Logger.Debug().Int("userID", user.ID).Msg("Attempting to revoke user's subscriptions")
+	var updatedUser *ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		if _, err := tx.UserAction.
+			Create().
+			SetAction(action).
+			SetDetails(details).
+			AddAuthorIDs(user.ID).
+			Save(ctx); err != nil {
+			return errors.New("failed to create user action")
+		}
+
+		updatedUser, err = GetUserByID(ctx, tx, user.ID)
+		if err != nil {
+			return errors.New("failed to fetch updated user")
+		}
+
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Transaction failed for RemoveAccount")
+		return errors.New("failed to remove user")
+	}
+
+	payload, err := r.CacheStore.CacheUser(updatedUser)
+	if err != nil {
+		return errors.New("failed to cache user")
+	}
+
+	cacheKeys := utils.GetUserKeys(updatedUser)
+	for _, key := range cacheKeys {
+		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
+			return errors.New("failed to set user cache")
+		}
+	}
+
+	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
+	return nil
 }
 
 func (r *UsersRepository) Ping() error {
