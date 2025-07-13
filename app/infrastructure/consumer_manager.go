@@ -52,17 +52,17 @@ func (m *ConsumerManager) Register(topic string, consumer handlers.ConsumerInter
 	}
 
 	m.ActiveConsumers[topic] = consumer
-	m.Logger.Info().Str("topic", topic).Msg("Consumer registered successfully")
+	m.Logger.Debug().Str("topic", topic).Msg("Consumer registered successfully")
 	return nil
 }
 
 func (m *ConsumerManager) PingAll() error {
-	m.Logger.Info().Msg("Performing health check on all active consumers")
+	m.Logger.Debug().Msg("Performing health check on all active consumers")
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	if len(m.ActiveConsumers) == 0 {
-		m.Logger.Info().Msg("No active consumers to ping")
+		m.Logger.Debug().Msg("No active consumers to ping")
 		return nil
 	}
 
@@ -79,7 +79,7 @@ func (m *ConsumerManager) PingAll() error {
 		m.Logger.Debug().Str("topic", topic).Msg("Consumer health check passed")
 	}
 
-	m.Logger.Info().Msg("All active consumers passed health checks")
+	m.Logger.Debug().Msg("All active consumers passed health checks")
 	return nil
 }
 

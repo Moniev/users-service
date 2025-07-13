@@ -173,6 +173,7 @@ func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
 		if err != nil {
 			return nil, err
 		}
+
 		return &responses.User{User: user}, nil
 	})
 }

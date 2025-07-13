@@ -21,3 +21,7 @@ func (r *User) Valid() error {
 
 	return nil
 }
+
+func FromUser(user *ent.User) *User {
+	return &User{}
+}

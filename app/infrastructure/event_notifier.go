@@ -47,7 +47,7 @@ func NewEventNotifier(
 	logger zerolog.Logger,
 	topic string,
 	timeout time.Duration) *EventNotifier {
-	logger.Info().Str("topic", topic).Dur("timeout", timeout).Msg("Initializing new EventNotifier")
+	logger.Debug().Str("topic", topic).Dur("timeout", timeout).Msg("Initializing new EventNotifier")
 	return &EventNotifier{
 		KafkaProducer:    kafkaProducer,
 		Topic:            topic,
@@ -100,12 +100,12 @@ func (n *EventNotifier) createAndProduceEvent(event interface{}, settings *ent.U
 		return err
 	}
 
-	n.Logger.Info().Str("event_type", eventType).Int("user_id", userID).Msg("Event created and produced successfully")
+	n.Logger.Debug().Str("event_type", eventType).Int("user_id", userID).Msg("Event created and produced successfully")
 	return nil
 }
 
 func (n *EventNotifier) CreateRegistrationEvent(user *ent.User, activationCode *ent.ActivationCode) error {
-	n.Logger.Info().Int("user_id", user.ID).Msg("Attempting to create registration event")
+	n.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to create registration event")
 
 	if user.Edges.UserSettings == nil {
 		n.Logger.Error().Int("user_id", user.ID).Msg("Cannot create registration event: User.Edges.UserSettings is not loaded.")
@@ -134,7 +134,8 @@ func (n *EventNotifier) CreateSecondFactorEvent(settings *ent.UserSettings, seco
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Info().Int("user_id", userID).Msg("Attempting to create second factor event")
+
+	n.Logger.Debug().Int("user_id", userID).Msg("Attempting to create second factor event")
 
 	if settings.Edges.SecondFactorTarget == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create 2FA event: UserSettings.Edges.SecondFactorTarget is not loaded.")
@@ -169,7 +170,7 @@ func (n *EventNotifier) CreateLoginEvent(settings *ent.UserSettings, loginMethod
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Info().Int("user_id", userID).Str("loginMethod", loginMethod).Msg("Attempting to create login event")
+	n.Logger.Debug().Int("user_id", userID).Str("loginMethod", loginMethod).Msg("Attempting to create login event")
 
 	if settings.Edges.Owner == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create login event: User settings owner not loaded.")
@@ -196,7 +197,7 @@ func (n *EventNotifier) CreateVerificationEvent(settings *ent.UserSettings, phon
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Info().Int("user_id", userID).Str("phone", phone).Msg("Attempting to create verification event")
+	n.Logger.Debug().Int("user_id", userID).Str("phone", phone).Msg("Attempting to create verification event")
 
 	if settings.Edges.Owner == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create verification event: User settings owner not loaded.")
@@ -225,7 +226,7 @@ func (n *EventNotifier) CreateNotificationEvent(settings *ent.UserSettings, devi
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Info().Int("user_id", userID).Int("deviceCount", len(devices)).Msg("Attempting to create notification event")
+	n.Logger.Debug().Int("user_id", userID).Int("deviceCount", len(devices)).Msg("Attempting to create notification event")
 
 	if settings.Edges.Owner == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create notification event: User settings owner not loaded.")
@@ -258,7 +259,7 @@ func (n *EventNotifier) CreateUserActionEvent(settings *ent.UserSettings, action
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Info().Int("user_id", userID).Str("actionType", action.Action).Msg("Attempting to create user action event")
+	n.Logger.Debug().Int("user_id", userID).Str("actionType", action.Action).Msg("Attempting to create user action event")
 
 	if settings.Edges.Owner == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create user action event: User settings owner not loaded.")
@@ -286,7 +287,7 @@ func (n *EventNotifier) CreateResetPasswordEvent(settings *ent.UserSettings, res
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Info().Int("user_id", userID).Msg("Attempting to create reset password event")
+	n.Logger.Debug().Int("user_id", userID).Msg("Attempting to create reset password event")
 
 	if settings.Edges.Owner == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create reset password event: User settings owner not loaded.")
@@ -327,7 +328,7 @@ func (n *EventNotifier) CreateLogoutEvent(settings *ent.UserSettings, logoutMeth
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Info().Int("user_id", userID).Str("logoutMethod", logoutMethod).Msg("Attempting to create logout event")
+	n.Logger.Debug().Int("user_id", userID).Str("logoutMethod", logoutMethod).Msg("Attempting to create logout event")
 
 	if settings.Edges.Owner == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create logout event: User settings owner not loaded.")
@@ -350,7 +351,7 @@ func (n *EventNotifier) CreateLogoutEvent(settings *ent.UserSettings, logoutMeth
 }
 
 func (n *EventNotifier) Ping() error {
-	n.Logger.Info().Msg("Performing Kafka producer health check")
+	n.Logger.Debug().Msg("Performing Kafka producer health check")
 	timeoutMs := int(n.KafkaPingTimeout / time.Millisecond)
 
 	_, err := n.KafkaProducer.GetMetadata(nil, true, timeoutMs)
@@ -372,6 +373,6 @@ func (n *EventNotifier) Ping() error {
 		return errors.New("kafka producer not connected or unhealthy: " + err.Error())
 	}
 
-	n.Logger.Info().Msg("Kafka producer health check passed successfully")
+	n.Logger.Debug().Msg("Kafka producer health check passed successfully")
 	return nil
 }

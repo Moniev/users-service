@@ -17,7 +17,7 @@ import (
 //
 // Returns:
 //   - gin.HandlerFunc: Middleware function to be used in the Gin framework.
-func (middlewares *Middlewares) RequestAuthenticationMiddleware() gin.HandlerFunc {
+func (m *Middlewares) RequestAuthenticationMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		requestID := uuid.New().String()
 		ctx.Set("RequestID", requestID)

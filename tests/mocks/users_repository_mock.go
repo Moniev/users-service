@@ -239,7 +239,6 @@ func (m *MockUsersRepository) RemoveSubscriptions(
 	user *ent.User,
 	subIDs []int,
 ) error {
-
 	args := m.Called(ctx, user, subIDs)
 	return args.Error(0)
 }
