@@ -453,14 +453,6 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 		}
 		r.Logger.Debug().Int("userID", newUser.ID).Msg("User details created")
 
-		if _, err := tx.UserSettings.
-			Create().
-			SetOwner(newUser).
-			SetUUID(uuid.NewString()).
-			Save(ctx); err != nil {
-			return errors.New("failed to create user settings")
-		}
-
 		if _, err := tx.UserDevice.
 			Create().
 			SetOwner(newUser).
@@ -502,6 +494,11 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 			return err
 		}
 		r.Logger.Debug().Int("activationCodeID", activationCode.ID).Msg("Activation code created")
+
+		newUser, err = GetUserByID(ctx, tx, newUser.ID)
+		if err != nil {
+			return errors.New("failed to fetch user")
+		}
 
 		return nil
 	}); err != nil {
