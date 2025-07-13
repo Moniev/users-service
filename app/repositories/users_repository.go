@@ -10,6 +10,7 @@ import (
 	"users-service/app/models/ent/activationcode"
 	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
+	_ "users-service/app/models/ent/runtime"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/userdetails"

@@ -9,6 +9,7 @@ import (
 	"os"
 	"users-service/app/middlewares"
 	"users-service/app/models/ent"
+	_ "users-service/app/models/ent/runtime"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
