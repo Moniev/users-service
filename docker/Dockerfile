@@ -5,7 +5,13 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 COPY . .
+
+RUN swag init -g ./app/cmd/main.go && \
+    echo "--- Checking generated Swagger files ---" && \
+    ls -l /src/docs
 
 RUN GOOS=linux GOARCH=amd64 go build -v -o /app/users-service ./app/cmd/main.go && \
     echo "--- Build successful, checking for binary in builder stage ---" && \
@@ -18,6 +24,11 @@ RUN apk --no-cache add bash ca-certificates curl libc6-compat
 WORKDIR /app
 
 COPY --from=builder /app/users-service /app/users-service
+COPY --from=builder /src/docs/swagger.json /app/swagger.json
+COPY --from=builder /src/docs/swagger.yaml /app/swagger.yaml
+
+COPY ./app/docs/openapi.json .
+COPY ./app/docs/openapi.yaml .
 
 RUN echo "--- Checking for binary in final stage before chmod ---" && \
     ls -l /app/users-service && \
@@ -26,9 +37,6 @@ RUN echo "--- Checking for binary in final stage before chmod ---" && \
 
 RUN curl -fsSL -o /app/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x /app/wait-for-it.sh
-
-COPY ./app/docs/swagger.json .
-COPY ./app/docs/swagger.yaml .
 
 RUN cat <<EOF > /app/start.sh
 #!/bin/sh

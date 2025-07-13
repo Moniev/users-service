@@ -963,7 +963,10 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 	return updatedUser, nil
 }
 
-func (r *UsersRepository) RemoveAccount(ctx context.Context, user *ent.User) error {
+func (r *UsersRepository) RemoveAccount(
+	ctx context.Context,
+	user *ent.User,
+) error {
 	r.Logger.Info().Int("userID", user.ID).Msg("Attempting to soft delete user account")
 	var err error
 
@@ -995,7 +998,12 @@ func (r *UsersRepository) RemoveAccount(ctx context.Context, user *ent.User) err
 	return err
 }
 
-func (r *UsersRepository) FindOrCreateDevice(ctx context.Context, userID int, req *requests.Device) (*ent.UserDevice, error) {
+func (r *UsersRepository) FindOrCreateDevice(
+	ctx context.Context,
+	userID int,
+	req *requests.Device,
+) (*ent.UserDevice, error) {
+
 	r.Logger.Debug().Int("userID", userID).Str("deviceToken", req.DeviceToken).Msg("Attempting to find or create device")
 	var device *ent.UserDevice
 
