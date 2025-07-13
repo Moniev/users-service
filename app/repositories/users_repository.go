@@ -90,7 +90,7 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 		return r.CacheStore.DecacheUser(payload)
 	}
 
-	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByID(ctx, tx, ID)
 		if err != nil {
 			r.Logger.Error().Err(err).Int("userID", ID).Msg("Failed to get user by ID within transaction")
@@ -452,6 +452,14 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 			return errors.New("failed to create user details")
 		}
 		r.Logger.Debug().Int("userID", newUser.ID).Msg("User details created")
+
+		if _, err := tx.UserSettings.
+			Create().
+			SetOwner(newUser).
+			SetUUID(uuid.NewString()).
+			Save(ctx); err != nil {
+			return errors.New("failed to create user settings")
+		}
 
 		if _, err := tx.UserDevice.
 			Create().
