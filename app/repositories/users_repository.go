@@ -422,7 +422,7 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		newUser, err = tx.User.
+		tempUser, err := tx.User.
 			Create().
 			SetMail(req.Mail).
 			SetPassword(hashedPassword).
@@ -431,31 +431,31 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 			r.Logger.Error().Err(err).Str("mail", req.Mail).Msg("Failed to create user")
 			return err
 		}
-		r.Logger.Debug().Int("userID", newUser.ID).Msg("User created successfully")
+		r.Logger.Debug().Int("userID", tempUser.ID).Msg("User created successfully")
 
 		if _, err := tx.UserSettings.
 			Create().
 			SetUUID(uuid.New().String()).
-			SetOwner(newUser).
+			SetOwner(tempUser).
 			Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("userID", newUser.ID).Msg("Failed to create user settings")
+			r.Logger.Error().Err(err).Int("userID", tempUser.ID).Msg("Failed to create user settings")
 			return errors.New("failed to create user settings")
 		}
-		r.Logger.Debug().Int("userID", newUser.ID).Msg("User settings created")
+		r.Logger.Debug().Int("userID", tempUser.ID).Msg("User settings created")
 
 		if _, err := tx.UserDetails.
 			Create().
 			SetName(req.Name).
-			SetOwner(newUser).
+			SetOwner(tempUser).
 			Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("userID", newUser.ID).Msg("Failed to create user details")
+			r.Logger.Error().Err(err).Int("userID", tempUser.ID).Msg("Failed to create user details")
 			return errors.New("failed to create user details")
 		}
-		r.Logger.Debug().Int("userID", newUser.ID).Msg("User details created")
+		r.Logger.Debug().Int("userID", tempUser.ID).Msg("User details created")
 
 		if _, err := tx.UserDevice.
 			Create().
-			SetOwner(newUser).
+			SetOwner(tempUser).
 			SetToken(req.DeviceToken).
 			SetIPAddress(req.IPAddress).
 			SetUserAgent(req.UserAgent).
@@ -464,10 +464,10 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 			SetBrowserName(req.BrowserName).
 			SetBrowserVersion(req.BrowserVersion).
 			Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("userID", newUser.ID).Msg("Failed to create user device")
+			r.Logger.Error().Err(err).Int("userID", tempUser.ID).Msg("Failed to create user device")
 			return errors.New("failed to create user device")
 		}
-		r.Logger.Debug().Int("userID", newUser.ID).Str("deviceToken", req.DeviceToken).Msg("User device created")
+		r.Logger.Debug().Int("userID", tempUser.ID).Str("deviceToken", req.DeviceToken).Msg("User device created")
 
 		var codeStr string
 		for {
@@ -487,15 +487,15 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 		activationCode, err = tx.ActivationCode.
 			Create().
 			SetCode(codeStr).
-			SetOwner(newUser).
+			SetOwner(tempUser).
 			Save(ctx)
 		if err != nil {
-			r.Logger.Error().Err(err).Int("userID", newUser.ID).Msg("Failed to create activation code")
+			r.Logger.Error().Err(err).Int("userID", tempUser.ID).Msg("Failed to create activation code")
 			return err
 		}
 		r.Logger.Debug().Int("activationCodeID", activationCode.ID).Msg("Activation code created")
 
-		newUser, err = GetUserByID(ctx, tx, newUser.ID)
+		newUser, err = GetUserByID(ctx, tx, tempUser.ID)
 		if err != nil {
 			return errors.New("failed to fetch user")
 		}

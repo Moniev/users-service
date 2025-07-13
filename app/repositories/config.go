@@ -41,7 +41,9 @@ func GetUserByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
 	return tx.User.
 		Query().
 		Where(user.IDEQ(ID), user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserSettings().
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
 		WithUserDevices().
 		WithUserDetails().
 		WithUserRoles().
@@ -57,7 +59,9 @@ func GetUserByMail(ctx context.Context, tx *ent.Tx, mail string) (*ent.User, err
 	return tx.User.
 		Query().
 		Where(user.MailEQ(mail), user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserSettings().
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
 		WithUserDevices().
 		WithUserDetails().
 		WithUserRoles().
@@ -73,7 +77,9 @@ func GetUserByPhone(ctx context.Context, tx *ent.Tx, mail string) (*ent.User, er
 	return tx.User.
 		Query().
 		Where(user.MailEQ(mail), user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserSettings().
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
 		WithUserDevices().
 		WithUserDetails().
 		WithUserRoles().
@@ -89,7 +95,9 @@ func GetUserBySecondFactor(ctx context.Context, tx *ent.Tx, code string) (*ent.U
 	return tx.User.
 		Query().
 		Where(user.HasSecondFactorCodeWith(secondfactorcode.CodeEQ(code)), user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserSettings().
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
 		WithUserDevices().
 		WithUserDetails().
 		WithUserRoles().
@@ -105,7 +113,9 @@ func GetUserByActivationCode(ctx context.Context, tx *ent.Tx, code string) (*ent
 	return tx.User.
 		Query().
 		Where(user.HasActivationCodeWith(activationcode.CodeEQ(code)), user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserSettings().
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
 		WithUserDevices().
 		WithUserDetails().
 		WithUserRoles().
@@ -121,7 +131,9 @@ func GetUserByVerificationCode(ctx context.Context, tx *ent.Tx, code string) (*e
 	return tx.User.
 		Query().
 		Where(user.HasVerificationCodeWith(verificationcode.CodeEQ(code)), user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserSettings().
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
 		WithUserDevices().
 		WithUserDetails().
 		WithUserRoles().
@@ -137,7 +149,9 @@ func GetUserByResetCode(ctx context.Context, tx *ent.Tx, code string) (*ent.User
 	return tx.User.
 		Query().
 		Where(user.HasResetCodeWith(resetcode.CodeEQ(code)), user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserSettings().
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
 		WithUserDevices().
 		WithUserDetails().
 		WithUserRoles().
