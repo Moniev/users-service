@@ -55,6 +55,7 @@ func (h *UserActionHandler) Handle(ctx context.Context, msg *kafka.Message) erro
 			}
 
 			return h.UsersRepository.CreateUserAction(ctx, user, event.Action, event.OriginDevice, event.Details)
+		case "subscription":
 		}
 
 		h.Logger.Debug().
