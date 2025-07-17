@@ -287,7 +287,8 @@ The `steps` array defines the sequence of actions and assertions for a test case
    ```    
 
 ## License
-© 2025 Robert Moń, All Rights Reserved.
+© 2025 Robert Moń, All Rights Reserved. 
+You may use it for noncommercial purpose if your name is not Kamil Rudyk or Mateusz Kacpura
 
 
 ## Notes
