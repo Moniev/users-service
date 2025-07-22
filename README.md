@@ -288,8 +288,6 @@ The `steps` array defines the sequence of actions and assertions for a test case
 
 ## License
 © 2025 Robert Moń, All Rights Reserved. 
-You may use it for noncommercial purpose if your name is not Kamil Rudyk or Mateusz Kacpura
+You may use it for noncommercial purpose if your name is not Kamil Rudyk or Mateusz Kacpura ;>
 
-
-## Notes
-- {TO DO}
+![Alt](https://repobeats.axiom.co/api/embed/0ccd32c70b973168f94e36384a64155cb9867f07.svg "Repobeats analytics image")
