@@ -36,6 +36,11 @@ func Contains(slice []string, target string) bool {
 	return slices.Contains(slice, target)
 }
 
+// Contains checks if a target string exists within a slice of strings.
+func ContainsInt(slice []int, target int) bool {
+	return slices.Contains(slice, target)
+}
+
 // GenerateRandomCode generates a random 6-digit integer between 100000 and 999999.
 func GenerateRandomCode() int {
 	return randGen.IntN(900000) + 100000

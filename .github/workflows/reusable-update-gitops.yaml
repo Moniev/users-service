@@ -67,14 +67,14 @@ jobs:
       - name: Commit and push changes
         run: |
           set -euo pipefail
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "github-actions-bot@users.noreply.github.com"
+          git config --global user.name "Spirit Of the Machine"
+          git config --global user.email "m0ni3v@gmail.com"
 
           git add "${{ inputs.deployment_file_path }}"
 
           if git diff --staged --quiet; then
             echo "No changes to commit for ${{ inputs.service_name }}."
           else
-            git commit -m "ci: Update ${{ inputs.service_name }} image to ${{ inputs.image_tag }}"
+            git commit -m "CI: Update ${{ inputs.service_name }} image to ${{ inputs.image_tag }}"
             git push
           fi

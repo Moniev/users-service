@@ -1217,7 +1217,18 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		newSubIDs := append(user.SubscriptionIds, subIDs...)
+		toAppend := make([]int, 0)
+		for _, newID := range subIDs {
+			if utils.ContainsInt(user.SubscriptionIds, newID) {
+				toAppend = append(toAppend, newID)
+			}
+		}
+
+		if len(toAppend) == 0 {
+			return nil
+		}
+
+		newSubIDs := append(user.SubscriptionIds, toAppend...)
 
 		if _, err := tx.User.
 			UpdateOneID(user.ID).
