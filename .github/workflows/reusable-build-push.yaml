@@ -76,7 +76,6 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-          # Używamy heredoc do bezpiecznego przekazania wieloliniowej listy tagów
           echo "all_tags<<EOF" >> $GITHUB_OUTPUT
           echo -e "$ALL_TAGS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
