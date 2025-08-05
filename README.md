@@ -285,11 +285,7 @@ The `steps` array defines the sequence of actions and assertions for a test case
    ```bash
       localhost:8000/redoc
    ```    
-
+## Updates
+![Alt](https://repobeats.axiom.co/api/embed/0ccd32c70b973168f94e36384a64155cb9867f07.svg "Repobeats analytics image")
 ## License
-© 2025 Robert Moń, All Rights Reserved. 
-You may use it for noncommercial purpose if your name is not Kamil Rudyk or Mateusz Kacpura
-
-
-## Notes
-- {TO DO}
+© 2025 Robert Moń, integrate it whenever you want for non commercial purpoes.
