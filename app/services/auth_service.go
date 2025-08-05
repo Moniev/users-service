@@ -116,6 +116,7 @@ func (s *AuthService) GenerateJWT(ctx context.Context, userID int, deviceID int,
 	resultChan := make(chan models.JWTResult, 1)
 
 	go func() {
+		defer close(resultChan)
 		signedToken, err := token.SignedString(s.PrivateKey)
 		if err != nil {
 			s.Logger.Error().Int("userID", userID).Err(err).Msg("Failed to sign JWT")
@@ -144,6 +145,7 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 	resultChan := make(chan models.JWTValidationResult, 1)
 
 	go func() {
+		defer close(resultChan)
 		token, err := jwt.ParseWithClaims(tokenString, &models.Claims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
 				s.Logger.Warn().Str("alg", fmt.Sprintf("%v", token.Header["alg"])).Msg("Unexpected signing method")

@@ -44,10 +44,13 @@ func (h *SubscriptionActionHandler) Handle(ctx context.Context, msg *kafka.Messa
 			return fmt.Errorf("failed to unmarshal user action event: %w", err)
 		}
 
-		switch event.Action {
-		case "":
-			return errors.New("invalid user action event: missing action")
+		h.Logger.Debug().
+			Str("event_id", event.EventID).
+			Int("user_id", event.UserID).
+			Str("action", event.Action).
+			Msg("Processed user action event")
 
+		switch event.Action {
 		case "remove":
 			user, err := h.UsersRepository.GetUserByID(ctx, event.UserID)
 			if err != nil {
@@ -63,15 +66,9 @@ func (h *SubscriptionActionHandler) Handle(ctx context.Context, msg *kafka.Messa
 			}
 
 			return h.UsersRepository.AddSubscriptions(ctx, user, event.SubscriptionIDs)
+		default:
+			return errors.New("invalid user action event: missing action")
 		}
-
-		h.Logger.Debug().
-			Str("event_id", event.EventID).
-			Int("user_id", event.UserID).
-			Str("action", event.Action).
-			Msg("Processed user action event")
-
-		return nil
 	}
 
 	h.Logger.Warn().Str("event_type", baseEvent.EventType).Msg("Unknown event type received by SubscriptionActionHandler")

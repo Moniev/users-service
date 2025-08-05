@@ -44,10 +44,13 @@ func (h *UserActionHandler) Handle(ctx context.Context, msg *kafka.Message) erro
 			return fmt.Errorf("failed to unmarshal user action event: %w", err)
 		}
 
-		switch event.Action {
+		h.Logger.Debug().
+			Str("event_id", event.EventID).
+			Int("user_id", event.UserID).
+			Str("action", event.Action).
+			Msg("Processed user action event")
 
-		case "":
-			return errors.New("invalid user action event: missing action")
+		switch event.Action {
 		case "action":
 			user, err := h.UsersRepository.GetUserByID(ctx, event.UserID)
 			if err != nil {
@@ -55,14 +58,10 @@ func (h *UserActionHandler) Handle(ctx context.Context, msg *kafka.Message) erro
 			}
 
 			return h.UsersRepository.CreateUserAction(ctx, user, event.Action, event.OriginDevice, event.Details)
-		case "subscription":
-		}
 
-		h.Logger.Debug().
-			Str("event_id", event.EventID).
-			Int("user_id", event.UserID).
-			Str("action", event.Action).
-			Msg("Processed user action event")
+		default:
+			return errors.New("invalid user action event: missing action")
+		}
 
 		return nil
 	}

@@ -41,7 +41,7 @@ KAFKA_SSL_CA_PATH: ""
 KAFKA_SSL_CERT_PATH: ""
 KAFKA_SSL_KEY_PATH: ""
 KAFKA_CLIENT_KEY_PASSWORD: ""
-KAFKA_TOPICS: ["test-events", "test-audits"]
+KAFKA_TOPICS: "test-events,test-audits"
 KAFKA_BROKER_ID: "1"
 KAFKA_NOTIFIER_TOPIC: "test-notifications"
 

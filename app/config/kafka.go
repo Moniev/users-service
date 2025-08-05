@@ -186,16 +186,17 @@ func NewKafkaConsumer(
 // It returns a Kafka producer instance or an error if initialization fails.
 func NewKafkaProducer(logger zerolog.Logger, settings *Settings) (*kafka.Producer, error) {
 	config := &kafka.ConfigMap{
-		"bootstrap.servers":          settings.KafkaBootstrapServers,
-		"acks":                       "all",
-		"linger.ms":                  5,
-		"queue.buffering.max.ms":     5000,
-		"queue.buffering.max.kbytes": 1048576,
-		"batch.num.messages":         10000,
-		"compression.type":           "gzip",
-		"retries":                    5,
-		"retry.backoff.ms":           100,
-		"partitioner":                "murmur2_random",
+		"bootstrap.servers":                     settings.KafkaBootstrapServers,
+		"acks":                                  "all",
+		"ssl.endpoint.identification.algorithm": "https",
+		"linger.ms":                             5,
+		"queue.buffering.max.ms":                5000,
+		"queue.buffering.max.kbytes":            1048576,
+		"batch.num.messages":                    10000,
+		"compression.type":                      "gzip",
+		"retries":                               5,
+		"retry.backoff.ms":                      100,
+		"partitioner":                           "murmur2_random",
 	}
 
 	if settings.KafkaSecurityProtocol != "" {
