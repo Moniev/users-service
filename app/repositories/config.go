@@ -73,6 +73,13 @@ func GetUserByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
 		Only(ctx)
 }
 
+func GetUserPublicByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
+	return tx.User.
+		Query().
+		Where(user.IDEQ(ID), user.BlacklistedEQ(false), user.RemovedEQ(false)).
+		Only(ctx)
+}
+
 func GetUserByMail(ctx context.Context, tx *ent.Tx, mail string) (*ent.User, error) {
 	return tx.User.
 		Query().

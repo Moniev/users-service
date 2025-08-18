@@ -38,6 +38,7 @@ type UsersRepositoryInterface interface {
 	CreateUserAction(ctx context.Context, user *ent.User, action, originDevice, details string) error
 
 	GetUserByID(ctx context.Context, ID int) (*ent.User, error)
+	GetUserPublicByID(ctx context.Context, ID int) (*ent.User, error)
 	GetUserByMail(ctx context.Context, mail string) (*ent.User, error)
 	GetUserByPhone(ctx context.Context, phone string) (*ent.User, error)
 	GetUserBySecondFactor(ctx context.Context, code string) (*ent.User, error)
@@ -93,6 +94,38 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByID(ctx, tx, ID)
+		if err != nil {
+			r.Logger.Error().Err(err).Int("userID", ID).Msg("Failed to get user by ID within transaction")
+			return err
+		}
+
+		r.Logger.Debug().Int("userID", ID).Msg("User found by ID within transaction")
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("userID", ID).Msg("Transaction failed for GetUserByID")
+		return nil, err
+	}
+
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, errors.New("failed to update user")
+	}
+
+	r.Logger.Info().Int("userID", foundUser.ID).Msg("Successfully retrieved user by ID")
+	return foundUser, nil
+}
+
+func (r *UsersRepository) GetUserPublicByID(ctx context.Context, ID int) (*ent.User, error) {
+	r.Logger.Info().Int("userID", ID).Msg("Attempting to get user by ID")
+	var foundUser *ent.User
+	var err error
+
+	payload, _ := r.CacheStore.Get(ctx, "user-public:"+strconv.Itoa(ID))
+	if payload != nil {
+		return r.CacheStore.DecacheUser(payload)
+	}
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		foundUser, err = GetUserPublicByID(ctx, tx, ID)
 		if err != nil {
 			r.Logger.Error().Err(err).Int("userID", ID).Msg("Failed to get user by ID within transaction")
 			return err
@@ -1193,6 +1226,12 @@ func (r *UsersRepository) GetUsersPublic(ctx context.Context, lim int) ([]*ent.U
 	}); err != nil {
 		r.Logger.Error().Err(err).Msg("Transaction failed for GetUsersPublic")
 		return nil, errors.New("failed to remove user")
+	}
+
+	for _, user := range foundUsers {
+		if err := UpdateCache(ctx, user, r); err != nil {
+			return nil, errors.New("failed to cache user")
+		}
 	}
 
 	return foundUsers, nil

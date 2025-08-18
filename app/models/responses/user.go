@@ -51,20 +51,31 @@ func FromUsers(users []*ent.User) *Users {
 }
 
 type UserPrivate struct {
-	Token string `json:"token,omitempty"`
-	Mail  string `json:"mail"`
-	Phone string `json:"phone,omitempty"`
+	Token     string `json:"token,omitempty"`
+	Mail      string `json:"mail"`
+	Phone     string `json:"phone,omitempty"`
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+	Name      string `json:"name,omitempty"`
+
 	UserPublic
 }
 
 func FromUserPrivate(user *ent.User, token ...string) *UserPrivate {
-	if user == nil {
+	if user == nil || user.Edges.UserDetails == nil {
 		return nil
 	}
 
 	res := &UserPrivate{
-		Mail:  user.Mail,
-		Phone: user.Phone,
+		Mail:      user.Mail,
+		Phone:     user.Phone,
+		FirstName: user.Edges.UserDetails.FirstName,
+		LastName:  user.Edges.UserDetails.LastName,
+		Name:      user.Edges.UserDetails.Name,
+	}
+
+	if user.Edges.UserDetails.Edges.EntrepreneurDetails != nil {
+
 	}
 
 	res.UserPublic = UserPublic{

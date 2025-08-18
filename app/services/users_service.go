@@ -184,9 +184,19 @@ func (s *UsersService) Index(ctx *gin.Context, lim int) ([]*ent.User, error) {
 }
 
 func (s *UsersService) GetUserPublic(ctx context.Context, userID int) (*ent.User, error) {
-	return nil, nil
+	user, err := s.UsersRepository.GetUserPublicByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user")
+	}
+
+	return user, nil
 }
 
 func (s *UsersService) GetUserPrivate(ctx context.Context, userID int) (*ent.User, error) {
-	return nil, nil
+	user, err := s.UsersRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user")
+	}
+
+	return user, nil
 }

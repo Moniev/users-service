@@ -6,6 +6,10 @@ import (
 )
 
 func GetUserKeys(user *ent.User) []string {
+	if user.Edges.UserDetails == nil {
+		return []string{fmt.Sprintf("user-public:%d", user.ID)}
+	}
+
 	keys := []string{
 		fmt.Sprintf("user:%d", user.ID),
 		fmt.Sprintf("user:email:%s", user.Mail),
