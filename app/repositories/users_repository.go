@@ -43,6 +43,7 @@ type UsersRepositoryInterface interface {
 	GetUserBySecondFactor(ctx context.Context, code string) (*ent.User, error)
 	GetUserByVerificationCode(ctx context.Context, code string) (*ent.User, error)
 	GetUserByResetCode(ctx context.Context, code string) (*ent.User, error)
+	GetUsersPublic(ctx context.Context, lim int) ([]*ent.User, error)
 
 	FindOrCreateDevice(ctx context.Context, userID int, req *requests.Device) (*ent.UserDevice, error)
 
@@ -104,16 +105,8 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 		return nil, err
 	}
 
-	payload, err = r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Int("userID", foundUser.ID).Msg("Successfully retrieved user by ID")
@@ -143,16 +136,8 @@ func (r *UsersRepository) GetUserByMail(ctx context.Context, mail string) (*ent.
 		return nil, err
 	}
 
-	payload, err = r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Str("mail", foundUser.Mail).Msg("Successfully retrieved user by mail")
@@ -203,16 +188,8 @@ func (r *UsersRepository) ActivateAccount(ctx context.Context, code string) (*en
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
 
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
 	}
 
 	r.Logger.Info().Int("userID", foundUser.ID).Msg("Account successfully activated")
@@ -263,16 +240,8 @@ func (r *UsersRepository) VerifyAccount(ctx context.Context, code string) (*ent.
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, err
 	}
 
 	r.Logger.Info().Int("userID", foundUser.ID).Msg("Account successfully verified")
@@ -297,16 +266,8 @@ func (r *UsersRepository) GetUserBySecondFactor(ctx context.Context, code string
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, err
 	}
 
 	r.Logger.Info().Int("userID", foundUser.ID).Msg("Successfully retrieved user by second factor code")
@@ -331,16 +292,8 @@ func (r *UsersRepository) GetUserByVerificationCode(ctx context.Context, code st
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, err
 	}
 
 	r.Logger.Info().Int("userID", foundUser.ID).Msg("Successfully retrieved user by verification code")
@@ -365,16 +318,8 @@ func (r *UsersRepository) GetUserByResetCode(ctx context.Context, code string) (
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, err
 	}
 
 	r.Logger.Info().Int("userID", foundUser.ID).Msg("Successfully retrieved user by reset code")
@@ -399,16 +344,8 @@ func (r *UsersRepository) GetUserByPhone(ctx context.Context, phone string) (*en
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(foundUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(foundUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, err
 	}
 
 	r.Logger.Info().Str("phone", foundUser.Phone).Msg("Successfully retrieved user by phone")
@@ -506,16 +443,8 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 		return nil, nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(newUser)
-	if err != nil {
-		return nil, nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(newUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, nil, errors.New("failed to set user cache")
-		}
+	if err = UpdateCache(ctx, newUser, r); err != nil {
+		return nil, nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Int("userID", newUser.ID).Msg("User and associated entities created successfully")
@@ -574,16 +503,8 @@ func (r *UsersRepository) CreateSecondFactorCode(ctx context.Context, user *ent.
 		return nil, nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Int("userID", updatedUser.ID).Msg("Second factor code created successfully")
@@ -638,16 +559,8 @@ func (r *UsersRepository) CreateResetCode(ctx context.Context, user *ent.User) (
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Int("userID", user.ID).Msg("Reset code created successfully")
@@ -687,16 +600,8 @@ func (r *UsersRepository) RemoveResetCode(ctx context.Context, user *ent.User) (
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Int("userID", updatedUser.ID).Msg("Reset code removed successfully")
@@ -747,16 +652,8 @@ func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, user *ent.
 		r.Logger.Debug().Str("cacheKey", cacheKey).Msg("User cached successfully")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	return updatedUser, nil
@@ -790,16 +687,8 @@ func (r *UsersRepository) UpdateUsersPassword(ctx context.Context, user *ent.Use
 		return nil, err
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Int("userID", updatedUser.ID).Msg("User password updated successfully")
@@ -850,16 +739,8 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, user *ent.User, req *r
 		return nil, errors.New("failed to update user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Int("userID", updatedUser.ID).Msg("User mail/phone updated successfully")
@@ -872,9 +753,12 @@ func (r *UsersRepository) UpdateUsersDetails(ctx context.Context, user *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		detailsUpdater := tx.UserDetails.UpdateOneID(user.Edges.UserDetails.ID)
+		detailsUpdated := tx.UserDetails.
+			UpdateOneID(user.Edges.UserDetails.ID).
+			SetFirstName(req.FirstName).
+			SetLastName(req.LastName)
 
-		if _, err = detailsUpdater.Save(ctx); err != nil {
+		if _, err = detailsUpdated.Save(ctx); err != nil {
 			r.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to update user's details in DB")
 			return errors.New("failed to update user's details")
 		}
@@ -894,16 +778,8 @@ func (r *UsersRepository) UpdateUsersDetails(ctx context.Context, user *ent.User
 		return nil, errors.New("failed to update user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Debug().Int("userID", updatedUser.ID).Msg("User details updated successfully")
@@ -953,16 +829,8 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 		return nil, errors.New("failed to update user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Debug().Int("userID", updatedUser.ID).Msg("User settings updated successfully")
@@ -1045,19 +913,11 @@ func (r *UsersRepository) FindOrCreateDevice(
 
 				foundUser, err := GetUserByID(ctx, tx, userID)
 				if err != nil {
-					return errors.New("failed to fetcvh user")
+					return errors.New("failed to fetch user")
 				}
 
-				payload, err := r.CacheStore.CacheUser(foundUser)
-				if err != nil {
-					return errors.New("failed to cache user")
-				}
-
-				cacheKeys := utils.GetUserKeys(foundUser)
-				for _, key := range cacheKeys {
-					if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-						return errors.New("failed to set user cache")
-					}
+				if err := UpdateCache(ctx, foundUser, r); err != nil {
+					return errors.New("failed to update user")
 				}
 
 				return nil
@@ -1086,7 +946,7 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(ctx context.Context, user *e
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		details, _ := tx.EntrepreneurDetails.
 			Query().
-			Where(entrepreneurdetails.HasUserDetailsWith(userdetails.IDEQ(updatedUser.Edges.UserDetails.ID))).
+			Where(entrepreneurdetails.HasUserDetailsWith(userdetails.IDEQ(user.Edges.UserDetails.ID))).
 			Only(ctx)
 		if details == nil {
 			if _, err := tx.EntrepreneurDetails.
@@ -1141,16 +1001,8 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(ctx context.Context, user *e
 		return nil, errors.New("failed to remove user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	return updatedUser, nil
@@ -1194,16 +1046,8 @@ func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, re
 		return nil, errors.New("failed to remove user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return nil, errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return nil, errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
@@ -1219,7 +1063,7 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		toAppend := make([]int, 0)
 		for _, newID := range subIDs {
-			if utils.ContainsInt(user.SubscriptionIds, newID) {
+			if !utils.ContainsInt(user.SubscriptionIds, newID) {
 				toAppend = append(toAppend, newID)
 			}
 		}
@@ -1249,16 +1093,8 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 		return errors.New("failed to remove user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return errors.New("failed to update user")
 	}
 
 	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
@@ -1292,16 +1128,8 @@ func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.Use
 		return errors.New("failed to remove user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return errors.New("failed to update user")
 	}
 
 	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
@@ -1339,20 +1167,35 @@ func (r *UsersRepository) CreateUserAction(
 		return errors.New("failed to remove user")
 	}
 
-	payload, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		return errors.New("failed to cache user")
-	}
-
-	cacheKeys := utils.GetUserKeys(updatedUser)
-	for _, key := range cacheKeys {
-		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
-			return errors.New("failed to set user cache")
-		}
+	if err := UpdateCache(ctx, updatedUser, r); err != nil {
+		return errors.New("failed to update user")
 	}
 
 	r.Logger.Debug().Int("userID", user.ID).Msg("User account successfully marked as removed")
 	return nil
+}
+
+func (r *UsersRepository) GetUsersPublic(ctx context.Context, lim int) ([]*ent.User, error) {
+	r.Logger.Debug().Msg("Attempting to revoke user's subscriptions")
+	var foundUsers []*ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		foundUsers, err = tx.User.
+			Query().
+			Limit(lim).
+			All(ctx)
+		if err != nil {
+			return errors.New("failed to fetch users")
+		}
+
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Msg("Transaction failed for GetUsersPublic")
+		return nil, errors.New("failed to remove user")
+	}
+
+	return foundUsers, nil
 }
 
 func (r *UsersRepository) Ping() error {

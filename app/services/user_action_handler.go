@@ -62,8 +62,6 @@ func (h *UserActionHandler) Handle(ctx context.Context, msg *kafka.Message) erro
 		default:
 			return errors.New("invalid user action event: missing action")
 		}
-
-		return nil
 	}
 
 	h.Logger.Warn().Str("event_type", baseEvent.EventType).Msg("Unknown event type received by UserActionHandler")

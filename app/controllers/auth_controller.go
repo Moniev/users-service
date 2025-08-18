@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"net/http"
-	"users-service/app/models/ent"
 	requests "users-service/app/models/requests"
 	"users-service/app/models/responses"
 	"users-service/app/services"
@@ -121,8 +120,13 @@ func (c *AuthController) InitWebSocketHelper(ctx *gin.Context) (*requests.WebSoc
 // @Router       /api/v1/auth/register [post]
 func (c *AuthController) Register(ctx *gin.Context) {
 	handleStandardRequest(ctx, c,
-		func(reqCtx context.Context, req *requests.Register) (*ent.User, error) {
-			return c.AuthService.Register(reqCtx, req)
+		func(reqCtx context.Context, req *requests.Register) (*responses.UserPrivate, error) {
+			user, err := c.AuthService.Register(reqCtx, req)
+			if err != nil {
+				return nil, err
+			}
+
+			return responses.FromUserPrivate(user), nil
 		},
 	)
 }
@@ -139,13 +143,13 @@ func (c *AuthController) Register(ctx *gin.Context) {
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Invalid or expired code"
 // @Router       /api/v1/auth/activation/account [patch]
 func (c *AuthController) ActivateAccount(ctx *gin.Context) {
-	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.User, error) {
+	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.UserPrivate, error) {
 		user, err := c.AuthService.ActivateAccount(reqCtx, req)
 		if err != nil {
 			return nil, err
 		}
 
-		return &responses.User{User: user}, nil
+		return responses.FromUserPrivate(user), nil
 	})
 }
 
@@ -182,13 +186,13 @@ func (c *AuthController) ResendActivationCode(ctx *gin.Context) {
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Invalid or expired code"
 // @Router       /api/v1/auth/verification/account [patch]
 func (c *AuthController) VerifyAccount(ctx *gin.Context) {
-	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.User, error) {
+	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.UserPrivate, error) {
 		user, token, err := c.AuthService.VerifyAccount(reqCtx, req)
 		if err != nil {
 			return nil, err
 		}
 
-		return &responses.User{User: user, Token: token}, nil
+		return responses.FromUserPrivate(user, token), nil
 	})
 }
 
@@ -225,13 +229,13 @@ func (c *AuthController) ResendVerificationCode(ctx *gin.Context) {
 // @Router       /api/v1/auth/login [post]
 func (c *AuthController) Login(ctx *gin.Context) {
 	handleStandardRequest(ctx, c,
-		func(reqCtx context.Context, req *requests.Login) (*responses.User, error) {
+		func(reqCtx context.Context, req *requests.Login) (*responses.UserPrivate, error) {
 			user, token, err := c.AuthService.Login(reqCtx, req)
 			if err != nil {
 				return nil, err
 			}
 
-			return &responses.User{User: user, Token: token}, nil
+			return responses.FromUserPrivate(user, token), nil
 		},
 	)
 }
@@ -269,13 +273,13 @@ func (c *AuthController) ResendSecondFactorCode(ctx *gin.Context) {
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Service failed to process the request"
 // @Router       /api/v1/auth/second-factor/verification/code [post]
 func (c *AuthController) VerifySecondFactorCode(ctx *gin.Context) {
-	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.User, error) {
+	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.UserPrivate, error) {
 		user, token, err := c.AuthService.VerifySecondFactor(reqCtx, req)
 		if err != nil {
-			return &responses.User{User: nil, Token: ""}, err
+			return nil, err
 		}
 
-		return &responses.User{User: user, Token: token}, nil
+		return responses.FromUserPrivate(user, token), nil
 	})
 }
 

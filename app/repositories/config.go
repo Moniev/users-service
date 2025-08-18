@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 	"users-service/app/models/ent"
 	"users-service/app/models/ent/activationcode"
 	"users-service/app/models/ent/resetcode"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
 	"users-service/app/models/ent/verificationcode"
+	"users-service/app/utils"
 )
 
 func WithTransaction(ctx context.Context, client *ent.Client, fn func(tx *ent.Tx) error) error {
@@ -35,6 +37,22 @@ func WithTransaction(ctx context.Context, client *ent.Client, fn func(tx *ent.Tx
 	}
 
 	return tx.Commit()
+}
+
+func UpdateCache(ctx context.Context, user *ent.User, r *UsersRepository) error {
+	payload, err := r.CacheStore.CacheUser(user)
+	if err != nil {
+		return errors.New("failed to cache user")
+	}
+
+	cacheKeys := utils.GetUserKeys(user)
+	for _, key := range cacheKeys {
+		if err := r.CacheStore.Set(ctx, key, payload, time.Minute*5); err != nil {
+			return errors.New("failed to set user cache")
+		}
+	}
+
+	return nil
 }
 
 func GetUserByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {

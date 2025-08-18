@@ -41,6 +41,11 @@ type User struct {
 	Device
 }
 
+type UserPublic struct {
+	ID int `json:"id"`
+	Device
+}
+
 type UserInterface interface {
 	Valid() error
 }

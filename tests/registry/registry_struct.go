@@ -65,8 +65,6 @@ type ModelsContainer struct {
 	Success responses.SuccessResponse
 	Message responses.Message
 
-	UserResponse responses.User
-
 	ProgressReporter responses.ProgressReporter
 
 	PermissionInfo      utilsModels.PermissionInfo
@@ -95,7 +93,6 @@ func init() {
 	ModelTypeRegistry["responses.ErrorResponse"] = reflect.TypeOf(&responses.ErrorResponse{})
 	ModelTypeRegistry["responses.SuccessResponse"] = reflect.TypeOf(&responses.SuccessResponse{})
 	ModelTypeRegistry["responses.Message"] = reflect.TypeOf(&responses.Message{})
-	ModelTypeRegistry["responses.UserResponse"] = reflect.TypeOf(&responses.User{})
 	ModelTypeRegistry["responses.ProgressReporter"] = reflect.TypeOf(&responses.ProgressReporter{})
 
 	ModelTypeRegistry["events.BaseEvent"] = reflect.TypeOf(&events.BaseEvent{})

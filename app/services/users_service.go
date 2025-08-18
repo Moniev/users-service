@@ -8,6 +8,7 @@ import (
 	"users-service/app/models/requests"
 	"users-service/app/repositories"
 
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 )
 
@@ -18,6 +19,8 @@ type UsersService struct {
 }
 
 type UsersServiceInterface interface {
+	Index(ctx *gin.Context, lim int) ([]*ent.User, error)
+
 	UpdateUser(ctx context.Context, userID int, req *requests.User) (*ent.User, error)
 	UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error)
 	UpdateSettings(ctx context.Context, userID int, req *requests.Settings) (*ent.User, error)
@@ -169,6 +172,15 @@ func (s UsersService) UpdateLocation(ctx context.Context, userID int, req *reque
 	}
 
 	return user, nil
+}
+
+func (s *UsersService) Index(ctx *gin.Context, lim int) ([]*ent.User, error) {
+	users, err := s.UsersRepository.GetUsersPublic(ctx, lim)
+	if err != nil {
+		return nil, errors.New("failed to fetch users")
+	}
+
+	return users, nil
 }
 
 func (s *UsersService) GetUserPublic(ctx context.Context, userID int) (*ent.User, error) {
