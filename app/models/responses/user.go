@@ -58,6 +58,7 @@ type UserPrivate struct {
 	LastName  string `json:"last_name,omitempty"`
 	Name      string `json:"name,omitempty"`
 
+	Locations           []*ent.Location          `json:locations,omitempty`
 	EntrepreneurDetails *ent.EntrepreneurDetails `json:"entrepreneur_details,omitempty"`
 	UserSettings        *ent.UserSettings        `json:"settings,omitempty"`
 	UserPublic
@@ -74,9 +75,11 @@ func FromUserPrivate(user *ent.User, token ...string) *UserPrivate {
 	}
 
 	if details := user.Edges.UserDetails; details != nil {
-		res.FirstName = user.Edges.UserDetails.FirstName
-		res.LastName = user.Edges.UserDetails.LastName
-		res.Name = user.Edges.UserDetails.Name
+		res.FirstName = details.FirstName
+		res.LastName = details.LastName
+		res.Name = details.Name
+
+		res.Locations = details.Edges.Locations
 
 		if entrepreneur := user.Edges.UserDetails.Edges.EntrepreneurDetails; entrepreneur != nil {
 			res.EntrepreneurDetails = entrepreneur
