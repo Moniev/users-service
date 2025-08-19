@@ -72,7 +72,7 @@ func (c *UsersController) RespondSuccess(ctx *gin.Context, statusCode int, data 
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
 // @Param        body      body      requests.User  true  "User data to update"
-// @Success      200       {object}  responses.SuccessResponse{data=responses.User}  "OK - User updated successfully"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - User updated successfully"
 // @Failure      400       {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
@@ -96,7 +96,7 @@ func (c *UsersController) UpdateUser(ctx *gin.Context) {
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
 // @Param        body      body      requests.Details  true  "User details to update"
-// @Success      200       {object}  responses.SuccessResponse{data=responses.User}  "OK - User details updated successfully"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - User details updated successfully"
 // @Failure      400       {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
@@ -120,7 +120,7 @@ func (c *UsersController) UpdateDetails(ctx *gin.Context) {
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
 // @Param        body      body      requests.Settings  true  "User settings to update"
-// @Success      200       {object}  responses.SuccessResponse{data=responses.User}  "OK - User settings updated successfully"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - User settings updated successfully"
 // @Failure      400       {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"

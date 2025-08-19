@@ -109,14 +109,15 @@ func (c *AuthController) InitWebSocketHelper(ctx *gin.Context) (*requests.WebSoc
 }
 
 // Register godoc
-// @Summary      Register a new user
-// @Description  Initiates a WebSocket connection to handle user registration with real-time progress updates.
+// @Summary      Creates new user
+// @Description  Creates a user's account with a request data, returning the user private object.
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        body  body      requests.Register  true  "User registration data"
-// @Success      101   {string}  string "Switching Protocols"
+// @Param        body  body      requests.Register      true  "User's registration data"
+// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Account verified successfully"
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
+// @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Invalid or expired code"
 // @Router       /api/v1/auth/register [post]
 func (c *AuthController) Register(ctx *gin.Context) {
 	handleStandardRequest(ctx, c,
@@ -138,7 +139,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.Code      true  "Activation code"
-// @Success      200   {object}  responses.SuccessResponse{data=responses.User}  "OK - Account activated successfully"
+// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Account activated successfully"
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Invalid or expired code"
 // @Router       /api/v1/auth/activation/account [patch]
@@ -181,7 +182,7 @@ func (c *AuthController) ResendActivationCode(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.Code      true  "Verification code"
-// @Success      200   {object}  responses.SuccessResponse{data=responses.User}  "OK - Account verified successfully"
+// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Account verified successfully"
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Invalid or expired code"
 // @Router       /api/v1/auth/verification/account [patch]
@@ -268,7 +269,7 @@ func (c *AuthController) ResendSecondFactorCode(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.Code      true  "User's email address"
-// @Success      200   {object}  responses.SuccessResponse{data=responses.User}  "OK - Successfully requested a new 2FA code"
+// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Successfully requested a new 2FA code"
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Service failed to process the request"
 // @Router       /api/v1/auth/second-factor/verification/code [post]

@@ -196,20 +196,20 @@ func (s *CacheStore) DecacheClaims(payloadBytes []byte) (*utils.Claims, error) {
 }
 
 func (s *CacheStore) CacheUser(user *ent.User) ([]byte, error) {
-	s.Logger.Debug().Int("userID", user.ID).Msg("Attempting to cache user data")
+	s.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to cache user data")
 	userData, err := json.Marshal(user)
 	if err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to marshal user data to JSON for caching")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to marshal user data to JSON for caching")
 		return []byte{}, err
 	}
-	s.Logger.Debug().Int("userID", user.ID).Int("userDataLength", len(userData)).Msg("User data marshaled to JSON")
+	s.Logger.Debug().Int("user_id", user.ID).Int("userDataLength", len(userData)).Msg("User data marshaled to JSON")
 
 	encryptedData, nonce, err := s.Encrypt(userData)
 	if err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to encrypt user data")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to encrypt user data")
 		return []byte{}, err
 	}
-	s.Logger.Debug().Int("userID", user.ID).Msg("User data encrypted")
+	s.Logger.Debug().Int("user_id", user.ID).Msg("User data encrypted")
 
 	cachePayload := &models.CachePayload{
 		CipherText: encryptedData,
@@ -218,10 +218,10 @@ func (s *CacheStore) CacheUser(user *ent.User) ([]byte, error) {
 
 	payloadBytes, err := json.Marshal(cachePayload)
 	if err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to marshal CachePayload for user data")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to marshal CachePayload for user data")
 		return []byte{}, err
 	}
-	s.Logger.Debug().Int("userID", user.ID).Int("marshaledSize", len(payloadBytes)).Msg("User CachePayload marshaled to JSON")
+	s.Logger.Debug().Int("user_id", user.ID).Int("marshaledSize", len(payloadBytes)).Msg("User CachePayload marshaled to JSON")
 
 	return payloadBytes, err
 }
@@ -247,7 +247,7 @@ func (s *CacheStore) DecacheUser(payloadBytes []byte) (*ent.User, error) {
 		s.Logger.Error().Err(err).Msg("Failed to unmarshal plaintext into User struct")
 		return nil, err
 	}
-	s.Logger.Debug().Int("userID", user.ID).Msg("User decached successfully")
+	s.Logger.Debug().Int("user_id", user.ID).Msg("User decached successfully")
 
 	return &user, nil
 }

@@ -749,12 +749,66 @@ definitions:
       status:
         type: string
     type: object
-  responses.User:
+  responses.UserPrivate:
     properties:
+      active:
+        type: boolean
+      blacklisted:
+        type: boolean
+      created_at:
+        type: string
+      entrepreneur_details:
+        $ref: '#/definitions/ent.EntrepreneurDetails'
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      locations:
+        items:
+          $ref: '#/definitions/ent.Location'
+        type: array
+      mail:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      removed:
+        type: boolean
+      settings:
+        $ref: '#/definitions/ent.UserSettings'
       token:
         type: string
-      user:
-        $ref: '#/definitions/ent.User'
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  responses.UserPublic:
+    properties:
+      active:
+        type: boolean
+      blacklisted:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: integer
+      removed:
+        type: boolean
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  responses.Users:
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/responses.UserPublic'
+        type: array
     type: object
 externalDocs:
   description: OpenAPI 3.0.0 Specification
@@ -792,7 +846,7 @@ paths:
             - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/responses.User'
+                  $ref: '#/definitions/responses.UserPrivate'
               type: object
         "400":
           description: Bad Request - Invalid input data
@@ -1018,10 +1072,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Initiates a WebSocket connection to handle user registration with
-        real-time progress updates.
+      description: Creates a user's account with a request data, returning the user
+        private object.
       parameters:
-      - description: User registration data
+      - description: User's registration data
         in: body
         name: body
         required: true
@@ -1030,15 +1084,24 @@ paths:
       produces:
       - application/json
       responses:
-        "101":
-          description: Switching Protocols
+        "200":
+          description: OK - Account verified successfully
           schema:
-            type: string
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/responses.UserPrivate'
+              type: object
         "400":
           description: Bad Request - Invalid input data
           schema:
             $ref: '#/definitions/responses.ErrorResponse'
-      summary: Register a new user
+        "422":
+          description: Unprocessable Entity - Invalid or expired code
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Creates new user
       tags:
       - auth
   /api/v1/auth/register/externally:
@@ -1111,7 +1174,7 @@ paths:
             - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/responses.User'
+                  $ref: '#/definitions/responses.UserPrivate'
               type: object
         "400":
           description: Bad Request - Invalid input data
@@ -1147,7 +1210,7 @@ paths:
             - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/responses.User'
+                  $ref: '#/definitions/responses.UserPrivate'
               type: object
         "400":
           description: Bad Request - Invalid input data
@@ -1251,121 +1314,7 @@ paths:
       tags:
       - diagnostics
       - health
-  /api/v1/users/details/entrepreneur/update:
-    put:
-      consumes:
-      - application/json
-      description: Updates existing entrepreneur details if already created. Other
-        way creates new EntrepreneurDetails object.
-      parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK - Account removed successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/responses.SuccessResponse'
-            - properties:
-                data:
-                  type: string
-              type: object
-        "401":
-          description: Unauthorized - Invalid or missing token
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "422":
-          description: Unprocessable Entity - Removal failed
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Updates user entrepreneur details
-      tags:
-      - users
-  /api/v1/users/details/location/update:
-    put:
-      consumes:
-      - application/json
-      description: Updates existing location if already created. Other way creates
-        new EntrepreneurDetails object.
-      parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK - Account removed successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/responses.SuccessResponse'
-            - properties:
-                data:
-                  type: string
-              type: object
-        "401":
-          description: Unauthorized - Invalid or missing token
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "422":
-          description: Unprocessable Entity - Removal failed
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Updates user's location
-      tags:
-      - users
-  /api/v1/users/details/update:
-    patch:
-      consumes:
-      - application/json
-      description: Updates the authenticated user's additional details.
-      parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: User details to update
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/requests.Details'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK - User details updated successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/responses.SuccessResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/responses.User'
-              type: object
-        "400":
-          description: Bad Request - Invalid input data
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "401":
-          description: Unauthorized - Invalid or missing token
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "422":
-          description: Unprocessable Entity - Update failed
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Update user's details
-      tags:
-      - users
-  /api/v1/users/remove:
+  /api/v1/users:
     delete:
       consumes:
       - application/json
@@ -1400,52 +1349,39 @@ paths:
       summary: Remove user account
       tags:
       - users
-  /api/v1/users/settings/update:
-    patch:
+    get:
       consumes:
       - application/json
-      description: Updates the authenticated user's application settings (e.g., 2FA,
-        night mode).
+      description: Shows public user's data. Returns UserPublic object if user found.
       parameters:
       - description: Bearer token
         in: header
         name: Authorization
         required: true
         type: string
-      - description: User settings to update
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/requests.Settings'
       produces:
       - application/json
       responses:
         "200":
-          description: OK - User settings updated successfully
+          description: OK - User fetched successfully
           schema:
             allOf:
             - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/responses.User'
+                  $ref: '#/definitions/responses.UserPublic'
               type: object
-        "400":
-          description: Bad Request - Invalid input data
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
         "401":
           description: Unauthorized - Invalid or missing token
           schema:
             $ref: '#/definitions/responses.ErrorResponse'
         "422":
-          description: Unprocessable Entity - Update failed
+          description: Unprocessable Entity - fetch failed
           schema:
             $ref: '#/definitions/responses.ErrorResponse'
-      summary: Update user's settings
+      summary: Show given user public data
       tags:
       - users
-  /api/v1/users/update:
     patch:
       consumes:
       - application/json
@@ -1473,7 +1409,7 @@ paths:
             - $ref: '#/definitions/responses.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/responses.User'
+                  $ref: '#/definitions/responses.UserPrivate'
               type: object
         "400":
           description: Bad Request - Invalid input data
@@ -1488,6 +1424,299 @@ paths:
           schema:
             $ref: '#/definitions/responses.ErrorResponse'
       summary: Update user's basic information
+      tags:
+      - users
+  /api/v1/users/details:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's additional details.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User details to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Details'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - User details updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/responses.UserPrivate'
+              type: object
+        "400":
+          description: Bad Request - Invalid input data
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - Update failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Update user's details
+      tags:
+      - users
+  /api/v1/users/details/entrepreneur:
+    put:
+      consumes:
+      - application/json
+      description: Updates existing entrepreneur details if already created. Other
+        way creates new EntrepreneurDetails object.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Account removed successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - Update failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Updates user entrepreneur details
+      tags:
+      - users
+  /api/v1/users/details/location:
+    put:
+      consumes:
+      - application/json
+      description: Updates existing location if already created. Other way creates
+        new location object.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - location updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - Update failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Updates user's location
+      tags:
+      - users
+  /api/v1/users/index:
+    get:
+      consumes:
+      - application/json
+      description: Returns array of UserPublic objects.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Users fetched successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/responses.Users'
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - fetch failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Show user's public data for users in choosed range
+      tags:
+      - users
+  /api/v1/users/me:
+    get:
+      consumes:
+      - application/json
+      description: Shows user's private data. Returns UserPrivate object if user is
+        authenticated.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - User fetched successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/responses.UserPublic'
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - fetch failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Show given user public data
+      tags:
+      - users
+  /api/v1/users/role:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Successfully revoked role from user
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - fetch failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Revokes role from chosen user
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - Successfully added role for user
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - fetch failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Adds role for choosen user
+      tags:
+      - users
+  /api/v1/users/settings:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's application settings (e.g., 2FA,
+        night mode).
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User settings to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/requests.Settings'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK - User settings updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/responses.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/responses.UserPrivate'
+              type: object
+        "400":
+          description: Bad Request - Invalid input data
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity - Update failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Update user's settings
       tags:
       - users
 schemes:

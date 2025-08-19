@@ -100,7 +100,7 @@ func NewAuthService(
 //   - A string containing the signed JWT token, or empty if an error occurs.
 //   - An error if signing fails, or nil on success.
 func (s *AuthService) GenerateJWT(ctx context.Context, userID int, deviceID int, userRoles []models.UserRoleInfo) (string, error) {
-	s.Logger.Info().Int("userID", userID).Int("deviceID", deviceID).Msg("Generating JWT for device")
+	s.Logger.Info().Int("user_id", userID).Int("deviceID", deviceID).Msg("Generating JWT for device")
 
 	claims := models.Claims{
 		UserID:    userID,
@@ -119,11 +119,11 @@ func (s *AuthService) GenerateJWT(ctx context.Context, userID int, deviceID int,
 		defer close(resultChan)
 		signedToken, err := token.SignedString(s.PrivateKey)
 		if err != nil {
-			s.Logger.Error().Int("userID", userID).Err(err).Msg("Failed to sign JWT")
+			s.Logger.Error().Int("user_id", userID).Err(err).Msg("Failed to sign JWT")
 			resultChan <- models.JWTResult{Token: "", Err: err}
 			return
 		}
-		s.Logger.Info().Int("userID", userID).Msg("JWT successfully generated")
+		s.Logger.Info().Int("user_id", userID).Msg("JWT successfully generated")
 		resultChan <- models.JWTResult{Token: signedToken, Err: nil}
 	}()
 
@@ -134,7 +134,7 @@ func (s *AuthService) GenerateJWT(ctx context.Context, userID int, deviceID int,
 		}
 		return result.Token, nil
 	case <-ctx.Done():
-		s.Logger.Warn().Int("userID", userID).Err(ctx.Err()).Msg("JWT generation timed out")
+		s.Logger.Warn().Int("user_id", userID).Err(ctx.Err()).Msg("JWT generation timed out")
 		return "", errors.New("JWT generation timed out")
 	}
 }
@@ -168,14 +168,14 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 		}
 
 		if claims.DeviceID == 0 {
-			s.Logger.Warn().Int("userID", claims.UserID).Msg("Token is missing device ID")
+			s.Logger.Warn().Int("user_id", claims.UserID).Msg("Token is missing device ID")
 			resultChan <- models.JWTValidationResult{Claims: nil, Err: errors.New("token is not device-specific")}
 			return
 		}
 
 		if claims.ExpiresAt != nil && claims.ExpiresAt.Unix() <= time.Now().UTC().Unix() {
 			s.Logger.Warn().
-				Int("userID", claims.UserID).
+				Int("user_id", claims.UserID).
 				Int("deviceID", claims.DeviceID).
 				Time("exp", claims.ExpiresAt.Time).
 				Msg("Token expired")
@@ -184,7 +184,7 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 		}
 
 		s.Logger.Info().
-			Int("userID", claims.UserID).
+			Int("user_id", claims.UserID).
 			Int("deviceID", claims.DeviceID).
 			Interface("userRoles", claims.UserRoles).
 			Msg("Token validated successfully")
@@ -222,7 +222,7 @@ func (s *AuthService) Register(
 	}
 
 	if err := s.EventNotifier.CreateRegistrationEvent(newUser, activationCode); err != nil {
-		s.Logger.Error().Err(err).Int("userID", newUser.ID).Msg("Failed to produce registration event")
+		s.Logger.Error().Err(err).Int("user_id", newUser.ID).Msg("Failed to produce registration event")
 	}
 
 	return newUser, nil
@@ -235,11 +235,11 @@ func (s *AuthService) ResendActivationCode(ctx context.Context, req *requests.Ma
 	}
 
 	if err := s.EventNotifier.CreateRegistrationEvent(user, user.Edges.ActivationCode); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce resend-activation event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce resend-activation event")
 		return errors.New("failed to send activation code")
 	}
 
-	s.Logger.Info().Int("userID", user.ID).Msg("Resent activation code event produced")
+	s.Logger.Info().Int("user_id", user.ID).Msg("Resent activation code event produced")
 	return nil
 }
 
@@ -254,7 +254,7 @@ func (s *AuthService) ActivateAccount(
 
 	action := &ent.UserAction{Action: "account.activated"}
 	if err := s.EventNotifier.CreateUserActionEvent(user.Edges.UserSettings, action); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce account activation event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce account activation event")
 	}
 
 	return user, nil
@@ -358,7 +358,7 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login) (*ent.User
 
 	device, err := s.UsersRepository.FindOrCreateDevice(ctx, user.ID, &req.Device)
 	if err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to find or create device")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to find or create device")
 		return nil, "", errors.New("failed to handle user device")
 	}
 
@@ -369,7 +369,7 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login) (*ent.User
 		}
 
 		if err := s.EventNotifier.CreateSecondFactorEvent(userWithCode.Edges.UserSettings, secondFactor); err != nil {
-			s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce second factor event")
+			s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce second factor event")
 			return nil, "", errors.New("failed to send second factor code")
 		}
 
@@ -383,7 +383,7 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login) (*ent.User
 	}
 
 	if err := s.EventNotifier.CreateLoginEvent(user.Edges.UserSettings, "password"); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce login event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce login event")
 	}
 
 	return user, token, nil
@@ -404,11 +404,11 @@ func (s *AuthService) ResendSecondFactorCode(ctx context.Context, req *requests.
 	}
 
 	if err := s.EventNotifier.CreateSecondFactorEvent(user.Edges.UserSettings, user.Edges.SecondFactorCode); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce resend-second-factor event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce resend-second-factor event")
 		return errors.New("failed to send second factor code")
 	}
 
-	s.Logger.Info().Int("userID", user.ID).Msg("Resent second factor event produced")
+	s.Logger.Info().Int("user_id", user.ID).Msg("Resent second factor event produced")
 	return nil
 }
 
@@ -425,7 +425,7 @@ func (s *AuthService) VerifySecondFactor(ctx context.Context, req *requests.Code
 
 	device := user.Edges.SecondFactorCode.Edges.TargetUserDevice
 	if device == nil {
-		s.Logger.Error().Int("userID", user.ID).Msg("Device context not found for second factor verification")
+		s.Logger.Error().Int("user_id", user.ID).Msg("Device context not found for second factor verification")
 		return nil, "", errors.New("could not determine the device for this session")
 	}
 
@@ -437,11 +437,11 @@ func (s *AuthService) VerifySecondFactor(ctx context.Context, req *requests.Code
 
 	user, err = s.UsersRepository.RemoveSecondFactorCode(ctx, user)
 	if err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to remove second factor code after use")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to remove second factor code after use")
 	}
 
 	if err := s.EventNotifier.CreateLoginEvent(user.Edges.UserSettings, "second-factor"); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce login event after 2FA")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce login event after 2FA")
 	}
 
 	return user, token, nil
@@ -454,11 +454,11 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *requests.
 	}
 
 	if err := s.EventNotifier.CreateVerificationEvent(user.Edges.UserSettings, user.Phone, user.Edges.VerificationCode); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce resend-verification event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce resend-verification event")
 		return errors.New("failed to send verification code")
 	}
 
-	s.Logger.Info().Int("userID", user.ID).Msg("Resent verification code event produced")
+	s.Logger.Info().Int("user_id", user.ID).Msg("Resent verification code event produced")
 	return nil
 }
 
@@ -470,7 +470,7 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *requests.Code) (*e
 
 	device, err := s.UsersRepository.FindOrCreateDevice(ctx, user.ID, &req.Device)
 	if err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to find or create device during account verification")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to find or create device during account verification")
 		return nil, "", errors.New("failed to handle user device")
 	}
 
@@ -495,7 +495,7 @@ func (s *AuthService) RequestPasswordReset(ctx context.Context, req *requests.Ma
 	}
 
 	if err := s.EventNotifier.CreateResetPasswordEvent(user.Edges.UserSettings, resetCode); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce reset password event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce reset password event")
 		return errors.New("failed to send reset password code")
 	}
 
@@ -514,7 +514,7 @@ func (s *AuthService) CancelPasswordReset(ctx context.Context, req *requests.Mai
 
 	action := &ent.UserAction{Action: "password.reset.cancelled"}
 	if err := s.EventNotifier.CreateUserActionEvent(user.Edges.UserSettings, action); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce password reset cancellation event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce password reset cancellation event")
 	}
 
 	return nil
@@ -541,7 +541,7 @@ func (s *AuthService) ConfirmPasswordReset(ctx context.Context, req *requests.Co
 
 	action := &ent.UserAction{Action: "password.reset.confirmed"}
 	if err := s.EventNotifier.CreateUserActionEvent(user.Edges.UserSettings, action); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce password reset confirmation event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce password reset confirmation event")
 	}
 
 	return nil
@@ -559,10 +559,10 @@ func (s *AuthService) ResendResetCode(ctx context.Context, req *requests.Mail) e
 	}
 
 	if err := s.EventNotifier.CreateResetPasswordEvent(user.Edges.UserSettings, resetCode); err != nil {
-		s.Logger.Error().Err(err).Int("userID", user.ID).Msg("Failed to produce resend-reset-code event")
+		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce resend-reset-code event")
 		return errors.New("failed to send reset code")
 	}
 
-	s.Logger.Info().Int("userID", user.ID).Msg("Resent reset code event produced")
+	s.Logger.Info().Int("user_id", user.ID).Msg("Resent reset code event produced")
 	return nil
 }
