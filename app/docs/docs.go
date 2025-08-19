@@ -2673,8 +2673,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "Main users management microservice responsible for user related operations.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {
