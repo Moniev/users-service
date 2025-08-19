@@ -8,7 +8,6 @@ import (
 	"users-service/app/models/requests"
 	"users-service/app/repositories"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 )
 
@@ -19,7 +18,7 @@ type UsersService struct {
 }
 
 type UsersServiceInterface interface {
-	Index(ctx *gin.Context, page, pageSize int) ([]*ent.User, error)
+	Index(ctx context.Context, page, pageSize int) ([]*ent.User, error)
 
 	UpdateUser(ctx context.Context, userID int, req *requests.User) (*ent.User, error)
 	UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error)
@@ -84,138 +83,61 @@ func (s *UsersService) UpdateUser(ctx context.Context, userID int, req *requests
 }
 
 func (s *UsersService) UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error) {
-	user, err := s.UsersRepository.GetUserByID(ctx, userID)
-	if err != nil {
-		return nil, errors.New("failed to fetch user")
+	updateLogic := func(ctx context.Context, user *ent.User, req *requests.Details) (*ent.User, error) {
+		return s.UsersRepository.UpdateUsersDetails(ctx, user, req)
 	}
 
-	updatedUser, err := s.UsersRepository.UpdateUsersDetails(ctx, user, req)
-	if err != nil {
-		return nil, errors.New("failed to update user")
-	}
-
-	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
-		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce notification event")
-		return nil, errors.New("failed to send notification")
-	}
-
-	return updatedUser, nil
+	return HandleUserServiceCall(ctx, userID, *s, req, updateLogic)
 }
 
 func (s *UsersService) UpdateSettings(ctx context.Context, userID int, req *requests.Settings) (*ent.User, error) {
-	user, err := s.UsersRepository.GetUserByID(ctx, userID)
-	if err != nil {
-		return nil, errors.New("failed to fetch user")
+	updateLogic := func(ctx context.Context, user *ent.User, req *requests.Settings) (*ent.User, error) {
+		return s.UsersRepository.UpdateUsersSettings(ctx, user, req)
 	}
 
-	updatedUser, err := s.UsersRepository.UpdateUsersSettings(ctx, user, req)
-	if err != nil {
-		return nil, errors.New("failed to update user")
-	}
-
-	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
-		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce notification event")
-		return nil, errors.New("failed to send notification")
-	}
-
-	return updatedUser, nil
+	return HandleUserServiceCall(ctx, userID, *s, req, updateLogic)
 }
 
 func (s *UsersService) RemoveAccount(ctx context.Context, userID int) error {
-	user, err := s.UsersRepository.GetUserByID(ctx, userID)
-	if err != nil {
-		return errors.New("failed to fetch user")
+	removeLogic := func(ctx context.Context, user *ent.User) error {
+		return s.UsersRepository.RemoveAccount(ctx, user)
 	}
 
-	if err := s.UsersRepository.RemoveAccount(ctx, user); err != nil {
-		return errors.New("failed to remove user")
-	}
-
-	if err := s.EventNotifier.CreateNotificationEvent(user.Edges.UserSettings, user.Edges.UserDevices); err != nil {
-		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce notification event")
-		return errors.New("failed to send notification")
-	}
-
-	return nil
+	return HandleUserAction(ctx, userID, s, removeLogic)
 }
 
 func (s *UsersService) UpdateEntrepreneurDetails(ctx context.Context, userID int, req *requests.EntrepreneurDetails) (*ent.User, error) {
-	user, err := s.UsersRepository.GetUserByID(ctx, userID)
-	if err != nil {
-		return nil, errors.New("failed to fetch user")
+	updateLogic := func(ctx context.Context, user *ent.User, req *requests.EntrepreneurDetails) (*ent.User, error) {
+		return s.UsersRepository.UpdateEntrepreneurDetails(ctx, user, req)
 	}
 
-	updatedUser, err := s.UsersRepository.UpdateEntrepreneurDetails(ctx, user, req)
-	if err != nil {
-		return nil, errors.New("failed to update user details")
-	}
-
-	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
-		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce notification event")
-		return nil, errors.New("failed to send notification")
-	}
-
-	return user, nil
+	return HandleUserServiceCall(ctx, userID, *s, req, updateLogic)
 }
 
-func (s UsersService) UpdateLocation(ctx context.Context, userID int, req *requests.Location) (*ent.User, error) {
-	user, err := s.UsersRepository.GetUserByID(ctx, userID)
-	if err != nil {
-		return nil, errors.New("failed to fetch user")
+func (s *UsersService) UpdateLocation(ctx context.Context, userID int, req *requests.Location) (*ent.User, error) {
+	updateLogic := func(ctx context.Context, user *ent.User, req *requests.Location) (*ent.User, error) {
+		return s.UsersRepository.UpdateLocation(ctx, user, req)
 	}
 
-	updatedUser, err := s.UsersRepository.UpdateLocation(ctx, user, req)
-	if err != nil {
-		return nil, errors.New("failed to update user details")
-	}
-
-	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
-		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce notification event")
-		return nil, errors.New("failed to send notification")
-	}
-
-	return user, nil
+	return HandleUserServiceCall(ctx, userID, *s, req, updateLogic)
 }
 
-func (s *UsersService) Index(ctx *gin.Context, page, pageSize int) ([]*ent.User, error) {
-	users, err := s.UsersRepository.GetUsersPublic(ctx, page, pageSize)
-	if err != nil {
-		return nil, errors.New("failed to fetch users")
-	}
-
-	return users, nil
+func (s *UsersService) Index(ctx context.Context, page, pageSize int) ([]*ent.User, error) {
+	return s.UsersRepository.GetUsersPublic(ctx, page, pageSize)
 }
 
 func (s *UsersService) GetUserPublic(ctx context.Context, userID int) (*ent.User, error) {
-	user, err := s.UsersRepository.GetUserPublicByID(ctx, userID)
-	if err != nil {
-		return nil, errors.New("failed to fetch user")
-	}
-
-	return user, nil
+	return s.UsersRepository.GetUserPublicByID(ctx, userID)
 }
 
 func (s *UsersService) GetUserPrivate(ctx context.Context, userID int) (*ent.User, error) {
-	user, err := s.UsersRepository.GetUserByID(ctx, userID)
-	if err != nil {
-		return nil, errors.New("failed to fetch user")
-	}
-
-	return user, nil
+	return s.UsersRepository.GetUserByID(ctx, userID)
 }
 
 func (s *UsersService) AddRole(ctx context.Context, userID, roleID int) error {
-	if err := s.UsersRepository.AddRole(ctx, userID, roleID); err != nil {
-		return err
-	}
-
-	return nil
+	return s.UsersRepository.AddRole(ctx, userID, roleID)
 }
 
 func (s *UsersService) RevokeRole(ctx context.Context, userID, roleID int) error {
-	if err := s.UsersRepository.RevokeRole(ctx, userID, roleID); err != nil {
-		return err
-	}
-
-	return nil
+	return s.UsersRepository.RevokeRole(ctx, userID, roleID)
 }
