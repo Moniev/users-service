@@ -158,3 +158,21 @@ func (r *Index) Valid() error {
 
 	return r.Device.Valid()
 }
+
+type Role struct {
+	UserID int
+	RoleID int
+	Device
+}
+
+func (r *Role) Valid() error {
+	if r.UserID <= 0 {
+		return errors.New("choosed wrong user ID")
+	}
+
+	if r.RoleID <= 0 {
+		return errors.New("choosed wrong role ID")
+	}
+
+	return r.Device.Valid()
+}

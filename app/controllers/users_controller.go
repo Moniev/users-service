@@ -167,7 +167,7 @@ func (c *UsersController) RemoveAccount(ctx *gin.Context) {
 // @Param        Authorization header    string            true  "Bearer token"
 // @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Account removed successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
-// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Removal failed"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
 // @Router       /api/v1/users/details/entrepreneur/ [put]
 func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.EntrepreneurDetails) (*responses.UserPrivate, error) {
@@ -182,14 +182,14 @@ func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
 
 // UpdateLocation godoc
 // @Summary      Updates user's location
-// @Description  Updates existing location if already created. Other way creates new EntrepreneurDetails object.
+// @Description  Updates existing location if already created. Other way creates new location object.
 // @Tags         users
 // @Accept       json
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
-// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Account removed successfully"
+// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - location updated successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
-// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Removal failed"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
 // @Router       /api/v1/users/details/location/ [put]
 func (c *UsersController) UpdateLocation(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Location) (*responses.UserPrivate, error) {
@@ -202,6 +202,17 @@ func (c *UsersController) UpdateLocation(ctx *gin.Context) {
 	})
 }
 
+// Show godoc
+// @Summary      Show given user public data
+// @Description  Shows public user's data. Returns UserPublic object if user found.
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header    string            true  "Bearer token"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPublic}  "OK - User fetched successfully"
+// @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
+// @Router       /api/v1/users/ [get]
 func (c *UsersController) Show(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.UserPublic) (*responses.UserPublic, error) {
 		user, err := c.UsersService.GetUserPublic(reqCtx, req.ID)
@@ -213,6 +224,17 @@ func (c *UsersController) Show(ctx *gin.Context) {
 	})
 }
 
+// Me godoc
+// @Summary      Show given user public data
+// @Description  Shows user's private data. Returns UserPrivate object if user is authenticated.
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header    string            true  "Bearer token"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPublic}  "OK - User fetched successfully"
+// @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
+// @Router       /api/v1/users/me/ [get]
 func (c *UsersController) Me(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Empty) (*responses.UserPrivate, error) {
 		user, err := c.UsersService.GetUserPrivate(reqCtx, userID)
@@ -224,6 +246,17 @@ func (c *UsersController) Me(ctx *gin.Context) {
 	})
 }
 
+// Index godoc
+// @Summary      Show user's public data for users in choosed range
+// @Description  Returns array of UserPublic objects.
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header    string            true  "Bearer token"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.Users}  "OK - Users fetched successfully"
+// @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
+// @Router       /api/v1/users/index [get]
 func (c *UsersController) Index(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Index) (*responses.Users, error) {
 		users, err := c.UsersService.Index(ctx, req.Page, req.PageSize)
@@ -232,5 +265,47 @@ func (c *UsersController) Index(ctx *gin.Context) {
 		}
 
 		return responses.FromUsers(users), nil
+	})
+}
+
+// AddRole godoc
+// @Summary      Adds role for choosen user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header    string            true  "Bearer token"
+// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Successfully added role for user"
+// @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
+// @Router       /api/v1/users/index [post]
+func (c *UsersController) AddRole(ctx *gin.Context) {
+	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (string, error) {
+		err := c.UsersService.AddRole(ctx, req.UserID, req.RoleID)
+		if err != nil {
+			return "Failed to add role for user", err
+		}
+
+		return "Successfully added role for user", nil
+	})
+}
+
+// RevokeRole godoc
+// @Summary      Revokes role from chosen user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header    string            true  "Bearer token"
+// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Successfully revoked role from user
+// @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
+// @Router       /api/v1/users/index [patch]]
+func (c *UsersController) RevokeRole(ctx *gin.Context) {
+	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (string, error) {
+		err := c.UsersService.RevokeRole(ctx, req.UserID, req.RoleID)
+		if err != nil {
+			return "Failed to revoke role from user", err
+		}
+
+		return "Successfully revoked role from user", nil
 	})
 }
