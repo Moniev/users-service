@@ -835,8 +835,8 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 			SetSecondFactorTargetID(req.SecondFactorTargetID)
 
 		r.Logger.Debug().Int("user_id", user.ID).
-			Bool("nightMode", req.NightMode).
-			Bool("twoFactor", req.TwoFactor).
+			Bool("night_mode", req.NightMode).
+			Bool("two_factor", req.TwoFactor).
 			Int("secondFactorTargetID", req.SecondFactorTargetID).
 			Msg("Updating user settings fields")
 

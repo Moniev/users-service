@@ -76,7 +76,7 @@ func (c *UsersController) RespondSuccess(ctx *gin.Context, statusCode int, data 
 // @Failure      400       {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
-// @Router       /api/v1/users/ [patch]
+// @Router       /api/v1/users [patch]
 func (c *UsersController) UpdateUser(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.User) (*responses.UserPrivate, error) {
 		user, err := c.UsersService.UpdateUser(reqCtx, userID, req)
@@ -100,7 +100,7 @@ func (c *UsersController) UpdateUser(ctx *gin.Context) {
 // @Failure      400       {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
-// @Router       /api/v1/users/details/ [patch]
+// @Router       /api/v1/users/details [patch]
 func (c *UsersController) UpdateDetails(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Details) (*responses.UserPrivate, error) {
 		user, err := c.UsersService.UpdateDetails(reqCtx, userID, req)
@@ -124,7 +124,7 @@ func (c *UsersController) UpdateDetails(ctx *gin.Context) {
 // @Failure      400       {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
-// @Router       /api/v1/users/settings/ [patch]
+// @Router       /api/v1/users/settings [patch]
 func (c *UsersController) UpdateSettings(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Settings) (*responses.UserPrivate, error) {
 		user, err := c.UsersService.UpdateSettings(reqCtx, userID, req)
@@ -146,7 +146,7 @@ func (c *UsersController) UpdateSettings(ctx *gin.Context) {
 // @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Account removed successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Removal failed"
-// @Router       /api/v1/users/ [delete]
+// @Router       /api/v1/users [delete]
 func (c *UsersController) RemoveAccount(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Empty) (string, error) {
 		err := c.UsersService.RemoveAccount(reqCtx, userID)
@@ -168,7 +168,7 @@ func (c *UsersController) RemoveAccount(ctx *gin.Context) {
 // @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Account removed successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
-// @Router       /api/v1/users/details/entrepreneur/ [put]
+// @Router       /api/v1/users/details/entrepreneur [put]
 func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.EntrepreneurDetails) (*responses.UserPrivate, error) {
 		user, err := c.UsersService.UpdateEntrepreneurDetails(reqCtx, userID, req)
@@ -190,7 +190,7 @@ func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
 // @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - location updated successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
-// @Router       /api/v1/users/details/location/ [put]
+// @Router       /api/v1/users/details/location [put]
 func (c *UsersController) UpdateLocation(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Location) (*responses.UserPrivate, error) {
 		user, err := c.UsersService.UpdateLocation(reqCtx, userID, req)
@@ -212,7 +212,7 @@ func (c *UsersController) UpdateLocation(ctx *gin.Context) {
 // @Success      200       {object}  responses.SuccessResponse{data=responses.UserPublic}  "OK - User fetched successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
-// @Router       /api/v1/users/ [get]
+// @Router       /api/v1/users [get]
 func (c *UsersController) Show(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.UserPublic) (*responses.UserPublic, error) {
 		user, err := c.UsersService.GetUserPublic(reqCtx, req.ID)
@@ -234,7 +234,7 @@ func (c *UsersController) Show(ctx *gin.Context) {
 // @Success      200       {object}  responses.SuccessResponse{data=responses.UserPublic}  "OK - User fetched successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
-// @Router       /api/v1/users/me/ [get]
+// @Router       /api/v1/users/me [get]
 func (c *UsersController) Me(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Empty) (*responses.UserPrivate, error) {
 		user, err := c.UsersService.GetUserPrivate(reqCtx, userID)
@@ -277,7 +277,7 @@ func (c *UsersController) Index(ctx *gin.Context) {
 // @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Successfully added role for user"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
-// @Router       /api/v1/users/index [post]
+// @Router       /api/v1/users/role [post]
 func (c *UsersController) AddRole(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (string, error) {
 		err := c.UsersService.AddRole(ctx, req.UserID, req.RoleID)
@@ -298,7 +298,7 @@ func (c *UsersController) AddRole(ctx *gin.Context) {
 // @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Successfully revoked role from user
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
-// @Router       /api/v1/users/index [patch]]
+// @Router       /api/v1/users/role [patch]
 func (c *UsersController) RevokeRole(ctx *gin.Context) {
 	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (string, error) {
 		err := c.UsersService.RevokeRole(ctx, req.UserID, req.RoleID)
