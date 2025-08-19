@@ -44,7 +44,7 @@ type UsersRepositoryInterface interface {
 	GetUserBySecondFactor(ctx context.Context, code string) (*ent.User, error)
 	GetUserByVerificationCode(ctx context.Context, code string) (*ent.User, error)
 	GetUserByResetCode(ctx context.Context, code string) (*ent.User, error)
-	GetUsersPublic(ctx context.Context, lim int) ([]*ent.User, error)
+	GetUsersPublic(ctx context.Context, page, pageSize int) ([]*ent.User, error)
 
 	FindOrCreateDevice(ctx context.Context, userID int, req *requests.Device) (*ent.UserDevice, error)
 
@@ -1208,29 +1208,33 @@ func (r *UsersRepository) CreateUserAction(
 	return nil
 }
 
-func (r *UsersRepository) GetUsersPublic(ctx context.Context, lim int) ([]*ent.User, error) {
-	r.Logger.Debug().Msg("Attempting to revoke user's subscriptions")
-	var foundUsers []*ent.User
-	var err error
+func (r *UsersRepository) GetUsersPublic(ctx context.Context, page, pageSize int) ([]*ent.User, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 20
+	}
 
-	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		foundUsers, err = tx.User.
-			Query().
-			Limit(lim).
-			All(ctx)
-		if err != nil {
-			return errors.New("failed to fetch users")
-		}
+	offset := (page - 1) * pageSize
 
-		return nil
-	}); err != nil {
-		r.Logger.Error().Err(err).Msg("Transaction failed for GetUsersPublic")
-		return nil, errors.New("failed to remove user")
+	r.Logger.Debug().Int("page", page).Int("pageSize", pageSize).Msg("Fetching public users with offset")
+
+	foundUsers, err := r.DB.User.
+		Query().
+		Limit(pageSize).
+		Offset(offset).
+		Order(ent.Desc(user.FieldCreatedAt)).
+		All(ctx)
+
+	if err != nil {
+		r.Logger.Error().Err(err).Msg("Database query failed for GetUsersPublic")
+		return nil, errors.New("failed to fetch users public")
 	}
 
 	for _, user := range foundUsers {
 		if err := UpdateCache(ctx, user, r); err != nil {
-			return nil, errors.New("failed to cache user")
+			r.Logger.Warn().Err(err).Int("userID", user.ID).Msg("Failed to update cache for a user, continuing")
 		}
 	}
 

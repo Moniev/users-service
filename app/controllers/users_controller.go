@@ -225,8 +225,8 @@ func (c *UsersController) Me(ctx *gin.Context) {
 }
 
 func (c *UsersController) Index(ctx *gin.Context) {
-	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Empty) (*responses.Users, error) {
-		users, err := c.UsersService.Index(ctx, 50)
+	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Index) (*responses.Users, error) {
+		users, err := c.UsersService.Index(ctx, req.Page, req.PageSize)
 		if err != nil {
 			return nil, err
 		}

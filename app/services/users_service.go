@@ -19,7 +19,7 @@ type UsersService struct {
 }
 
 type UsersServiceInterface interface {
-	Index(ctx *gin.Context, lim int) ([]*ent.User, error)
+	Index(ctx *gin.Context, page, pageSize int) ([]*ent.User, error)
 
 	UpdateUser(ctx context.Context, userID int, req *requests.User) (*ent.User, error)
 	UpdateDetails(ctx context.Context, userID int, req *requests.Details) (*ent.User, error)
@@ -174,8 +174,8 @@ func (s UsersService) UpdateLocation(ctx context.Context, userID int, req *reque
 	return user, nil
 }
 
-func (s *UsersService) Index(ctx *gin.Context, lim int) ([]*ent.User, error) {
-	users, err := s.UsersRepository.GetUsersPublic(ctx, lim)
+func (s *UsersService) Index(ctx *gin.Context, page, pageSize int) ([]*ent.User, error) {
+	users, err := s.UsersRepository.GetUsersPublic(ctx, page, pageSize)
 	if err != nil {
 		return nil, errors.New("failed to fetch users")
 	}

@@ -144,3 +144,17 @@ type Location struct {
 func (r *Location) Valid() error {
 	return r.Device.Valid()
 }
+
+type Index struct {
+	Page     int `json:"page"`
+	PageSize int `json:"page_size"`
+	Device
+}
+
+func (r *Index) Valid() error {
+	if r.PageSize > 0 && r.Page > 0 {
+		return errors.New("choosed wrong page size nad pages number")
+	}
+
+	return r.Device.Valid()
+}
