@@ -659,6 +659,7 @@ func (r *UsersRepository) RemoveResetCode(ctx context.Context, user *ent.User) (
 func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, user *ent.User) (*ent.User, error) {
 	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to remove second factor code")
 	var updatedUser *ent.User
+	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		if user.Edges.SecondFactorCode == nil {
@@ -668,9 +669,11 @@ func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, user *ent.
 
 		r.Logger.Debug().Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Second factor code found for deletion")
 
-		if err := tx.SecondFactorCode.
-			DeleteOneID(user.Edges.SecondFactorCode.ID).
-			Exec(ctx); err != nil {
+		updatedUser, err = tx.User.
+			UpdateOne(user).
+			ClearSecondFactorCode().
+			Save(ctx)
+		if err != nil {
 			r.Logger.Error().Err(err).Int("user_id", user.ID).Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Failed to remove second factor code")
 			return errors.New("failed to remove second factor code")
 		}
@@ -755,12 +758,13 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, targetUser *ent.User, 
 				return errors.New("failed to update user's mail/phone")
 			}
 
-			updatedUser, _ = GetUserByID(ctx, tx, targetUser.ID)
-
 			r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User mail/phone updated in DB")
 		} else {
+
 			r.Logger.Debug().Int("user_id", targetUser.ID).Msg("No changes detected for user mail/phone, skipping update")
 		}
+
+		updatedUser, _ = getUserFunctionalWithDetails(ctx, tx, user.IDEQ(targetUser.ID))
 
 		return nil
 	}); err != nil {
@@ -776,49 +780,52 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, targetUser *ent.User, 
 
 func (r *UsersRepository) UpdateUsersDetails(
 	ctx context.Context,
-	user *ent.User,
+	targetUser *ent.User,
 	req *requests.Details,
 ) (*ent.User, error) {
-	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to update user details")
+	r.Logger.Debug().Int("user_id", targetUser.ID).Msg("Attempting to update user details")
 	var updatedUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		detailsUpdated := tx.UserDetails.
-			UpdateOneID(user.Edges.UserDetails.ID).
+			UpdateOneID(targetUser.Edges.UserDetails.ID).
 			SetFirstName(req.FirstName).
 			SetLastName(req.LastName)
 
 		if _, err = detailsUpdated.Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to update user's details in DB")
+			r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Failed to update user's details in DB")
 			return errors.New("failed to update user's details")
 		}
-		r.Logger.Debug().Int("user_id", user.ID).Msg("User details updated in DB")
+		r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User details updated in DB")
+
+		updatedUser, err = getUserFunctionalWithDetails(ctx, tx, user.IDEQ(targetUser.ID))
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for UpdateUsersDetails")
+		r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Transaction failed for UpdateUsersDetails")
 		return nil, errors.New("failed to update user")
 	}
 
-	InvalidateCache(ctx, user, r)
+	InvalidateCache(ctx, targetUser, r)
 
-	r.Logger.Debug().Int("user_id", user.ID).Msg("User details updated successfully")
+	r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User details updated successfully")
 	return updatedUser, nil
 }
 
-func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.User, req *requests.Settings) (*ent.User, error) {
-	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to update user settings")
+func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, targetUser *ent.User, req *requests.Settings) (*ent.User, error) {
+	r.Logger.Debug().Int("user_id", targetUser.ID).Msg("Attempting to update user settings")
+	var updatedUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		settingsUpdater := tx.UserSettings.
-			UpdateOneID(user.Edges.UserSettings.ID).
+			UpdateOneID(targetUser.Edges.UserSettings.ID).
 			SetNightMode(req.NightMode).
 			SetTwoFactor(req.TwoFactor).
 			SetSecondFactorTargetID(req.SecondFactorTargetID)
 
-		r.Logger.Debug().Int("user_id", user.ID).
+		r.Logger.Debug().Int("user_id", targetUser.ID).
 			Bool("night_mode", req.NightMode).
 			Bool("two_factor", req.TwoFactor).
 			Int("second_factor_target_id", req.SecondFactorTargetID).
@@ -826,26 +833,28 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 
 		settingsUpdater.ClearNotificationTargetDevices().
 			AddNotificationTargetDeviceIDs(req.NotificationsTargetDeviceIDs...)
-		r.Logger.Debug().Int("user_id", user.ID).
+		r.Logger.Debug().Int("user_id", targetUser.ID).
 			Ints("notification_target_device_ids", req.NotificationsTargetDeviceIDs).
 			Msg("Updating notification target devices")
 
 		if _, err = settingsUpdater.Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to update user's settings in DB")
+			r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Failed to update user's settings in DB")
 			return errors.New("failed to update user's settings")
 		}
-		r.Logger.Debug().Int("user_id", user.ID).Msg("User settings updated in DB")
+		r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User settings updated in DB")
+
+		updatedUser, _ = getUserWithSettings(ctx, tx, user.IDEQ(targetUser.ID))
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for UpdateUsersSettings")
+		r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Transaction failed for UpdateUsersSettings")
 		return nil, errors.New("failed to update user")
 	}
 
-	InvalidateCache(ctx, user, r)
+	InvalidateCache(ctx, targetUser, r)
 
-	r.Logger.Debug().Int("user_id", user.ID).Msg("User settings updated successfully")
-	return user, nil
+	r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User settings updated successfully")
+	return updatedUser, nil
 }
 
 func (r *UsersRepository) RemoveAccount(
@@ -939,22 +948,22 @@ func (r *UsersRepository) FindOrCreateDevice(
 
 func (r *UsersRepository) UpdateEntrepreneurDetails(
 	ctx context.Context,
-	user *ent.User,
+	targetUser *ent.User,
 	req *requests.EntrepreneurDetails,
 ) (*ent.User, error) {
-	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to update entrepreneur details")
+	r.Logger.Info().Int("user_id", targetUser.ID).Msg("Attempting to update entrepreneur details")
 	var updatedUser *ent.User
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		details, _ := tx.EntrepreneurDetails.
 			Query().
-			Where(entrepreneurdetails.HasUserDetailsWith(userdetails.IDEQ(user.Edges.UserDetails.ID))).
+			Where(entrepreneurdetails.HasUserDetailsWith(userdetails.IDEQ(targetUser.Edges.UserDetails.ID))).
 			Only(ctx)
 		if details == nil {
 			if _, err := tx.EntrepreneurDetails.
 				Create().
-				SetUserDetailsID(user.Edges.UserDetails.ID).
+				SetUserDetailsID(targetUser.Edges.UserDetails.ID).
 				SetBusinessName(req.BusinessName).
 				SetNip(req.NIP).
 				SetKrs(req.KRS).
@@ -973,7 +982,7 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(
 		} else {
 			if _, err := tx.EntrepreneurDetails.
 				UpdateOneID(details.ID).
-				SetUserDetailsID(user.Edges.UserDetails.ID).
+				SetUserDetailsID(targetUser.Edges.UserDetails.ID).
 				SetBusinessName(req.BusinessName).
 				SetNip(req.NIP).
 				SetKrs(req.KRS).
@@ -991,30 +1000,32 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(
 			}
 		}
 
+		updatedUser, err = getUserFunctionalWithDetails(ctx, tx, user.IDEQ(targetUser.ID))
+
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
+		r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Transaction failed for RemoveAccount")
 		return nil, errors.New("failed to remove user")
 	}
 
-	InvalidateCache(ctx, user, r)
+	InvalidateCache(ctx, targetUser, r)
 
 	return updatedUser, nil
 }
 
 func (r *UsersRepository) UpdateLocation(
 	ctx context.Context,
-	user *ent.User,
+	targetUser *ent.User,
 	req *requests.Location,
 ) (*ent.User, error) {
-	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to update user location")
+	r.Logger.Debug().Int("user_id", targetUser.ID).Msg("Attempting to update user location")
 	var updatedUser *ent.User
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundLocation, _ := tx.Location.
 			Query().
-			Where(location.HasUserDetailsWith(userdetails.IDEQ(updatedUser.Edges.UserDetails.ID))).
+			Where(location.HasUserDetailsWith(userdetails.IDEQ(targetUser.Edges.UserDetails.ID))).
 			Only(ctx)
 		if foundLocation != nil {
 			if _, err := tx.Location.
@@ -1031,19 +1042,21 @@ func (r *UsersRepository) UpdateLocation(
 			}
 		}
 
-		r.Logger.Debug().Int("user_id", user.ID).Msg("User account marked as removed in DB")
+		r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User account marked as removed in DB")
+
+		updatedUser, _ = getUserFunctionalWithDetails(ctx, tx, user.IDEQ(targetUser.ID))
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
+		r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Transaction failed for RemoveAccount")
 		return nil, errors.New("failed to remove user")
 	}
 
-	InvalidateCache(ctx, user, r)
+	InvalidateCache(ctx, targetUser, r)
 
-	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
+	r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User account successfully marked as removed")
 
-	return nil, nil
+	return updatedUser, nil
 }
 
 func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) error {
