@@ -430,9 +430,10 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 	r.Logger.Info().Str("mail", req.Mail).Msg("Attempting to create new user")
 	var newUser *ent.User
 	var activationCode *ent.ActivationCode
+	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		newUser, err := tx.User.
+		newUser, err = tx.User.
 			Create().
 			SetMail(req.Mail).
 			SetPassword(hashedPassword).
@@ -521,7 +522,6 @@ func (r *UsersRepository) CreateSecondFactorCode(
 	device *ent.UserDevice,
 ) (*ent.SecondFactorCode, error) {
 	r.Logger.Info().Int("user_id", user.ID).Int("device_id", device.ID).Msg("Attempting to create second factor code")
-	var updatedUser *ent.User
 	var secondFactor *ent.SecondFactorCode
 	var err error
 
@@ -566,7 +566,7 @@ func (r *UsersRepository) CreateSecondFactorCode(
 
 	InvalidateCache(ctx, user, r)
 
-	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("Second factor code created successfully")
+	r.Logger.Info().Int("user_id", user.ID).Msg("Second factor code created successfully")
 	return secondFactor, nil
 }
 
@@ -803,13 +803,12 @@ func (r *UsersRepository) UpdateUsersDetails(
 
 	InvalidateCache(ctx, user, r)
 
-	r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User details updated successfully")
+	r.Logger.Debug().Int("user_id", user.ID).Msg("User details updated successfully")
 	return updatedUser, nil
 }
 
 func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.User, req *requests.Settings) (*ent.User, error) {
 	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to update user settings")
-	var updatedUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
@@ -845,8 +844,8 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 
 	InvalidateCache(ctx, user, r)
 
-	r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User settings updated successfully")
-	return updatedUser, nil
+	r.Logger.Debug().Int("user_id", user.ID).Msg("User settings updated successfully")
+	return user, nil
 }
 
 func (r *UsersRepository) RemoveAccount(
