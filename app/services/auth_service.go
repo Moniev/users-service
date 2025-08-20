@@ -548,7 +548,7 @@ func (s *AuthService) ConfirmPasswordReset(ctx context.Context, req *requests.Co
 }
 
 func (s *AuthService) ResendResetCode(ctx context.Context, req *requests.Mail) error {
-	user, err := s.UsersRepository.GetUserByMail(ctx, req.Mail)
+	user, err := s.UsersRepository.GetUserByMailWithCodes(ctx, req.Mail)
 	if err != nil {
 		return errors.New("failed to find user with the provided email")
 	}

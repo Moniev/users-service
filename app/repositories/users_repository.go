@@ -308,6 +308,9 @@ func (r *UsersRepository) VerifyAccount(ctx context.Context, code string) (*ent.
 			r.Logger.Error().Err(err).Str("verification_code", code).Msg("Failed to delete verification code")
 			return err
 		}
+
+		foundUser, _ = getUserWithRoles(ctx, tx, user.IDEQ(foundUser.ID))
+
 		r.Logger.Debug().Str("verification_code", code).Msg("Verification code deleted")
 
 		return nil
@@ -896,7 +899,7 @@ func (r *UsersRepository) FindOrCreateDevice(
 		if err != nil {
 			if ent.IsNotFound(err) {
 				r.Logger.Debug().Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Device not found, attempting to create new device")
-				newDevice, createErr := tx.UserDevice.
+				newDevice, err := tx.UserDevice.
 					Create().
 					SetOwnerID(userID).
 					SetToken(req.DeviceToken).
@@ -907,10 +910,9 @@ func (r *UsersRepository) FindOrCreateDevice(
 					SetOsVersion(req.OSVersion).
 					SetUserAgent(req.UserAgent).
 					Save(ctx)
-				if createErr != nil {
-					r.Logger.Error().Err(createErr).Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Failed to create new device")
-					err = createErr
-					return createErr
+				if err != nil {
+					r.Logger.Error().Err(err).Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Failed to create new device")
+					return err
 				}
 				device = newDevice
 				r.Logger.Debug().Int("user_id", userID).Int("device_id", device.ID).Msg("New device created successfully")
