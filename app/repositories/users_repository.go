@@ -731,7 +731,7 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, targetUser *ent.User, 
 				Query().
 				Where(user.PhoneEQ(req.Phone)).
 				Exist(ctx); exists {
-				updated = false
+				return errors.New("phone already exists")
 			}
 
 			userUpdater.SetPhone(req.Phone)
@@ -744,7 +744,7 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, targetUser *ent.User, 
 				Query().
 				Where(user.MailEQ(req.Mail)).
 				Exist(ctx); exists {
-				updated = false
+				return errors.New("mail already exists")
 			}
 
 			userUpdater.SetMail(req.Mail)
@@ -1087,13 +1087,13 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 		return nil
 
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
+		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for AddSubscriptions")
 		return errors.New("failed to remove user")
 	}
 
 	InvalidateCache(ctx, user, r)
 
-	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
+	r.Logger.Debug().Int("user_id", user.ID).Msg("Successfully added subscriptions to user account")
 
 	return nil
 }
@@ -1114,13 +1114,13 @@ func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.Use
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
+		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveSubscriptions")
 		return errors.New("failed to remove user")
 	}
 
 	InvalidateCache(ctx, user, r)
 
-	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
+	r.Logger.Debug().Int("user_id", user.ID).Msg("Successfully removed subscriptions from user account")
 
 	return nil
 }
@@ -1130,7 +1130,7 @@ func (r *UsersRepository) CreateUserAction(
 	user *ent.User,
 	action, originDevice, details string,
 ) error {
-	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to revoke user's subscriptions")
+	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to create user action")
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
@@ -1145,13 +1145,13 @@ func (r *UsersRepository) CreateUserAction(
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
+		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for CreateUserAction")
 		return errors.New("failed to remove user")
 	}
 
 	InvalidateCache(ctx, user, r)
 
-	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
+	r.Logger.Debug().Int("user_id", user.ID).Msg("Successfully created UserAction")
 	return nil
 }
 
