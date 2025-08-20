@@ -94,11 +94,6 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 	var foundUser *ent.User
 	var err error
 
-	payload, _ := r.CacheStore.Get(ctx, "user:"+strconv.Itoa(ID))
-	if payload != nil {
-		return r.CacheStore.DecacheUser(payload)
-	}
-
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByID(ctx, tx, ID)
 		if err != nil {
@@ -145,11 +140,6 @@ func (r *UsersRepository) GetUserPublicByID(ctx context.Context, ID int) (*ent.U
 	var foundUser *ent.User
 	var err error
 
-	payload, _ := r.CacheStore.Get(ctx, "user-public:"+strconv.Itoa(ID))
-	if payload != nil {
-		return r.CacheStore.DecacheUser(payload)
-	}
-
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserPublicByID(ctx, tx, ID)
 		if err != nil {
@@ -164,10 +154,6 @@ func (r *UsersRepository) GetUserPublicByID(ctx context.Context, ID int) (*ent.U
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
-
 	r.Logger.Info().Int("user_id", foundUser.ID).Msg("Successfully retrieved user by ID")
 	return foundUser, nil
 }
@@ -176,11 +162,6 @@ func (r *UsersRepository) GetUserByMail(ctx context.Context, mail string) (*ent.
 	r.Logger.Info().Str("mail", mail).Msg("Attempting to get user by mail")
 	var foundUser *ent.User
 	var err error
-
-	payload, _ := r.CacheStore.Get(ctx, "user:"+mail)
-	if payload != nil {
-		return r.CacheStore.DecacheUser(payload)
-	}
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByMail(ctx, tx, mail)
@@ -193,10 +174,6 @@ func (r *UsersRepository) GetUserByMail(ctx context.Context, mail string) (*ent.
 	}); err != nil {
 		r.Logger.Error().Err(err).Str("mail", mail).Msg("Transaction failed for GetUserByMail")
 		return nil, err
-	}
-
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
-		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Str("mail", foundUser.Mail).Msg("Successfully retrieved user by mail")
@@ -224,10 +201,6 @@ func (r *UsersRepository) GetUserByMailWithCodes(ctx context.Context, mail strin
 	}); err != nil {
 		r.Logger.Error().Err(err).Str("mail", mail).Msg("Transaction failed for GetUserByMail")
 		return nil, err
-	}
-
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
-		return nil, errors.New("failed to update user")
 	}
 
 	r.Logger.Info().Str("mail", foundUser.Mail).Msg("Successfully retrieved user by mail")
@@ -294,10 +267,11 @@ func (r *UsersRepository) VerifyAccount(ctx context.Context, code string) (*ent.
 		}
 		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User found for verification")
 
-		if _, err := tx.User.
+		foundUser, err = tx.User.
 			UpdateOneID(foundUser.ID).
 			SetVerified(true).
-			Save(ctx); err != nil {
+			Save(ctx)
+		if err != nil {
 			r.Logger.Error().Err(err).Int("user_id", foundUser.ID).Msg("Failed to set user verified")
 			return err
 		}

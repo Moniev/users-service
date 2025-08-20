@@ -413,35 +413,35 @@ func (s *AuthService) ResendSecondFactorCode(ctx context.Context, req *requests.
 }
 
 func (s *AuthService) VerifySecondFactor(ctx context.Context, req *requests.Code) (*ent.User, string, error) {
-	user, err := s.UsersRepository.GetUserBySecondFactor(ctx, req.Code)
+	foundUser, err := s.UsersRepository.GetUserBySecondFactor(ctx, req.Code)
 	if err != nil {
 		return nil, "", errors.New("failed to fetch user by second factor code")
 	}
 
-	if time.Now().UTC().After(user.Edges.SecondFactorCode.ExpiresAt) {
-		go s.UsersRepository.RemoveSecondFactorCode(context.Background(), user)
+	if time.Now().UTC().After(foundUser.Edges.SecondFactorCode.ExpiresAt) {
+		go s.UsersRepository.RemoveSecondFactorCode(context.Background(), foundUser)
 		return nil, "", errors.New("second factor token has expired")
 	}
 
-	device := user.Edges.SecondFactorCode.Edges.TargetUserDevice
+	device := foundUser.Edges.SecondFactorCode.Edges.TargetUserDevice
 	if device == nil {
-		s.Logger.Error().Int("user_id", user.ID).Msg("Device context not found for second factor verification")
+		s.Logger.Error().Int("user_id", foundUser.ID).Msg("Device context not found for second factor verification")
 		return nil, "", errors.New("could not determine the device for this session")
 	}
 
-	userRoles := utils.MarshalUserRoles(user.Edges.UserRoles)
-	token, err := s.GenerateJWT(ctx, user.ID, device.ID, userRoles)
+	userRoles := utils.MarshalUserRoles(foundUser.Edges.UserRoles)
+	token, err := s.GenerateJWT(ctx, foundUser.ID, device.ID, userRoles)
 	if err != nil {
 		return nil, "", errors.New("failed to create Bearer for user")
 	}
 
-	user, err = s.UsersRepository.RemoveSecondFactorCode(ctx, user)
+	user, err := s.UsersRepository.RemoveSecondFactorCode(ctx, foundUser)
 	if err != nil {
-		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to remove second factor code after use")
+		s.Logger.Error().Err(err).Int("user_id", foundUser.ID).Msg("Failed to remove second factor code after use")
 	}
 
-	if err := s.EventNotifier.CreateLoginEvent(user.Edges.UserSettings, "second-factor"); err != nil {
-		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce login event after 2FA")
+	if err := s.EventNotifier.CreateLoginEvent(foundUser.Edges.UserSettings, "second-factor"); err != nil {
+		s.Logger.Error().Err(err).Int("user_id", foundUser.ID).Msg("Failed to produce login event after 2FA")
 	}
 
 	return user, token, nil

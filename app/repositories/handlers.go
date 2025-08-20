@@ -170,7 +170,7 @@ func GetUserPublicByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, erro
 }
 
 func GetUserFunctionalByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
-	return getUserWithCodes(ctx, tx, user.IDEQ(ID))
+	return getUserFunctional(ctx, tx, user.IDEQ(ID))
 }
 
 func GetUserByMailWithCodes(ctx context.Context, tx *ent.Tx, mail string) (*ent.User, error) {
