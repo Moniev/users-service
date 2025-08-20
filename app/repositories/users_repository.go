@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"strconv"
-	"time"
 	"users-service/app/infrastructure"
 	"users-service/app/models/ent"
 	"users-service/app/models/ent/activationcode"
 	"users-service/app/models/ent/entrepreneurdetails"
 	"users-service/app/models/ent/location"
+	"users-service/app/models/ent/resetcode"
 	_ "users-service/app/models/ent/runtime"
 	"users-service/app/models/ent/secondfactorcode"
 	"users-service/app/models/ent/user"
@@ -39,12 +39,14 @@ type UsersRepositoryInterface interface {
 
 	CreateUser(ctx context.Context, req *requests.Register, hashedPassword string) (*ent.User, *ent.ActivationCode, error)
 	CreateResetCode(ctx context.Context, user *ent.User) (*ent.ResetCode, error)
-	CreateSecondFactorCode(ctx context.Context, user *ent.User, device *ent.UserDevice) (*ent.User, *ent.SecondFactorCode, error)
+	CreateSecondFactorCode(ctx context.Context, user *ent.User, device *ent.UserDevice) (*ent.SecondFactorCode, error)
 	CreateUserAction(ctx context.Context, user *ent.User, action, originDevice, details string) error
 
 	GetUserByID(ctx context.Context, ID int) (*ent.User, error)
+	GetUserFunctionalByID(ctx context.Context, ID int) (*ent.User, error)
 	GetUserPublicByID(ctx context.Context, ID int) (*ent.User, error)
 	GetUserByMail(ctx context.Context, mail string) (*ent.User, error)
+	GetUserByMailWithCodes(ctx context.Context, mail string) (*ent.User, error)
 	GetUserByPhone(ctx context.Context, phone string) (*ent.User, error)
 	GetUserBySecondFactor(ctx context.Context, code string) (*ent.User, error)
 	GetUserByVerificationCode(ctx context.Context, code string) (*ent.User, error)
@@ -111,8 +113,27 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
-		return nil, errors.New("failed to update user")
+	r.Logger.Info().Int("user_id", foundUser.ID).Msg("Successfully retrieved user by ID")
+	return foundUser, nil
+}
+
+func (r *UsersRepository) GetUserFunctionalByID(ctx context.Context, ID int) (*ent.User, error) {
+	r.Logger.Info().Int("user_id", ID).Msg("Attempting to get user by ID")
+	var foundUser *ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		foundUser, err = GetUserFunctionalByID(ctx, tx, ID)
+		if err != nil {
+			r.Logger.Error().Err(err).Int("user_id", ID).Msg("Failed to get user by ID within transaction")
+			return err
+		}
+
+		r.Logger.Debug().Int("user_id", ID).Msg("User found by ID within transaction")
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("user_id", ID).Msg("Transaction failed for GetUserByID")
+		return nil, err
 	}
 
 	r.Logger.Info().Int("user_id", foundUser.ID).Msg("Successfully retrieved user by ID")
@@ -182,20 +203,50 @@ func (r *UsersRepository) GetUserByMail(ctx context.Context, mail string) (*ent.
 	return foundUser, nil
 }
 
-func (r *UsersRepository) ActivateAccount(ctx context.Context, code string) (*ent.User, error) {
-	r.Logger.Info().Str("activationCode", code).Msg("Attempting to activate account")
+func (r *UsersRepository) GetUserByMailWithCodes(ctx context.Context, mail string) (*ent.User, error) {
+	r.Logger.Info().Str("mail", mail).Msg("Attempting to get user by mail")
 	var foundUser *ent.User
 	var err error
 
+	payload, _ := r.CacheStore.Get(ctx, "user:"+mail)
+	if payload != nil {
+		return r.CacheStore.DecacheUser(payload)
+	}
+
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		foundUser, err = GetUserByActivationCode(ctx, tx, code)
+		foundUser, err = GetUserByMailWithCodes(ctx, tx, mail)
+		if err != nil {
+			r.Logger.Error().Err(err).Str("mail", mail).Msg("Failed to get user by mail within transaction")
+			return err
+		}
+		r.Logger.Debug().Str("mail", mail).Msg("User found by mail within transaction")
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Str("mail", mail).Msg("Transaction failed for GetUserByMail")
+		return nil, err
+	}
+
+	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		return nil, errors.New("failed to update user")
+	}
+
+	r.Logger.Info().Str("mail", foundUser.Mail).Msg("Successfully retrieved user by mail")
+	return foundUser, nil
+}
+
+func (r *UsersRepository) ActivateAccount(ctx context.Context, code string) (*ent.User, error) {
+	r.Logger.Info().Str("activation_code", code).Msg("Attempting to activate account")
+	var updatedUser *ent.User
+
+	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		foundUser, err := GetUserByActivationCode(ctx, tx, code)
 		if err != nil {
 			r.Logger.Error().Err(err).Msg("Failed to get user by activation code within transaction")
 			return err
 		}
 		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User found for activation")
 
-		if _, err := foundUser.
+		if _, err = foundUser.
 			Update().
 			SetActive(true).
 			Save(ctx); err != nil {
@@ -211,38 +262,34 @@ func (r *UsersRepository) ActivateAccount(ctx context.Context, code string) (*en
 			r.Logger.Error().Msg("Failed to delete activation code")
 			return err
 		}
-		r.Logger.Debug().Str("activationCode", code).Msg("Activation code deleted")
+		r.Logger.Debug().Str("activation_code", code).Msg("Activation code deleted")
 
-		foundUser, err = GetUserByID(ctx, tx, foundUser.ID)
+		updatedUser, err = getUserWithSettings(ctx, tx, user.IDEQ(foundUser.ID))
 		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", foundUser.ID).Msg("Failed to re-fetch user after activation")
-			return err
+			return errors.New("failed to find user's settings")
 		}
-		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User re-fetched after activation")
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Str("activationCode", code).Msg("Transaction failed for ActivateAccount")
+		r.Logger.Error().Err(err).Str("activation_code", code).Msg("Transaction failed for ActivateAccount")
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
+	InvalidateCache(ctx, updatedUser, r)
 
-	}
-
-	r.Logger.Info().Int("user_id", foundUser.ID).Msg("Account successfully activated")
-	return foundUser, nil
+	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("Account successfully activated")
+	return updatedUser, nil
 }
 
 func (r *UsersRepository) VerifyAccount(ctx context.Context, code string) (*ent.User, error) {
-	r.Logger.Info().Str("verificationCode", code).Msg("Attempting to verify account")
+	r.Logger.Info().Str("verification_code", code).Msg("Attempting to verify account")
 	var foundUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByVerificationCode(ctx, tx, code)
 		if err != nil {
-			r.Logger.Error().Err(err).Str("verificationCode", code).Msg("Failed to get user by verification code within transaction")
+			r.Logger.Error().Err(err).Str("verification_code", code).Msg("Failed to get user by verification code within transaction")
 			return err
 		}
 		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User found for verification")
@@ -260,51 +307,39 @@ func (r *UsersRepository) VerifyAccount(ctx context.Context, code string) (*ent.
 			Delete().
 			Where(verificationcode.CodeEQ(code)).
 			Exec(ctx); err != nil {
-			r.Logger.Error().Err(err).Str("verificationCode", code).Msg("Failed to delete verification code")
+			r.Logger.Error().Err(err).Str("verification_code", code).Msg("Failed to delete verification code")
 			return err
 		}
-		r.Logger.Debug().Str("verificationCode", code).Msg("Verification code deleted")
-
-		foundUser, err = GetUserByID(ctx, tx, foundUser.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", foundUser.ID).Msg("Failed to re-fetch user after verification")
-			return err
-		}
-		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User re-fetched after verification")
+		r.Logger.Debug().Str("verification_code", code).Msg("Verification code deleted")
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Str("verificationCode", code).Msg("Transaction failed for VerifyAccount")
+		r.Logger.Error().Err(err).Str("verification_code", code).Msg("Transaction failed for VerifyAccount")
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
-		return nil, err
-	}
+	InvalidateCache(ctx, foundUser, r)
 
 	r.Logger.Info().Int("user_id", foundUser.ID).Msg("Account successfully verified")
 	return foundUser, nil
 }
 
 func (r *UsersRepository) GetUserBySecondFactor(ctx context.Context, code string) (*ent.User, error) {
-	r.Logger.Info().Str("secondFactorCode", code).Msg("Attempting to get user by second factor code")
+	r.Logger.Info().Str("second_factor_id", code).Msg("Attempting to get user by second factor code")
 	var foundUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserBySecondFactor(ctx, tx, code)
 		if err != nil {
-			r.Logger.Error().Err(err).Str("secondFactorCode", code).Msg("Failed to get user by second factor code within transaction")
+			r.Logger.Error().Err(err).Str("second_factor_id", code).Msg("Failed to get user by second factor code within transaction")
 			return err
 		}
+
 		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User found by second factor code within transaction")
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Str("secondFactorCode", code).Msg("Transaction failed for GetUserBySecondFactor")
-		return nil, err
-	}
-
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
+		r.Logger.Error().Err(err).Str("second_factor_id", code).Msg("Transaction failed for GetUserBySecondFactor")
 		return nil, err
 	}
 
@@ -313,20 +348,20 @@ func (r *UsersRepository) GetUserBySecondFactor(ctx context.Context, code string
 }
 
 func (r *UsersRepository) GetUserByVerificationCode(ctx context.Context, code string) (*ent.User, error) {
-	r.Logger.Info().Str("verificationCode", code).Msg("Attempting to get user by verification code")
+	r.Logger.Info().Str("verification_code", code).Msg("Attempting to get user by verification code")
 	var foundUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByVerificationCode(ctx, tx, code)
 		if err != nil {
-			r.Logger.Error().Err(err).Str("verificationCode", code).Msg("Failed to get user by verification code within transaction")
+			r.Logger.Error().Err(err).Str("verification_code", code).Msg("Failed to get user by verification code within transaction")
 			return err
 		}
 		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User found by verification code within transaction")
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Str("verificationCode", code).Msg("Transaction failed for GetUserByVerificationCode")
+		r.Logger.Error().Err(err).Str("verification_code", code).Msg("Transaction failed for GetUserByVerificationCode")
 		return nil, err
 	}
 
@@ -339,20 +374,20 @@ func (r *UsersRepository) GetUserByVerificationCode(ctx context.Context, code st
 }
 
 func (r *UsersRepository) GetUserByResetCode(ctx context.Context, code string) (*ent.User, error) {
-	r.Logger.Info().Str("resetCode", code).Msg("Attempting to get user by reset code")
+	r.Logger.Info().Str("reset_code", code).Msg("Attempting to get user by reset code")
 	var foundUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByResetCode(ctx, tx, code)
 		if err != nil {
-			r.Logger.Error().Err(err).Str("resetCode", code).Msg("Failed to get user by reset code within transaction")
+			r.Logger.Error().Err(err).Str("reset_code", code).Msg("Failed to get user by reset code within transaction")
 			return err
 		}
 		r.Logger.Debug().Int("user_id", foundUser.ID).Msg("User found by reset code within transaction")
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Str("resetCode", code).Msg("Transaction failed for GetUserByResetCode")
+		r.Logger.Error().Err(err).Str("reset_code", code).Msg("Transaction failed for GetUserByResetCode")
 		return nil, err
 	}
 
@@ -382,7 +417,7 @@ func (r *UsersRepository) GetUserByPhone(ctx context.Context, phone string) (*en
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, foundUser, r); err != nil {
+	if _ = UpdateCache(ctx, foundUser, r); err != nil {
 		return nil, err
 	}
 
@@ -394,10 +429,9 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 	r.Logger.Info().Str("mail", req.Mail).Msg("Attempting to create new user")
 	var newUser *ent.User
 	var activationCode *ent.ActivationCode
-	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		tempUser, err := tx.User.
+		newUser, err := tx.User.
 			Create().
 			SetMail(req.Mail).
 			SetPassword(hashedPassword).
@@ -406,31 +440,31 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 			r.Logger.Error().Err(err).Str("mail", req.Mail).Msg("Failed to create user")
 			return err
 		}
-		r.Logger.Debug().Int("user_id", tempUser.ID).Msg("User created successfully")
+		r.Logger.Debug().Int("user_id", newUser.ID).Msg("User created successfully")
 
 		if _, err := tx.UserSettings.
 			Create().
 			SetUUID(uuid.New().String()).
-			SetOwner(tempUser).
+			SetOwner(newUser).
 			Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("user_id", tempUser.ID).Msg("Failed to create user settings")
+			r.Logger.Error().Err(err).Int("user_id", newUser.ID).Msg("Failed to create user settings")
 			return errors.New("failed to create user settings")
 		}
-		r.Logger.Debug().Int("user_id", tempUser.ID).Msg("User settings created")
+		r.Logger.Debug().Int("user_id", newUser.ID).Msg("User settings created")
 
 		if _, err := tx.UserDetails.
 			Create().
 			SetName(req.Name).
-			SetOwner(tempUser).
+			SetOwner(newUser).
 			Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("user_id", tempUser.ID).Msg("Failed to create user details")
+			r.Logger.Error().Err(err).Int("user_id", newUser.ID).Msg("Failed to create user details")
 			return errors.New("failed to create user details")
 		}
-		r.Logger.Debug().Int("user_id", tempUser.ID).Msg("User details created")
+		r.Logger.Debug().Int("user_id", newUser.ID).Msg("User details created")
 
 		if _, err := tx.UserDevice.
 			Create().
-			SetOwner(tempUser).
+			SetOwner(newUser).
 			SetToken(req.DeviceToken).
 			SetIPAddress(req.IPAddress).
 			SetUserAgent(req.UserAgent).
@@ -439,10 +473,10 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 			SetBrowserName(req.BrowserName).
 			SetBrowserVersion(req.BrowserVersion).
 			Save(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("user_id", tempUser.ID).Msg("Failed to create user device")
+			r.Logger.Error().Err(err).Int("user_id", newUser.ID).Msg("Failed to create user device")
 			return errors.New("failed to create user device")
 		}
-		r.Logger.Debug().Int("user_id", tempUser.ID).Str("deviceToken", req.DeviceToken).Msg("User device created")
+		r.Logger.Debug().Int("user_id", newUser.ID).Str("device_token", req.DeviceToken).Msg("User device created")
 
 		var codeStr string
 		for {
@@ -453,27 +487,22 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 				Query().
 				Where(activationcode.CodeEQ(codeStr)).
 				Exist(ctx); !exists {
-				r.Logger.Debug().Str("activationCode", codeStr).Msg("Generated unique activation code")
+				r.Logger.Debug().Str("activation_code", codeStr).Msg("Generated unique activation code")
 				break
 			}
-			r.Logger.Debug().Str("activationCode", codeStr).Msg("Generated activation code already exists, retrying")
+			r.Logger.Debug().Str("activation_code", codeStr).Msg("Generated activation code already exists, retrying")
 		}
 
 		activationCode, err = tx.ActivationCode.
 			Create().
 			SetCode(codeStr).
-			SetOwner(tempUser).
+			SetOwner(newUser).
 			Save(ctx)
 		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", tempUser.ID).Msg("Failed to create activation code")
+			r.Logger.Error().Err(err).Int("user_id", newUser.ID).Msg("Failed to create activation code")
 			return err
 		}
-		r.Logger.Debug().Int("activationCodeID", activationCode.ID).Msg("Activation code created")
-
-		newUser, err = GetUserByID(ctx, tx, tempUser.ID)
-		if err != nil {
-			return errors.New("failed to fetch user")
-		}
+		r.Logger.Debug().Int("activation_code_id", activationCode.ID).Msg("Activation code created")
 
 		return nil
 	}); err != nil {
@@ -481,16 +510,16 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 		return nil, nil, err
 	}
 
-	if err = UpdateCache(ctx, newUser, r); err != nil {
-		return nil, nil, errors.New("failed to update user")
-	}
-
 	r.Logger.Info().Int("user_id", newUser.ID).Msg("User and associated entities created successfully")
 	return newUser, activationCode, nil
 }
 
-func (r *UsersRepository) CreateSecondFactorCode(ctx context.Context, user *ent.User, device *ent.UserDevice) (*ent.User, *ent.SecondFactorCode, error) {
-	r.Logger.Info().Int("user_id", user.ID).Int("deviceID", device.ID).Msg("Attempting to create second factor code")
+func (r *UsersRepository) CreateSecondFactorCode(
+	ctx context.Context,
+	user *ent.User,
+	device *ent.UserDevice,
+) (*ent.SecondFactorCode, error) {
+	r.Logger.Info().Int("user_id", user.ID).Int("device_id", device.ID).Msg("Attempting to create second factor code")
 	var updatedUser *ent.User
 	var secondFactor *ent.SecondFactorCode
 	var err error
@@ -510,10 +539,10 @@ func (r *UsersRepository) CreateSecondFactorCode(ctx context.Context, user *ent.
 				return err
 			}
 			if !exists {
-				r.Logger.Debug().Str("secondFactorCode", codeStr).Msg("Generated unique second factor code")
+				r.Logger.Debug().Str("second_factor_id", codeStr).Msg("Generated unique second factor code")
 				break
 			}
-			r.Logger.Debug().Str("secondFactorCode", codeStr).Msg("Generated second factor code already exists, retrying")
+			r.Logger.Debug().Str("second_factor_id", codeStr).Msg("Generated second factor code already exists, retrying")
 		}
 
 		secondFactor, err = tx.SecondFactorCode.
@@ -526,33 +555,23 @@ func (r *UsersRepository) CreateSecondFactorCode(ctx context.Context, user *ent.
 			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to create second factor code")
 			return err
 		}
-		r.Logger.Debug().Int("secondFactorID", secondFactor.ID).Msg("Second factor code created")
-
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to re-fetch user after second factor code creation")
-			return err
-		}
-		r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User re-fetched after second factor code creation")
+		r.Logger.Debug().Int("second_factor_id", secondFactor.ID).Msg("Second factor code created")
 
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for CreateSecondFactorCode")
-		return nil, nil, err
+		return nil, err
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("Second factor code created successfully")
-	return updatedUser, secondFactor, nil
+	return secondFactor, nil
 }
 
 func (r *UsersRepository) CreateResetCode(ctx context.Context, user *ent.User) (*ent.ResetCode, error) {
 	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to create reset code")
 	var resetCode *ent.ResetCode
-	var updatedUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
@@ -562,14 +581,14 @@ func (r *UsersRepository) CreateResetCode(ctx context.Context, user *ent.User) (
 			code := utils.GenerateRandomCode()
 			codeStr = strconv.Itoa(code)
 
-			if exists, _ := tx.SecondFactorCode.
+			if exists, _ := tx.ResetCode.
 				Query().
-				Where(secondfactorcode.CodeEQ(codeStr)).
+				Where(resetcode.CodeEQ(codeStr)).
 				Exist(ctx); !exists {
-				r.Logger.Debug().Str("resetCode", codeStr).Msg("Generated unique reset code")
+				r.Logger.Debug().Str("reset_code", codeStr).Msg("Generated unique reset code")
 				break
 			}
-			r.Logger.Debug().Str("resetCode", codeStr).Msg("Generated reset code already exists, retrying")
+			r.Logger.Debug().Str("reset_code", codeStr).Msg("Generated reset code already exists, retrying")
 		}
 
 		resetCode, err = tx.ResetCode.
@@ -581,13 +600,7 @@ func (r *UsersRepository) CreateResetCode(ctx context.Context, user *ent.User) (
 			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to create reset code")
 			return err
 		}
-		r.Logger.Debug().Int("resetCodeID", resetCode.ID).Msg("Reset code created")
-
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to re-fetch user after reset code creation")
-			return err
-		}
+		r.Logger.Debug().Int("reset_code_id", resetCode.ID).Msg("Reset code created")
 
 		r.Logger.Debug().Int("user_id", user.ID).Msg("User re-fetched after reset code creation (for consistency check)")
 
@@ -597,9 +610,7 @@ func (r *UsersRepository) CreateResetCode(ctx context.Context, user *ent.User) (
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Info().Int("user_id", user.ID).Msg("Reset code created successfully")
 	return resetCode, nil
@@ -615,15 +626,15 @@ func (r *UsersRepository) RemoveResetCode(ctx context.Context, user *ent.User) (
 			r.Logger.Warn().Int("user_id", user.ID).Msg("User has no reset code to remove")
 			return errors.New("user has no reset code")
 		}
-		r.Logger.Debug().Int("resetCodeID", user.Edges.ResetCode.ID).Msg("Reset code found for deletion")
+		r.Logger.Debug().Int("reset_code_id", user.Edges.ResetCode.ID).Msg("Reset code found for deletion")
 
 		if err := tx.ResetCode.
 			DeleteOneID(user.Edges.ResetCode.ID).
 			Exec(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Int("resetCodeID", user.Edges.ResetCode.ID).Msg("Failed to delete reset code")
+			r.Logger.Error().Err(err).Int("user_id", user.ID).Int("reset_code_id", user.Edges.ResetCode.ID).Msg("Failed to delete reset code")
 			return err
 		}
-		r.Logger.Debug().Int("resetCodeID", user.Edges.ResetCode.ID).Msg("Reset code deleted")
+		r.Logger.Debug().Int("reset_code_id", user.Edges.ResetCode.ID).Msg("Reset code deleted")
 
 		updatedUser, err = GetUserByID(ctx, tx, user.ID)
 		if err != nil {
@@ -638,9 +649,7 @@ func (r *UsersRepository) RemoveResetCode(ctx context.Context, user *ent.User) (
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("Reset code removed successfully")
 	return updatedUser, nil
@@ -649,7 +658,6 @@ func (r *UsersRepository) RemoveResetCode(ctx context.Context, user *ent.User) (
 func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, user *ent.User) (*ent.User, error) {
 	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to remove second factor code")
 	var updatedUser *ent.User
-	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		if user.Edges.SecondFactorCode == nil {
@@ -657,22 +665,15 @@ func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, user *ent.
 			return errors.New("user has no reset code")
 		}
 
-		r.Logger.Debug().Int("secondFactorCodeID", user.Edges.SecondFactorCode.ID).Msg("Second factor code found for deletion")
+		r.Logger.Debug().Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Second factor code found for deletion")
 
 		if err := tx.SecondFactorCode.
 			DeleteOneID(user.Edges.SecondFactorCode.ID).
 			Exec(ctx); err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Int("secondFactorCodeID", user.Edges.SecondFactorCode.ID).Msg("Failed to remove second factor code")
+			r.Logger.Error().Err(err).Int("user_id", user.ID).Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Failed to remove second factor code")
 			return errors.New("failed to remove second factor code")
 		}
-		r.Logger.Debug().Int("secondFactorCodeID", user.Edges.SecondFactorCode.ID).Msg("Second factor code deleted")
-
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to re-fetch user after second factor code removal")
-			return err
-		}
-		r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User re-fetched after second factor code removal")
+		r.Logger.Debug().Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Second factor code deleted")
 
 		return nil
 	}); err != nil {
@@ -680,19 +681,7 @@ func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, user *ent.
 		return nil, err
 	}
 
-	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("Second factor code removed successfully. Caching user.")
-	cachedUser, err := r.CacheStore.CacheUser(updatedUser)
-	if err != nil {
-		r.Logger.Error().Err(err).Int("user_id", updatedUser.ID).Msg("Failed to cache user after second factor code removal")
-	} else {
-		cacheKey := "user:" + strconv.Itoa(updatedUser.ID)
-		r.CacheStore.Set(ctx, cacheKey, cachedUser, time.Minute*5)
-		r.Logger.Debug().Str("cacheKey", cacheKey).Msg("User cached successfully")
-	}
-
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	return updatedUser, nil
 }
@@ -703,21 +692,15 @@ func (r *UsersRepository) UpdateUsersPassword(ctx context.Context, user *ent.Use
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		if _, err = tx.User.
+		updatedUser, err = tx.User.
 			UpdateOneID(user.ID).
 			SetPassword(hashedPassword).
-			Save(ctx); err != nil {
+			Save(ctx)
+		if err != nil {
 			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to update user password in DB")
 			return errors.New("failed to update user")
 		}
 		r.Logger.Debug().Int("user_id", user.ID).Msg("User password updated in DB")
-
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to re-fetch user after password update")
-			return err
-		}
-		r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User re-fetched after password update")
 
 		return nil
 	}); err != nil {
@@ -725,9 +708,7 @@ func (r *UsersRepository) UpdateUsersPassword(ctx context.Context, user *ent.Use
 		return nil, err
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("User password updated successfully")
 	return updatedUser, nil
@@ -736,7 +717,6 @@ func (r *UsersRepository) UpdateUsersPassword(ctx context.Context, user *ent.Use
 func (r *UsersRepository) UpdateUser(ctx context.Context, user *ent.User, req *requests.User) (*ent.User, error) {
 	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to update user mail/phone")
 	var updatedUser *ent.User
-	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		userUpdater := tx.User.UpdateOneID(user.ID)
@@ -745,13 +725,13 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, user *ent.User, req *r
 		if req.Phone != user.Phone {
 			userUpdater.SetPhone(req.Phone)
 			updated = true
-			r.Logger.Debug().Int("user_id", user.ID).Str("oldPhone", user.Phone).Str("newPhone", req.Phone).Msg("Updating user phone")
+			r.Logger.Debug().Int("user_id", user.ID).Str("old_phone", user.Phone).Str("new_phone", req.Phone).Msg("Updating user phone")
 		}
 
 		if req.Mail != user.Mail {
 			userUpdater.SetMail(req.Mail)
 			updated = true
-			r.Logger.Debug().Int("user_id", user.ID).Str("oldMail", user.Mail).Str("newMail", req.Mail).Msg("Updating user mail")
+			r.Logger.Debug().Int("user_id", user.ID).Str("old_mail", user.Mail).Str("new_mail", req.Mail).Msg("Updating user mail")
 		}
 
 		if updated {
@@ -764,28 +744,23 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, user *ent.User, req *r
 			r.Logger.Debug().Int("user_id", user.ID).Msg("No changes detected for user mail/phone, skipping update")
 		}
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to re-fetch user after mail/phone update")
-			return err
-		}
-		r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User re-fetched after mail/phone update")
-
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for UpdateUser")
 		return nil, errors.New("failed to update user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("User mail/phone updated successfully")
 	return updatedUser, nil
 }
 
-func (r *UsersRepository) UpdateUsersDetails(ctx context.Context, user *ent.User, req *requests.Details) (*ent.User, error) {
+func (r *UsersRepository) UpdateUsersDetails(
+	ctx context.Context,
+	user *ent.User,
+	req *requests.Details,
+) (*ent.User, error) {
 	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to update user details")
 	var updatedUser *ent.User
 	var err error
@@ -802,23 +777,13 @@ func (r *UsersRepository) UpdateUsersDetails(ctx context.Context, user *ent.User
 		}
 		r.Logger.Debug().Int("user_id", user.ID).Msg("User details updated in DB")
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to re-fetch user after details update")
-			return err
-		}
-
-		r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User re-fetched after details update")
-
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for UpdateUsersDetails")
 		return nil, errors.New("failed to update user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User details updated successfully")
 	return updatedUser, nil
@@ -839,13 +804,13 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 		r.Logger.Debug().Int("user_id", user.ID).
 			Bool("night_mode", req.NightMode).
 			Bool("two_factor", req.TwoFactor).
-			Int("secondFactorTargetID", req.SecondFactorTargetID).
+			Int("second_factor_target_id", req.SecondFactorTargetID).
 			Msg("Updating user settings fields")
 
 		settingsUpdater.ClearNotificationTargetDevices().
 			AddNotificationTargetDeviceIDs(req.NotificationsTargetDeviceIDs...)
 		r.Logger.Debug().Int("user_id", user.ID).
-			Ints("notificationTargetDeviceIDs", req.NotificationsTargetDeviceIDs).
+			Ints("notification_target_device_ids", req.NotificationsTargetDeviceIDs).
 			Msg("Updating notification target devices")
 
 		if _, err = settingsUpdater.Save(ctx); err != nil {
@@ -854,22 +819,13 @@ func (r *UsersRepository) UpdateUsersSettings(ctx context.Context, user *ent.Use
 		}
 		r.Logger.Debug().Int("user_id", user.ID).Msg("User settings updated in DB")
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to re-fetch user after settings update")
-			return err
-		}
-		r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User re-fetched after settings update")
-
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for UpdateUsersSettings")
 		return nil, errors.New("failed to update user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Debug().Int("user_id", updatedUser.ID).Msg("User settings updated successfully")
 	return updatedUser, nil
@@ -883,7 +839,7 @@ func (r *UsersRepository) RemoveAccount(
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		if _, err := tx.User.
+		if user, err := tx.User.
 			UpdateOneID(user.ID).
 			SetRemoved(true).
 			Save(ctx); err != nil {
@@ -899,12 +855,7 @@ func (r *UsersRepository) RemoveAccount(
 		return errors.New("failed to remove user")
 	}
 
-	keys := utils.GetUserKeys(user)
-	for _, key := range keys {
-		if err := r.CacheStore.Del(ctx, key); err != nil {
-			return errors.New("failed to revoke cache")
-		}
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
 	return err
@@ -916,20 +867,20 @@ func (r *UsersRepository) FindOrCreateDevice(
 	req *requests.Device,
 ) (*ent.UserDevice, error) {
 
-	r.Logger.Debug().Int("user_id", userID).Str("deviceToken", req.DeviceToken).Msg("Attempting to find or create device")
+	r.Logger.Debug().Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Attempting to find or create device")
 	var device *ent.UserDevice
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		d, err := tx.UserDevice.Query().
 			Where(
-				userdevice.HasOwnerWith(user.ID(userID)),
+				userdevice.HasOwnerWith(user.IDEQ(userID)),
 				userdevice.Token(req.DeviceToken),
 			).
 			Only(ctx)
 
 		if err != nil {
 			if ent.IsNotFound(err) {
-				r.Logger.Debug().Int("user_id", userID).Str("deviceToken", req.DeviceToken).Msg("Device not found, attempting to create new device")
+				r.Logger.Debug().Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Device not found, attempting to create new device")
 				newDevice, createErr := tx.UserDevice.
 					Create().
 					SetOwnerID(userID).
@@ -942,41 +893,39 @@ func (r *UsersRepository) FindOrCreateDevice(
 					SetUserAgent(req.UserAgent).
 					Save(ctx)
 				if createErr != nil {
-					r.Logger.Error().Err(createErr).Int("user_id", userID).Str("deviceToken", req.DeviceToken).Msg("Failed to create new device")
+					r.Logger.Error().Err(createErr).Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Failed to create new device")
 					err = createErr
 					return createErr
 				}
 				device = newDevice
-				r.Logger.Debug().Int("user_id", userID).Int("deviceID", device.ID).Msg("New device created successfully")
+				r.Logger.Debug().Int("user_id", userID).Int("device_id", device.ID).Msg("New device created successfully")
 
-				foundUser, err := GetUserByID(ctx, tx, userID)
-				if err != nil {
-					return errors.New("failed to fetch user")
-				}
-
-				if err := UpdateCache(ctx, foundUser, r); err != nil {
-					return errors.New("failed to update user")
-				}
+				user, _ := GetUserPublicByID(ctx, tx, userID)
+				InvalidateCache(ctx, user, r)
 
 				return nil
 			}
-			r.Logger.Error().Err(err).Int("user_id", userID).Str("deviceToken", req.DeviceToken).Msg("Failed to query device in DB")
+			r.Logger.Error().Err(err).Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Failed to query device in DB")
 			return err
 		}
 
 		device = d
-		r.Logger.Debug().Int("user_id", userID).Int("deviceID", device.ID).Msg("Existing device found")
+		r.Logger.Debug().Int("user_id", userID).Int("device_id", device.ID).Msg("Existing device found")
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", userID).Str("deviceToken", req.DeviceToken).Msg("Transaction failed for FindOrCreateDevice")
+		r.Logger.Error().Err(err).Int("user_id", userID).Str("device_token", req.DeviceToken).Msg("Transaction failed for FindOrCreateDevice")
 		return nil, errors.New("failed to find or create device in transaction")
 	}
 
-	r.Logger.Debug().Int("user_id", userID).Int("deviceID", device.ID).Msg("Device operation completed successfully")
+	r.Logger.Debug().Int("user_id", userID).Int("device_id", device.ID).Msg("Device operation completed successfully")
 	return device, nil
 }
 
-func (r *UsersRepository) UpdateEntrepreneurDetails(ctx context.Context, user *ent.User, req *requests.EntrepreneurDetails) (*ent.User, error) {
+func (r *UsersRepository) UpdateEntrepreneurDetails(
+	ctx context.Context,
+	user *ent.User,
+	req *requests.EntrepreneurDetails,
+) (*ent.User, error) {
 	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to update entrepreneur details")
 	var updatedUser *ent.User
 	var err error
@@ -1026,27 +975,22 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(ctx context.Context, user *e
 			}
 		}
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			return errors.New("failed to fetch updated user")
-		}
-
-		r.Logger.Debug().Int("user_id", user.ID).Msg("User account marked as removed in DB")
-
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
 		return nil, errors.New("failed to remove user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	return updatedUser, nil
 }
 
-func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, req *requests.Location) (*ent.User, error) {
+func (r *UsersRepository) UpdateLocation(
+	ctx context.Context,
+	user *ent.User,
+	req *requests.Location,
+) (*ent.User, error) {
 	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to update user location")
 	var updatedUser *ent.User
 	var err error
@@ -1071,11 +1015,6 @@ func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, re
 			}
 		}
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			return errors.New("failed to fetch updated user")
-		}
-
 		r.Logger.Debug().Int("user_id", user.ID).Msg("User account marked as removed in DB")
 
 		return nil
@@ -1084,9 +1023,7 @@ func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, re
 		return nil, errors.New("failed to remove user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return nil, errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
 
@@ -1095,7 +1032,6 @@ func (r *UsersRepository) UpdateLocation(ctx context.Context, user *ent.User, re
 
 func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, subIDs []int) error {
 	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to add user's subscriptions")
-	var updatedUser *ent.User
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
@@ -1119,11 +1055,6 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 			return errors.New("failed update user")
 		}
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			return errors.New("failed to fetch updated user")
-		}
-
 		return nil
 
 	}); err != nil {
@@ -1131,9 +1062,7 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 		return errors.New("failed to remove user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
 
@@ -1142,7 +1071,6 @@ func (r *UsersRepository) AddSubscriptions(ctx context.Context, user *ent.User, 
 
 func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.User, subIDs []int) error {
 	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to revoke user's subscriptions")
-	var updatedUser *ent.User
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
@@ -1155,20 +1083,13 @@ func (r *UsersRepository) RemoveSubscriptions(ctx context.Context, user *ent.Use
 			return errors.New("failed update user")
 		}
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			return errors.New("failed to fetch updated user")
-		}
-
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
 		return errors.New("failed to remove user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
 
@@ -1181,7 +1102,6 @@ func (r *UsersRepository) CreateUserAction(
 	action, originDevice, details string,
 ) error {
 	r.Logger.Debug().Int("user_id", user.ID).Msg("Attempting to revoke user's subscriptions")
-	var updatedUser *ent.User
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
@@ -1194,20 +1114,13 @@ func (r *UsersRepository) CreateUserAction(
 			return errors.New("failed to create user action")
 		}
 
-		updatedUser, err = GetUserByID(ctx, tx, user.ID)
-		if err != nil {
-			return errors.New("failed to fetch updated user")
-		}
-
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveAccount")
 		return errors.New("failed to remove user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, user, r)
 
 	r.Logger.Debug().Int("user_id", user.ID).Msg("User account successfully marked as removed")
 	return nil
@@ -1223,7 +1136,7 @@ func (r *UsersRepository) GetUsersPublic(ctx context.Context, page, pageSize int
 
 	offset := (page - 1) * pageSize
 
-	r.Logger.Debug().Int("page", page).Int("pageSize", pageSize).Msg("Fetching public users with offset")
+	r.Logger.Debug().Int("page", page).Int("page_size", pageSize).Msg("Fetching public users with offset")
 
 	foundUsers, err := r.DB.User.
 		Query().
@@ -1252,16 +1165,12 @@ func (r *UsersRepository) AddRole(ctx context.Context, userID, roleID int) error
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		if _, err := tx.User.
+		updatedUser, err = tx.User.
 			UpdateOneID(userID).
 			AddUserRoleIDs(roleID).
-			Save(ctx); err != nil {
-			return errors.New("failed to add role for user")
-		}
-
-		updatedUser, err = GetUserByID(ctx, tx, userID)
+			Save(ctx)
 		if err != nil {
-			return errors.New("failed to fetch updated user")
+			return errors.New("failed to add role for user")
 		}
 
 		return nil
@@ -1270,9 +1179,7 @@ func (r *UsersRepository) AddRole(ctx context.Context, userID, roleID int) error
 		return errors.New("failed to remove user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, updatedUser, r)
 
 	r.Logger.Debug().Int("user_id", userID).Msg("Successfully added role for user")
 	return nil
@@ -1284,16 +1191,12 @@ func (r *UsersRepository) RevokeRole(ctx context.Context, userID, roleID int) er
 	var err error
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		if _, err := tx.User.
+		updatedUser, err = tx.User.
 			UpdateOneID(userID).
 			RemoveUserRoleIDs(roleID).
-			Save(ctx); err != nil {
-			return errors.New("failed to revoke role for user")
-		}
-
-		updatedUser, err = GetUserByID(ctx, tx, userID)
+			Save(ctx)
 		if err != nil {
-			return errors.New("failed to fetch updated user")
+			return errors.New("failed to revoke role for user")
 		}
 
 		return nil
@@ -1302,9 +1205,7 @@ func (r *UsersRepository) RevokeRole(ctx context.Context, userID, roleID int) er
 		return errors.New("failed to remove user")
 	}
 
-	if err := UpdateCache(ctx, updatedUser, r); err != nil {
-		return errors.New("failed to update user")
-	}
+	InvalidateCache(ctx, updatedUser, r)
 
 	r.Logger.Debug().Int("user_id", userID).Msg("Successfully added role for user")
 	return nil

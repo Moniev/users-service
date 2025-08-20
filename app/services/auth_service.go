@@ -205,10 +205,10 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 
 func (s *AuthService) Register(
 	ctx context.Context,
-	req *requests.Register) (*ent.User, error) {
-
+	req *requests.Register,
+) (*ent.User, error) {
 	if user, _ := s.UsersRepository.GetUserByMail(ctx, req.Mail); user != nil {
-		return nil, errors.New("this email is already registered")
+		return nil, errors.New("this mail is already registered")
 	}
 
 	hashedPassword, err := s.HashPassword(req.Password)
@@ -229,7 +229,7 @@ func (s *AuthService) Register(
 }
 
 func (s *AuthService) ResendActivationCode(ctx context.Context, req *requests.Mail) error {
-	user, err := s.UsersRepository.GetUserByMail(ctx, req.Mail)
+	user, err := s.UsersRepository.GetUserByMailWithCodes(ctx, req.Mail)
 	if err != nil {
 		return errors.New("failed to find user with the provided email")
 	}
@@ -363,12 +363,12 @@ func (s *AuthService) Login(ctx context.Context, req *requests.Login) (*ent.User
 	}
 
 	if user.Edges.UserSettings.TwoFactor {
-		userWithCode, secondFactor, err := s.UsersRepository.CreateSecondFactorCode(ctx, user, device)
+		secondFactor, err := s.UsersRepository.CreateSecondFactorCode(ctx, user, device)
 		if err != nil {
 			return nil, "", errors.New("failed to create second factor code")
 		}
 
-		if err := s.EventNotifier.CreateSecondFactorEvent(userWithCode.Edges.UserSettings, secondFactor); err != nil {
+		if err := s.EventNotifier.CreateSecondFactorEvent(user.Edges.UserSettings, secondFactor); err != nil {
 			s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce second factor event")
 			return nil, "", errors.New("failed to send second factor code")
 		}
@@ -448,7 +448,7 @@ func (s *AuthService) VerifySecondFactor(ctx context.Context, req *requests.Code
 }
 
 func (s *AuthService) ResendVerificationCode(ctx context.Context, req *requests.Mail) error {
-	user, err := s.UsersRepository.GetUserByMail(ctx, req.Mail)
+	user, err := s.UsersRepository.GetUserByMailWithCodes(ctx, req.Mail)
 	if err != nil {
 		return errors.New("failed to find user with the provided email")
 	}

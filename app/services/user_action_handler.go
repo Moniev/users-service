@@ -50,13 +50,13 @@ func (h *UserActionHandler) Handle(ctx context.Context, msg *kafka.Message) erro
 			Str("action", event.Action).
 			Msg("Processed user action event")
 
+		user, err := h.UsersRepository.GetUserPublicByID(ctx, event.UserID)
+		if err != nil {
+			return err
+		}
+
 		switch event.Action {
 		case "action":
-			user, err := h.UsersRepository.GetUserByID(ctx, event.UserID)
-			if err != nil {
-				return err
-			}
-
 			return h.UsersRepository.CreateUserAction(ctx, user, event.Action, event.OriginDevice, event.Details)
 
 		default:

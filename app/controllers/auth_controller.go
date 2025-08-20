@@ -115,19 +115,19 @@ func (c *AuthController) InitWebSocketHelper(ctx *gin.Context) (*requests.WebSoc
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.Register      true  "User's registration data"
-// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Account verified successfully"
+// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPublic}  "OK - Account verified successfully"
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Invalid or expired code"
 // @Router       /api/v1/auth/register [post]
 func (c *AuthController) Register(ctx *gin.Context) {
 	handleStandardRequest(ctx, c,
-		func(reqCtx context.Context, req *requests.Register) (*responses.UserPrivate, error) {
+		func(reqCtx context.Context, req *requests.Register) (*responses.UserPublic, error) {
 			user, err := c.AuthService.Register(reqCtx, req)
 			if err != nil {
 				return nil, err
 			}
 
-			return responses.FromUserPrivate(user), nil
+			return responses.FromUserPublic(user), nil
 		},
 	)
 }
@@ -139,18 +139,18 @@ func (c *AuthController) Register(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requests.Code      true  "Activation code"
-// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Account activated successfully"
+// @Success      200   {object}  responses.SuccessResponse{data=responses.UserPublic}  "OK - Account activated successfully"
 // @Failure      400   {object}  responses.ErrorResponse "Bad Request - Invalid input data"
 // @Failure      422   {object}  responses.ErrorResponse "Unprocessable Entity - Invalid or expired code"
 // @Router       /api/v1/auth/activation/account [patch]
 func (c *AuthController) ActivateAccount(ctx *gin.Context) {
-	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.UserPrivate, error) {
+	handleStandardRequest(ctx, c, func(reqCtx context.Context, req *requests.Code) (*responses.UserPublic, error) {
 		user, err := c.AuthService.ActivateAccount(reqCtx, req)
 		if err != nil {
 			return nil, err
 		}
 
-		return responses.FromUserPrivate(user), nil
+		return responses.FromUserPublic(user), nil
 	})
 }
 

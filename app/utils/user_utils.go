@@ -18,6 +18,16 @@ func GetUserKeys(user *ent.User) []string {
 	return keys
 }
 
+func GetAllUserKeys(user *ent.User) []string {
+	keys := []string{
+		fmt.Sprintf("user-public:%d", user.ID),
+		fmt.Sprintf("user:%d", user.ID),
+		fmt.Sprintf("user:email:%s", user.Mail),
+	}
+
+	return keys
+}
+
 func RemoveIDs(subIDs, remIDs []int) []int {
 	remMap := make(map[int]bool)
 	for _, remID := range remIDs {

@@ -50,21 +50,15 @@ func (h *SubscriptionActionHandler) Handle(ctx context.Context, msg *kafka.Messa
 			Str("action", event.Action).
 			Msg("Processed user action event")
 
+		user, err := h.UsersRepository.GetUserPublicByID(ctx, event.UserID)
+		if err != nil {
+			return err
+		}
+
 		switch event.Action {
 		case "remove":
-			user, err := h.UsersRepository.GetUserByID(ctx, event.UserID)
-			if err != nil {
-				return err
-			}
-
 			return h.UsersRepository.RemoveSubscriptions(ctx, user, event.SubscriptionIDs)
-
 		case "add":
-			user, err := h.UsersRepository.GetUserByID(ctx, event.UserID)
-			if err != nil {
-				return err
-			}
-
 			return h.UsersRepository.AddSubscriptions(ctx, user, event.SubscriptionIDs)
 		default:
 			return errors.New("invalid user action event: missing action")

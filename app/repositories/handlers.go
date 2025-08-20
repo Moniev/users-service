@@ -56,6 +56,17 @@ func UpdateCache(ctx context.Context, user *ent.User, r *UsersRepository) error 
 	return nil
 }
 
+func InvalidateCache(ctx context.Context, user *ent.User, r *UsersRepository) error {
+	cacheKeys := utils.GetAllUserKeys(user)
+	var err error
+
+	for _, key := range cacheKeys {
+		err = r.CacheStore.Del(ctx, key)
+	}
+
+	return err
+}
+
 func withFullUserData(q *ent.UserQuery) *ent.UserQuery {
 	return q.
 		Where(user.BlacklistedEQ(false), user.RemovedEQ(false)).
@@ -64,23 +75,91 @@ func withFullUserData(q *ent.UserQuery) *ent.UserQuery {
 		}).
 		WithUserDevices().
 		WithUserDetails().
-		WithUserRoles().
-		WithUserActions().
-		WithActivationCode().
-		WithSecondFactorCode().
-		WithResetCode().
-		WithVerificationCode()
+		WithUserRoles()
 }
 
-func getUser(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
+func withFunctionalData(q *ent.UserQuery) *ent.UserQuery {
+	return q.
+		Where(user.BlacklistedEQ(false), user.RemovedEQ(false)).
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
+		WithUserDevices().
+		WithUserRoles().
+		WithSecondFactorCode(func(sfq *ent.SecondFactorCodeQuery) {
+			sfq.WithTargetUserDevice()
+		})
+}
+
+func withSettings(q *ent.UserQuery) *ent.UserQuery {
+	return q.
+		Where(user.BlacklistedEQ(false), user.RemovedEQ(false)).
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		})
+}
+
+func withCodes(q *ent.UserQuery) *ent.UserQuery {
+	return q.
+		Where(user.BlacklistedEQ(false), user.RemovedEQ(false)).
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
+		WithResetCode().
+		WithActivationCode().
+		WithVerificationCode().
+		WithSecondFactorCode()
+}
+
+func withRoles(q *ent.UserQuery) *ent.UserQuery {
+	return q.
+		Where(user.BlacklistedEQ(false), user.RemovedEQ(false)).
+		WithUserRoles()
+}
+
+func getUserPrivate(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
 	q := tx.User.Query()
 	q = withFullUserData(q)
 	q.Where(where...)
 	return q.Only(ctx)
 }
 
+func getUserPublic(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
+	q := tx.User.Query()
+	q.Where(where...)
+	return q.Only(ctx)
+}
+
+func getUserFunctional(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
+	q := tx.User.Query()
+	q = withFunctionalData(q)
+	q.Where(where...)
+	return q.Only(ctx)
+}
+
+func getUserWithRoles(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
+	q := tx.User.Query()
+	q = withRoles(q)
+	q.Where(where...)
+	return q.Only(ctx)
+}
+
+func getUserWithSettings(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
+	q := tx.User.Query()
+	q = withSettings(q)
+	q.Where(where...)
+	return q.Only(ctx)
+}
+
+func getUserWithCodes(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
+	q := tx.User.Query()
+	q = withCodes(q)
+	q.Where(where...)
+	return q.Only(ctx)
+}
+
 func GetUserByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
-	return getUser(ctx, tx, user.IDEQ(ID))
+	return getUserPrivate(ctx, tx, user.IDEQ(ID))
 }
 
 func GetUserPublicByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
@@ -90,26 +169,34 @@ func GetUserPublicByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, erro
 		Only(ctx)
 }
 
+func GetUserFunctionalByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
+	return getUserWithCodes(ctx, tx, user.IDEQ(ID))
+}
+
+func GetUserByMailWithCodes(ctx context.Context, tx *ent.Tx, mail string) (*ent.User, error) {
+	return getUserWithCodes(ctx, tx, user.MailEQ(mail))
+}
+
 func GetUserByMail(ctx context.Context, tx *ent.Tx, mail string) (*ent.User, error) {
-	return getUser(ctx, tx, user.MailEQ(mail))
+	return getUserFunctional(ctx, tx, user.MailEQ(mail))
 }
 
 func GetUserByPhone(ctx context.Context, tx *ent.Tx, phone string) (*ent.User, error) {
-	return getUser(ctx, tx, user.PhoneEQ(phone))
+	return getUserFunctional(ctx, tx, user.PhoneEQ(phone))
 }
 
 func GetUserBySecondFactor(ctx context.Context, tx *ent.Tx, code string) (*ent.User, error) {
-	return getUser(ctx, tx, user.HasSecondFactorCodeWith(secondfactorcode.CodeEQ(code)))
+	return getUserFunctional(ctx, tx, user.HasSecondFactorCodeWith(secondfactorcode.CodeEQ(code)))
 }
 
 func GetUserByActivationCode(ctx context.Context, tx *ent.Tx, code string) (*ent.User, error) {
-	return getUser(ctx, tx, user.HasActivationCodeWith(activationcode.CodeEQ(code)))
+	return getUserWithSettings(ctx, tx, user.HasActivationCodeWith(activationcode.CodeEQ(code)))
 }
 
 func GetUserByVerificationCode(ctx context.Context, tx *ent.Tx, code string) (*ent.User, error) {
-	return getUser(ctx, tx, user.HasVerificationCodeWith(verificationcode.CodeEQ(code)))
+	return getUserWithRoles(ctx, tx, user.HasVerificationCodeWith(verificationcode.CodeEQ(code)))
 }
 
 func GetUserByResetCode(ctx context.Context, tx *ent.Tx, code string) (*ent.User, error) {
-	return getUser(ctx, tx, user.HasResetCodeWith(resetcode.CodeEQ(code)))
+	return getUserWithSettings(ctx, tx, user.HasResetCodeWith(resetcode.CodeEQ(code)))
 }

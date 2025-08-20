@@ -207,6 +207,8 @@ func (a *Application) Shutdown() {
 		defer wg.Done()
 		if err := a.RedisClient.Close(); err != nil {
 			a.Logger.Error().Err(err).Msg("Failed to gracefully close Redis client")
+		} else {
+			a.Logger.Info().Msg("Redis client closed.")
 		}
 	}()
 
