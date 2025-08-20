@@ -44,6 +44,7 @@ type UsersRepositoryInterface interface {
 
 	GetUserByID(ctx context.Context, ID int) (*ent.User, error)
 	GetUserFunctionalByID(ctx context.Context, ID int) (*ent.User, error)
+	GetUserFunctionalDetailsByID(ctx context.Context, ID int) (*ent.User, error)
 	GetUserPublicByID(ctx context.Context, ID int) (*ent.User, error)
 	GetUserByMail(ctx context.Context, mail string) (*ent.User, error)
 	GetUserByMailWithCodes(ctx context.Context, mail string) (*ent.User, error)
@@ -96,6 +97,29 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, e
 
 	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
 		foundUser, err = GetUserByID(ctx, tx, ID)
+		if err != nil {
+			r.Logger.Error().Err(err).Int("user_id", ID).Msg("Failed to get user by ID within transaction")
+			return err
+		}
+
+		r.Logger.Debug().Int("user_id", ID).Msg("User found by ID within transaction")
+		return nil
+	}); err != nil {
+		r.Logger.Error().Err(err).Int("user_id", ID).Msg("Transaction failed for GetUserByID")
+		return nil, err
+	}
+
+	r.Logger.Info().Int("user_id", foundUser.ID).Msg("Successfully retrieved user by ID")
+	return foundUser, nil
+}
+
+func (r *UsersRepository) GetUserFunctionalDetailsByID(ctx context.Context, ID int) (*ent.User, error) {
+	r.Logger.Info().Int("user_id", ID).Msg("Attempting to get user by ID")
+	var foundUser *ent.User
+	var err error
+
+	if err = WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
+		foundUser, err = GetUserFunctionalByID(ctx, tx, ID)
 		if err != nil {
 			r.Logger.Error().Err(err).Int("user_id", ID).Msg("Failed to get user by ID within transaction")
 			return err
@@ -688,43 +712,60 @@ func (r *UsersRepository) UpdateUsersPassword(ctx context.Context, user *ent.Use
 	return updatedUser, nil
 }
 
-func (r *UsersRepository) UpdateUser(ctx context.Context, user *ent.User, req *requests.User) (*ent.User, error) {
-	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to update user mail/phone")
+func (r *UsersRepository) UpdateUser(ctx context.Context, targetUser *ent.User, req *requests.User) (*ent.User, error) {
+	r.Logger.Info().Int("user_id", targetUser.ID).Msg("Attempting to update user mail/phone")
 	var updatedUser *ent.User
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		userUpdater := tx.User.UpdateOneID(user.ID)
+		userUpdater := tx.User.UpdateOneID(targetUser.ID)
 		updated := false
 
-		if req.Phone != user.Phone {
+		if req.Phone != targetUser.Phone {
+			if exists, _ := tx.User.
+				Query().
+				Where(user.PhoneEQ(req.Phone)).
+				Exist(ctx); exists {
+				updated = false
+			}
+
 			userUpdater.SetPhone(req.Phone)
 			updated = true
-			r.Logger.Debug().Int("user_id", user.ID).Str("old_phone", user.Phone).Str("new_phone", req.Phone).Msg("Updating user phone")
+			r.Logger.Debug().Int("user_id", targetUser.ID).Str("old_phone", targetUser.Phone).Str("new_phone", req.Phone).Msg("Updating user phone")
 		}
 
-		if req.Mail != user.Mail {
+		if req.Mail != targetUser.Mail {
+			if exists, _ := tx.User.
+				Query().
+				Where(user.MailEQ(req.Mail)).
+				Exist(ctx); exists {
+				updated = false
+			}
+
 			userUpdater.SetMail(req.Mail)
 			updated = true
-			r.Logger.Debug().Int("user_id", user.ID).Str("old_mail", user.Mail).Str("new_mail", req.Mail).Msg("Updating user mail")
+			r.Logger.Debug().Int("user_id", targetUser.ID).Str("old_mail", targetUser.Mail).Str("new_mail", req.Mail).Msg("Updating user mail")
 		}
 
 		if updated {
 			if _, err := userUpdater.Save(ctx); err != nil {
-				r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to update user mail/phone in DB")
+				r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Failed to update user mail/phone in DB")
 				return errors.New("failed to update user's mail/phone")
 			}
-			r.Logger.Debug().Int("user_id", user.ID).Msg("User mail/phone updated in DB")
+
+			updatedUser, _ = GetUserByID(ctx, tx, targetUser.ID)
+
+			r.Logger.Debug().Int("user_id", targetUser.ID).Msg("User mail/phone updated in DB")
 		} else {
-			r.Logger.Debug().Int("user_id", user.ID).Msg("No changes detected for user mail/phone, skipping update")
+			r.Logger.Debug().Int("user_id", targetUser.ID).Msg("No changes detected for user mail/phone, skipping update")
 		}
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for UpdateUser")
+		r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Transaction failed for UpdateUser")
 		return nil, errors.New("failed to update user")
 	}
 
-	InvalidateCache(ctx, user, r)
+	InvalidateCache(ctx, targetUser, r)
 
 	r.Logger.Info().Int("user_id", updatedUser.ID).Msg("User mail/phone updated successfully")
 	return updatedUser, nil
@@ -912,7 +953,7 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(
 		if details == nil {
 			if _, err := tx.EntrepreneurDetails.
 				Create().
-				SetUserDetailsID(updatedUser.Edges.UserDetails.ID).
+				SetUserDetailsID(user.Edges.UserDetails.ID).
 				SetBusinessName(req.BusinessName).
 				SetNip(req.NIP).
 				SetKrs(req.KRS).
@@ -931,7 +972,7 @@ func (r *UsersRepository) UpdateEntrepreneurDetails(
 		} else {
 			if _, err := tx.EntrepreneurDetails.
 				UpdateOneID(details.ID).
-				SetUserDetailsID(updatedUser.Edges.UserDetails.ID).
+				SetUserDetailsID(user.Edges.UserDetails.ID).
 				SetBusinessName(req.BusinessName).
 				SetNip(req.NIP).
 				SetKrs(req.KRS).

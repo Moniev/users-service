@@ -61,20 +61,20 @@ func (s *UsersService) UpdateUser(ctx context.Context, userID int, req *requests
 	}
 
 	if updatedUser.Phone != user.Phone {
-		if err := s.EventNotifier.CreateVerificationEvent(updatedUser.Edges.UserSettings, updatedUser.Phone, updatedUser.Edges.VerificationCode); err != nil {
+		if err := s.EventNotifier.CreateVerificationEvent(updatedUser.Edges.UserSettings, updatedUser.Phone, user.Edges.VerificationCode); err != nil {
 			s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce verification event")
 			return updatedUser, errors.New("failed to send second factor code")
 		}
 	}
 
 	if updatedUser.Mail != user.Mail {
-		if err := s.EventNotifier.CreateRegistrationEvent(updatedUser, updatedUser.Edges.ActivationCode); err != nil {
+		if err := s.EventNotifier.CreateRegistrationEvent(updatedUser, user.Edges.ActivationCode); err != nil {
 			s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce activation event")
 			return updatedUser, errors.New("failed to send second factor code")
 		}
 	}
 
-	if err := s.EventNotifier.CreateNotificationEvent(updatedUser.Edges.UserSettings, updatedUser.Edges.UserDevices); err != nil {
+	if err := s.EventNotifier.CreateNotificationEvent(user.Edges.UserSettings, user.Edges.UserDevices); err != nil {
 		s.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to produce notification event")
 		return updatedUser, errors.New("failed to send notification")
 	}

@@ -17,7 +17,7 @@ func HandleUserServiceCall[R any](
 	requestType := fmt.Sprintf("%T", req)
 	s.Logger.Info().Int("user_id", userID).Str("request_type", requestType).Msg("Handling user update call")
 
-	user, err := s.UsersRepository.GetUserFunctionalByID(ctx, userID)
+	user, err := s.UsersRepository.GetUserFunctionalDetailsByID(ctx, userID)
 	if err != nil {
 		s.Logger.Debug().Err(err).Int("user_id", userID).Msg("Failed to get user in helper")
 		return nil, err
@@ -45,7 +45,7 @@ func HandleUserAction(
 	actionLogic func(ctx context.Context, user *ent.User) error,
 ) error {
 	s.Logger.Info().Int("user_id", userID).Msg("Handling user action call")
-	user, err := s.UsersRepository.GetUserFunctionalByID(ctx, userID)
+	user, err := s.UsersRepository.GetUserFunctionalDetailsByID(ctx, userID)
 	if err != nil {
 		s.Logger.Debug().Err(err).Int("user_id", userID).Msg("Failed to get user in action helper")
 		return errors.New("failed to fetch user")

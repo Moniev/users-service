@@ -74,8 +74,18 @@ func withFullUserData(q *ent.UserQuery) *ent.UserQuery {
 			usq.WithOwner()
 		}).
 		WithUserDevices().
-		WithUserDetails().
-		WithUserRoles()
+		WithUserDetails(func(udq *ent.UserDetailsQuery) {
+			udq.WithEntrepreneurDetails().WithLocations()
+		}).
+		WithUserRoles(func(urq *ent.UserRoleQuery) {
+			urq.WithPermissions()
+		}).
+		WithResetCode().
+		WithActivationCode().
+		WithVerificationCode().
+		WithSecondFactorCode(func(sfq *ent.SecondFactorCodeQuery) {
+			sfq.WithTargetUserDevice()
+		})
 }
 
 func withFunctionalData(q *ent.UserQuery) *ent.UserQuery {
@@ -85,7 +95,24 @@ func withFunctionalData(q *ent.UserQuery) *ent.UserQuery {
 			usq.WithOwner()
 		}).
 		WithUserDevices().
-		WithUserRoles().
+		WithUserRoles(func(urq *ent.UserRoleQuery) {
+			urq.WithPermissions()
+		}).
+		WithSecondFactorCode(func(sfq *ent.SecondFactorCodeQuery) {
+			sfq.WithTargetUserDevice()
+		})
+}
+
+func withFunctionalDetailsData(q *ent.UserQuery) *ent.UserQuery {
+	return q.
+		Where(user.BlacklistedEQ(false), user.RemovedEQ(false)).
+		WithUserSettings(func(usq *ent.UserSettingsQuery) {
+			usq.WithOwner()
+		}).
+		WithUserDevices().
+		WithUserDetails(func(udq *ent.UserDetailsQuery) {
+			udq.WithEntrepreneurDetails().WithLocations()
+		}).
 		WithSecondFactorCode(func(sfq *ent.SecondFactorCodeQuery) {
 			sfq.WithTargetUserDevice()
 		})
@@ -108,13 +135,17 @@ func withCodes(q *ent.UserQuery) *ent.UserQuery {
 		WithResetCode().
 		WithActivationCode().
 		WithVerificationCode().
-		WithSecondFactorCode()
+		WithSecondFactorCode(func(sfq *ent.SecondFactorCodeQuery) {
+			sfq.WithTargetUserDevice()
+		})
 }
 
 func withRoles(q *ent.UserQuery) *ent.UserQuery {
 	return q.
 		Where(user.BlacklistedEQ(false), user.RemovedEQ(false)).
-		WithUserRoles()
+		WithUserRoles(func(urq *ent.UserRoleQuery) {
+			urq.WithPermissions()
+		})
 }
 
 func getUserPrivate(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
@@ -126,6 +157,13 @@ func getUserPrivate(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*
 
 func getUserPublic(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
 	q := tx.User.Query()
+	q.Where(where...)
+	return q.Only(ctx)
+}
+
+func getUserFunctionalWithDetails(ctx context.Context, tx *ent.Tx, where ...predicate.User) (*ent.User, error) {
+	q := tx.User.Query()
+	q = withFunctionalDetailsData(q)
 	q.Where(where...)
 	return q.Only(ctx)
 }
@@ -167,6 +205,10 @@ func GetUserPublicByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, erro
 		Query().
 		Where(user.IDEQ(ID), user.BlacklistedEQ(false), user.RemovedEQ(false)).
 		Only(ctx)
+}
+
+func GetUserPrivateByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
+	return getUserFunctionalWithDetails(ctx, tx, user.IDEQ(ID))
 }
 
 func GetUserFunctionalByID(ctx context.Context, tx *ent.Tx, ID int) (*ent.User, error) {
