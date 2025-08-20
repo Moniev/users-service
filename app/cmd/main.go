@@ -1,6 +1,13 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	"users-service/app/config"
 	_ "users-service/app/docs"
 
@@ -37,7 +44,33 @@ var SwaggerInfo = &swag.Spec{
 // @name Authorization
 func main() {
 	settings := config.GetSettings()
+	app := config.NewApp(settings)
 
-	router := config.NewApp(settings)
-	router.Run(settings.ApiPort)
+	server := &http.Server{
+		Addr:    settings.ApiPort,
+		Handler: app.Engine,
+	}
+
+	go func() {
+		app.Logger.Info().Str("address", server.Addr).Msg("Starting HTTP server")
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			app.Logger.Fatal().Err(err).Msgf("listen: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		app.Logger.Error().Err(err).Msg("Server forced to shutdown")
+	} else {
+		app.Logger.Info().Msg("Server shut down gracefully.")
+	}
+
+	app.Shutdown()
+	app.Logger.Info().Msg("Application shut down successfully")
 }

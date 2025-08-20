@@ -100,7 +100,7 @@ func NewAuthService(
 //   - A string containing the signed JWT token, or empty if an error occurs.
 //   - An error if signing fails, or nil on success.
 func (s *AuthService) GenerateJWT(ctx context.Context, userID int, deviceID int, userRoles []models.UserRoleInfo) (string, error) {
-	s.Logger.Info().Int("user_id", userID).Int("deviceID", deviceID).Msg("Generating JWT for device")
+	s.Logger.Info().Int("user_id", userID).Int("device_id", deviceID).Msg("Generating JWT for device")
 
 	claims := models.Claims{
 		UserID:    userID,
@@ -176,7 +176,7 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 		if claims.ExpiresAt != nil && claims.ExpiresAt.Unix() <= time.Now().UTC().Unix() {
 			s.Logger.Warn().
 				Int("user_id", claims.UserID).
-				Int("deviceID", claims.DeviceID).
+				Int("device_id", claims.DeviceID).
 				Time("exp", claims.ExpiresAt.Time).
 				Msg("Token expired")
 			resultChan <- models.JWTValidationResult{Claims: nil, Err: errors.New("token has expired")}
@@ -185,7 +185,7 @@ func (s *AuthService) ValidateJWT(ctx context.Context, tokenString string) (*mod
 
 		s.Logger.Info().
 			Int("user_id", claims.UserID).
-			Int("deviceID", claims.DeviceID).
+			Int("device_id", claims.DeviceID).
 			Interface("userRoles", claims.UserRoles).
 			Msg("Token validated successfully")
 		resultChan <- models.JWTValidationResult{Claims: claims, Err: nil}

@@ -126,7 +126,27 @@ func NewKafkaConsumer(
 		return nil, fmt.Errorf("failed to create consumer: %w", err)
 	}
 
-	err = consumer.Subscribe(topic, nil)
+	rebalanceCb := func(c *kafka.Consumer, event kafka.Event) error {
+		switch e := event.(type) {
+		case kafka.AssignedPartitions:
+			logger.Info().
+				Str("partitions", fmt.Sprintf("%v", e.Partitions)).
+				Msg("Partitions assigned")
+			c.Assign(e.Partitions)
+		case kafka.RevokedPartitions:
+			committedOffsets, err := c.Commit()
+			if err != nil {
+				logger.Error().Err(err).Msg("Failed to commit offsets on revoke")
+			} else {
+				logger.Info().
+					Str("offsets", fmt.Sprintf("%v", committedOffsets)).
+					Msg("Offsets committed on partition revocation")
+			}
+		}
+		return nil
+	}
+
+	err = consumer.Subscribe(topic, rebalanceCb)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to subscribe to Kafka topic")
 		consumer.Close()
@@ -146,31 +166,33 @@ func NewKafkaConsumer(
 				logger.Info().Str("topic", topic).Msg("Stopping consumer loop.")
 				return
 			default:
-				msg, err := consumer.ReadMessage(100 * time.Millisecond)
-				if err != nil {
-					if kafkaErr, ok := err.(kafka.Error); ok && kafkaErr.Code() == kafka.ErrTimedOut {
-						continue
-					}
-					logger.Error().Err(err).Msg("Consumer error while reading message")
+				ev := consumer.Poll(100)
+				if ev == nil {
 					continue
 				}
 
-				if handler != nil {
-					if err := handler.Handle(ctx, msg); err != nil {
-						logger.Error().Err(err).Str("topic", *msg.TopicPartition.Topic).Msg("Failed to process message")
-						continue
+				switch e := ev.(type) {
+				case *kafka.Message:
+					if handler != nil {
+						if err := handler.Handle(ctx, e); err != nil {
+							logger.Error().Err(err).Str("topic", *e.TopicPartition.Topic).Msg("Failed to process message")
+							continue
+						}
 					}
-				}
-
-				_, err = consumer.CommitMessage(msg)
-				if err != nil {
-					logger.Error().Err(err).Msg("Failed to commit offset")
-				} else {
-					logger.Debug().
-						Str("topic", *msg.TopicPartition.Topic).
-						Int32("partition", msg.TopicPartition.Partition).
-						Int64("offset", int64(msg.TopicPartition.Offset)).
-						Msg("Offset committed")
+					_, err := consumer.CommitMessage(e)
+					if err != nil {
+						logger.Error().Err(err).Msg("Failed to commit offset")
+					} else {
+						logger.Debug().
+							Str("topic", *e.TopicPartition.Topic).
+							Int32("partition", e.TopicPartition.Partition).
+							Int64("offset", int64(e.TopicPartition.Offset)).
+							Msg("Offset committed")
+					}
+				case kafka.Error:
+					logger.Error().Err(e).Msg("Consumer error")
+				default:
+					logger.Debug().Str("event", fmt.Sprintf("%v", e)).Msg("Ignored event")
 				}
 			}
 		}
@@ -182,8 +204,6 @@ func NewKafkaConsumer(
 	}, nil
 }
 
-// NewProducer creates and initializes a new Kafka producer with the given broker and logger.
-// It returns a Kafka producer instance or an error if initialization fails.
 func NewKafkaProducer(logger zerolog.Logger, settings *Settings) (*kafka.Producer, error) {
 	config := &kafka.ConfigMap{
 		"bootstrap.servers":                     settings.KafkaBootstrapServers,
@@ -197,6 +217,7 @@ func NewKafkaProducer(logger zerolog.Logger, settings *Settings) (*kafka.Produce
 		"retries":                               5,
 		"retry.backoff.ms":                      100,
 		"partitioner":                           "murmur2_random",
+		"enable.idempotence":                    true,
 	}
 
 	if settings.KafkaSecurityProtocol != "" {

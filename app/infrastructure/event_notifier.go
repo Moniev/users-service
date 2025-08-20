@@ -57,7 +57,7 @@ func NewEventNotifier(
 }
 
 func (n *EventNotifier) Produce(key []byte, value []byte) error {
-	n.Logger.Debug().Str("topic", n.Topic).Int("keyLength", len(key)).Int("valueLength", len(value)).Msg("Attempting to produce Kafka message")
+	n.Logger.Debug().Str("topic", n.Topic).Int("key_length", len(key)).Int("value_length", len(value)).Msg("Attempting to produce Kafka message")
 	message := &kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &n.Topic, Partition: kafka.PartitionAny},
 		Key:            key,
@@ -93,7 +93,7 @@ func (n *EventNotifier) createAndProduceEvent(event interface{}, settings *ent.U
 		n.Logger.Error().Err(err).Str("event_type", eventType).Int("user_id", userID).Msg("Failed to marshal event payload to JSON")
 		return err
 	}
-	n.Logger.Debug().Str("event_type", eventType).Int("user_id", userID).Int("payloadLength", len(payload)).Msg("Event payload marshaled")
+	n.Logger.Debug().Str("event_type", eventType).Int("user_id", userID).Int("payload_length", len(payload)).Msg("Event payload marshaled")
 
 	if err := n.Produce([]byte(settings.UUID), payload); err != nil {
 		n.Logger.Error().Err(err).Str("event_type", eventType).Int("user_id", userID).Msg("Failed to produce event to Kafka")
@@ -124,7 +124,7 @@ func (n *EventNotifier) CreateRegistrationEvent(user *ent.User, activationCode *
 		ActivationCode: activationCode.Code,
 		ExpiresAt:      activationCode.ExpiresAt,
 	}
-	n.Logger.Debug().Int("user_id", user.ID).Str("eventID", event.EventID).Msg("Registration event struct created")
+	n.Logger.Debug().Int("user_id", user.ID).Str("event_id", event.EventID).Msg("Registration event struct created")
 
 	return n.createAndProduceEvent(event, user.Edges.UserSettings, event.EventType)
 }
@@ -160,7 +160,7 @@ func (n *EventNotifier) CreateSecondFactorEvent(settings *ent.UserSettings, seco
 		ExpiresAt:        secondFactor.ExpiresAt,
 		TargetDevice:     settings.Edges.SecondFactorTarget.Token,
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("eventID", event.EventID).Msg("Second factor event struct created")
+	n.Logger.Debug().Int("user_id", userID).Str("event_id", event.EventID).Msg("Second factor event struct created")
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
 }
@@ -170,7 +170,7 @@ func (n *EventNotifier) CreateLoginEvent(settings *ent.UserSettings, loginMethod
 	if settings.Edges.Owner != nil {
 		userID = settings.Edges.Owner.ID
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("loginMethod", loginMethod).Msg("Attempting to create login event")
+	n.Logger.Debug().Int("user_id", userID).Str("login_method", loginMethod).Msg("Attempting to create login event")
 
 	if settings.Edges.Owner == nil {
 		n.Logger.Error().Int("user_id", userID).Msg("Cannot create login event: User settings owner not loaded.")
@@ -187,7 +187,7 @@ func (n *EventNotifier) CreateLoginEvent(settings *ent.UserSettings, loginMethod
 		},
 		LoginMethod: loginMethod,
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("eventID", event.EventID).Msg("Login event struct created")
+	n.Logger.Debug().Int("user_id", userID).Str("event_id", event.EventID).Msg("Login event struct created")
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
 }
@@ -216,7 +216,7 @@ func (n *EventNotifier) CreateVerificationEvent(settings *ent.UserSettings, phon
 		VerificationCode: verificationCode.Code,
 		ExpiresAt:        verificationCode.ExpiresAt,
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("eventID", event.EventID).Msg("Verification event struct created")
+	n.Logger.Debug().Int("user_id", userID).Str("event_id", event.EventID).Msg("Verification event struct created")
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
 }
@@ -249,7 +249,7 @@ func (n *EventNotifier) CreateNotificationEvent(settings *ent.UserSettings, devi
 		},
 		TargetDevices: deviceTokens,
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("eventID", event.EventID).Msg("Notification event struct created")
+	n.Logger.Debug().Int("user_id", userID).Str("event_id", event.EventID).Msg("Notification event struct created")
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
 }
@@ -277,7 +277,7 @@ func (n *EventNotifier) CreateUserActionEvent(settings *ent.UserSettings, action
 		Action:  action.Action,
 		Details: action.Details,
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("eventID", event.EventID).Msg("User action event struct created")
+	n.Logger.Debug().Int("user_id", userID).Str("event_id", event.EventID).Msg("User action event struct created")
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
 }
@@ -304,7 +304,7 @@ func (n *EventNotifier) CreateResetPasswordEvent(settings *ent.UserSettings, res
 	if settings.Edges.Owner.Phone == "" {
 		n.Logger.Warn().Int("user_id", userID).Msg("User has no phone number for password reset event. Event will proceed without phone number.")
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("userPhone", settings.Edges.Owner.Phone).Msg("Checking user phone for reset event")
+	n.Logger.Debug().Int("user_id", userID).Str("user_phone", settings.Edges.Owner.Phone).Msg("Checking user phone for reset event")
 
 	event := events.ResetPasswordEvent{
 		BaseEvent: events.BaseEvent{
@@ -318,7 +318,7 @@ func (n *EventNotifier) CreateResetPasswordEvent(settings *ent.UserSettings, res
 		ExpiresAt:    resetCode.ExpiresAt,
 		TargetDevice: settings.Edges.SecondFactorTarget.Token,
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("eventID", event.EventID).Msg("Reset password event struct created")
+	n.Logger.Debug().Int("user_id", userID).Str("event_id", event.EventID).Msg("Reset password event struct created")
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
 }
@@ -345,7 +345,7 @@ func (n *EventNotifier) CreateLogoutEvent(settings *ent.UserSettings, logoutMeth
 		},
 		LogoutMethod: logoutMethod,
 	}
-	n.Logger.Debug().Int("user_id", userID).Str("eventID", event.EventID).Msg("Logout event struct created")
+	n.Logger.Debug().Int("user_id", userID).Str("event_id", event.EventID).Msg("Logout event struct created")
 
 	return n.createAndProduceEvent(event, settings, event.EventType)
 }

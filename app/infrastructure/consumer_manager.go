@@ -10,14 +10,14 @@ import (
 )
 
 type ConsumerManagerInterface interface {
-	GetConsumer(topic string) (handlers.ConsumerInterface, bool)
-	Register(topic string, consumer handlers.ConsumerInterface) error
+	GetConsumer(topic string) (*handlers.ConsumerWrapper, bool)
+	Register(topic string, consumer *handlers.ConsumerWrapper) error
 	PingAll() error
 }
 
 type ConsumerManager struct {
 	mu              sync.RWMutex
-	ActiveConsumers map[string]handlers.ConsumerInterface
+	ActiveConsumers map[string]*handlers.ConsumerWrapper
 	Logger          zerolog.Logger
 }
 
@@ -26,12 +26,12 @@ var _ ConsumerManagerInterface = (*ConsumerManager)(nil)
 func NewConsumerManager(logger zerolog.Logger) *ConsumerManager {
 	logger.Info().Msg("Initializing new ConsumerManager")
 	return &ConsumerManager{
-		ActiveConsumers: make(map[string]handlers.ConsumerInterface),
+		ActiveConsumers: make(map[string]*handlers.ConsumerWrapper),
 		Logger:          logger,
 	}
 }
 
-func (m *ConsumerManager) Register(topic string, consumer handlers.ConsumerInterface) error {
+func (m *ConsumerManager) Register(topic string, consumer *handlers.ConsumerWrapper) error {
 	m.Logger.Debug().Str("topic", topic).Msg("Attempting to register consumer")
 
 	if topic == "" {
@@ -83,7 +83,7 @@ func (m *ConsumerManager) PingAll() error {
 	return nil
 }
 
-func (m *ConsumerManager) GetConsumer(topic string) (handlers.ConsumerInterface, bool) {
+func (m *ConsumerManager) GetConsumer(topic string) (*handlers.ConsumerWrapper, bool) {
 	m.Logger.Debug().Str("topic", topic).Msg("Attempting to get consumer")
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -96,4 +96,28 @@ func (m *ConsumerManager) GetConsumer(topic string) (handlers.ConsumerInterface,
 	}
 
 	return consumer, exists
+}
+
+func (m *ConsumerManager) StopAll() error {
+	var wg sync.WaitGroup
+	m.mu.RLock()
+	consumersToStop := make([]*handlers.ConsumerWrapper, 0, len(m.ActiveConsumers))
+	for _, wrapper := range m.ActiveConsumers {
+		consumersToStop = append(consumersToStop, wrapper)
+	}
+	m.mu.RUnlock()
+
+	wg.Add(len(consumersToStop))
+	m.Logger.Info().Int("count", len(consumersToStop)).Msg("Sending stop signals to consumers")
+
+	for _, wrapper := range consumersToStop {
+		go func(w *handlers.ConsumerWrapper) {
+			defer wg.Done()
+			w.Stop()
+		}(wrapper)
+	}
+
+	wg.Wait()
+	m.Logger.Info().Msg("All consumers stopped.")
+	return nil
 }

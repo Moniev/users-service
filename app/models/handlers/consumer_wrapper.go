@@ -34,6 +34,10 @@ func (w *ConsumerWrapper) CommitMessage(msg *kafka.Message) ([]kafka.TopicPartit
 	return w.Consumer.CommitMessage(msg)
 }
 
+func (w *ConsumerWrapper) Stop() {
+	w.Cancel()
+}
+
 type MessageHandler interface {
 	Handle(ctx context.Context, msg *kafka.Message) error
 }

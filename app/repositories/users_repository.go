@@ -24,6 +24,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
+var ()
+
 type UsersRepository struct {
 	CacheStore infrastructure.CacheStoreInterface
 	DB         *ent.Client
@@ -706,7 +708,7 @@ func (r *UsersRepository) UpdateUsersPassword(ctx context.Context, user *ent.Use
 			SetPassword(hashedPassword).
 			Save(ctx); err != nil {
 			r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Failed to update user password in DB")
-			return err
+			return errors.New("failed to update user")
 		}
 		r.Logger.Debug().Int("user_id", user.ID).Msg("User password updated in DB")
 
