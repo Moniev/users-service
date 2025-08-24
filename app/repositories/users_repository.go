@@ -656,36 +656,38 @@ func (r *UsersRepository) RemoveResetCode(ctx context.Context, user *ent.User) (
 	return updatedUser, nil
 }
 
-func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, user *ent.User) (*ent.User, error) {
-	r.Logger.Info().Int("user_id", user.ID).Msg("Attempting to remove second factor code")
+func (r *UsersRepository) RemoveSecondFactorCode(ctx context.Context, targetUser *ent.User) (*ent.User, error) {
+	r.Logger.Info().Int("user_id", targetUser.ID).Msg("Attempting to remove second factor code")
 	var updatedUser *ent.User
 	var err error
 
 	if err := WithTransaction(ctx, r.DB, func(tx *ent.Tx) error {
-		if user.Edges.SecondFactorCode == nil {
-			r.Logger.Warn().Int("user_id", user.ID).Msg("User has no second factor code to remove")
+		if targetUser.Edges.SecondFactorCode == nil {
+			r.Logger.Warn().Int("user_id", targetUser.ID).Msg("User has no second factor code to remove")
 			return errors.New("user has no reset code")
 		}
 
-		r.Logger.Debug().Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Second factor code found for deletion")
+		r.Logger.Debug().Int("second_factor_code_id", targetUser.Edges.SecondFactorCode.ID).Msg("Second factor code found for deletion")
 
 		updatedUser, err = tx.User.
-			UpdateOne(user).
+			UpdateOne(targetUser).
 			ClearSecondFactorCode().
 			Save(ctx)
 		if err != nil {
-			r.Logger.Error().Err(err).Int("user_id", user.ID).Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Failed to remove second factor code")
+			r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Int("second_factor_code_id", targetUser.Edges.SecondFactorCode.ID).Msg("Failed to remove second factor code")
 			return errors.New("failed to remove second factor code")
 		}
-		r.Logger.Debug().Int("second_factor_code_id", user.Edges.SecondFactorCode.ID).Msg("Second factor code deleted")
+		r.Logger.Debug().Int("second_factor_code_id", targetUser.Edges.SecondFactorCode.ID).Msg("Second factor code deleted")
+
+		updatedUser, err = getUserFunctional(ctx, tx, user.IDEQ(targetUser.ID))
 
 		return nil
 	}); err != nil {
-		r.Logger.Error().Err(err).Int("user_id", user.ID).Msg("Transaction failed for RemoveSecondFactorCode")
+		r.Logger.Error().Err(err).Int("user_id", targetUser.ID).Msg("Transaction failed for RemoveSecondFactorCode")
 		return nil, err
 	}
 
-	InvalidateCache(ctx, user, r)
+	InvalidateCache(ctx, targetUser, r)
 
 	return updatedUser, nil
 }

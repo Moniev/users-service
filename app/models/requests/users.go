@@ -1,16 +1,7 @@
 package requests
 
-import (
-	"errors"
-	"users-service/app/utils"
-)
-
 type Empty struct {
 	Device
-}
-
-type EmptyInterface interface {
-	Valid() error
 }
 
 func (r *Empty) Valid() error {
@@ -18,161 +9,107 @@ func (r *Empty) Valid() error {
 }
 
 type Details struct {
-	FirstName string
-	LastName  string
+	FirstName string `json:"first_name" binding:"required" validate:"required,min=1,max=50"`
+	LastName  string `json:"last_name" binding:"required" validate:"required,min=1,max=50"`
 	Device
-}
-
-type DetailsInterface interface {
-	Valid() error
 }
 
 func (r *Details) Valid() error {
-	if r.FirstName == "" || r.LastName == "" {
-		return errors.New("")
-	}
-
-	return r.Device.Valid()
+	return validate.Struct(r)
 }
 
 type User struct {
-	Phone string `json:"phone"`
-	Mail  string `json:"mail"`
+	Phone string `json:"phone" binding:"required" validate:"required,custom_phone"`
+	Mail  string `json:"mail" binding:"required,email" validate:"required,custom_email"`
 	Device
-}
-
-type UserPublic struct {
-	ID int `json:"id"`
-	Device
-}
-
-type UserInterface interface {
-	Valid() error
 }
 
 func (r *User) Valid() error {
-	if valid := utils.CheckEmailFormat(r.Mail); !valid && r.Mail != "" {
-		return errors.New("provided not valid email format")
-	}
+	return validate.Struct(r)
+}
 
-	if valid := utils.CheckPhoneFormat(r.Phone); !valid && r.Phone != "" {
-		return errors.New("provided not valid phone format")
-	}
+type UserPublic struct {
+	ID int `json:"id" binding:"required" validate:"required,gt=0"`
+	Device
+}
 
-	return r.Device.Valid()
+func (r *UserPublic) Valid() error {
+	return validate.Struct(r)
 }
 
 type Settings struct {
 	TwoFactor                    bool  `json:"two_factor"`
 	NightMode                    bool  `json:"night_mode"`
-	SecondFactorTargetID         int   `json:"second_factor_target_id"`
-	NotificationsTargetDeviceIDs []int `json:"notifications_target_device_ids"`
+	SecondFactorTargetID         int   `json:"second_factor_target_id" binding:"required" validate:"required,gt=0"`
+	NotificationsTargetDeviceIDs []int `json:"notifications_target_device_ids" validate:"dive,gt=0"`
 	Device
-}
-
-type SettingsInerface interface {
-	Valid() error
 }
 
 func (r *Settings) Valid() error {
-	if r.SecondFactorTargetID <= 0 {
-		return errors.New("wrong second factor device ID provided")
-	}
-
-	for _, id := range r.NotificationsTargetDeviceIDs {
-		if id <= 0 {
-			return errors.New("wrong notification device ID provided")
-		}
-	}
-
-	return r.Device.Valid()
+	return validate.Struct(r)
 }
 
 type Password struct {
-	Password string `json:"password"`
+	Password string `json:"password" binding:"required,min=8" validate:"required,custom_password"`
 	Device
 }
 
-type PasswordInterface interface {
-	Valid() error
-}
-
 func (r *Password) Valid() error {
-	if !utils.CheckPasswordFormat(r.Password) {
-		return errors.New("wrong password provided")
-	}
-
-	return r.Device.Valid()
+	return validate.Struct(r)
 }
 
 type EntrepreneurDetails struct {
-	BusinessName             string   `json:"business_name"`
-	NIP                      string   `json:"nip"`
-	KRS                      string   `json:"krs"`
-	Description              string   `json:"description"`
-	Income                   float64  `json:"income"`
-	Costs                    float64  `json:"costs"`
-	FundingCapital           float64  `json:"funding_capital"`
-	Industry                 string   `json:"industry"`
-	ManagementCouncilMembers []string `json:"management_council_members"`
-	DecisionMakers           []string `json:"decision_makers"`
-	BusinessPhoneNumber      string   `json:"business_phone_number"`
-	BusinessMail             string   `json:"business_mail"`
-	WebsiteAddress           string   `json:"website_address"`
+	BusinessName             string   `json:"business_name" binding:"required" validate:"required,min=2,max=100"`
+	NIP                      string   `json:"nip" binding:"omitempty" validate:"custom_nip"`
+	KRS                      string   `json:"krs" binding:"omitempty" validate:"custom_krs"`
+	Description              string   `json:"description" binding:"omitempty" validate:"max=500"`
+	Income                   float64  `json:"income" binding:"omitempty" validate:"gte=0"`
+	Costs                    float64  `json:"costs" binding:"omitempty" validate:"gte=0"`
+	FundingCapital           float64  `json:"funding_capital" binding:"omitempty" validate:"gte=0"`
+	Industry                 string   `json:"industry" binding:"omitempty" validate:"max=100"`
+	ManagementCouncilMembers []string `json:"management_council_members" binding:"omitempty" validate:"dive,min=1,max=100"`
+	DecisionMakers           []string `json:"decision_makers" binding:"omitempty" validate:"dive,min=1,max=100"`
+	BusinessPhoneNumber      string   `json:"business_phone_number" binding:"omitempty" validate:"custom_phone"`
+	BusinessMail             string   `json:"business_mail" binding:"omitempty,email" validate:"custom_email"`
+	WebsiteAddress           string   `json:"website_address" binding:"omitempty" validate:"custom_url"`
 	Device
 }
 
 func (r *EntrepreneurDetails) Valid() error {
-	if r.BusinessPhoneNumber != "" && !utils.CheckPhoneFormat(r.BusinessPhoneNumber) {
-		return errors.New("provided wrong format of phone number")
-	}
-
-	return r.Device.Valid()
+	return validate.Struct(r)
 }
 
 type Location struct {
-	Country         string `json:"country"`
-	Province        string `json:"province"`
-	City            string `json:"city"`
-	PostalCode      string `json:"postal_code"`
-	Street          string `json:"street"`
-	BuildingNumber  string `json:"building_number"`
-	ApartmentNumber string `json:"apartment_number"`
+	Country         string `json:"country" binding:"required" validate:"required,min=2,max=100"`
+	Province        string `json:"province" binding:"required" validate:"required,max=100"`
+	City            string `json:"city" binding:"required" validate:"required,min=2,max=100"`
+	PostalCode      string `json:"postal_code" binding:"required" validate:"required,min=5,max=10"`
+	Street          string `json:"street" binding:"omitempty" validate:"max=100"`
+	BuildingNumber  string `json:"building_number" binding:"required" validate:"required,min=1,max=20"`
+	ApartmentNumber string `json:"apartment_number" binding:"omitempty" validate:"max=20"`
 	Device
 }
 
 func (r *Location) Valid() error {
-	return r.Device.Valid()
+	return validate.Struct(r)
 }
 
 type Index struct {
-	Page     int `json:"page"`
-	PageSize int `json:"page_size"`
+	Page     int `json:"page" binding:"required" validate:"required,gt=0"`
+	PageSize int `json:"page_size" binding:"required" validate:"required,gt=0,lte=100"`
 	Device
 }
 
 func (r *Index) Valid() error {
-	if r.PageSize > 0 && r.Page > 0 {
-		return errors.New("choosed wrong page size nad pages number")
-	}
-
-	return r.Device.Valid()
+	return validate.Struct(r)
 }
 
 type Role struct {
-	UserID int
-	RoleID int
+	UserID int `json:"user_id" binding:"required" validate:"required,gt=0"`
+	RoleID int `json:"role_id" binding:"required" validate:"required,gt=0"`
 	Device
 }
 
 func (r *Role) Valid() error {
-	if r.UserID <= 0 {
-		return errors.New("choosed wrong user ID")
-	}
-
-	if r.RoleID <= 0 {
-		return errors.New("choosed wrong role ID")
-	}
-
-	return r.Device.Valid()
+	return validate.Struct(r)
 }

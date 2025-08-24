@@ -129,7 +129,6 @@ func NewApp(settings *Settings) *Application {
 	tracker := middlewares.NewRequestTracker(40)
 
 	router := gin.Default()
-
 	doc := redoc.Redoc{
 		Title:       "Factory Chainline, Users Service API",
 		Description: "Main users management microservice responsible for use related operations.",
