@@ -2,6 +2,7 @@ package requests
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"sync"
 	"users-service/app/utils"
@@ -77,6 +78,26 @@ func init() {
 	})
 }
 
+func translateError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var validationErrs validator.ValidationErrors
+	if errors.As(err, &validationErrs) {
+		e := validationErrs[0]
+		switch e.Tag() {
+		case "custom_email":
+			return errors.New("invalid email format")
+		case "custom_password":
+			return errors.New("password does not meet complexity requirements")
+		default:
+			return fmt.Errorf("validation failed for field '%s' with rule '%s'", e.Field(), e.Tag())
+		}
+	}
+	return err
+}
+
 type Device struct {
 	DeviceToken    string `json:"device_token" binding:"required" validate:"required"`
 	IPAddress      string `json:"ip_address" binding:"required" validate:"required,ip"`
@@ -127,7 +148,7 @@ type Register struct {
 }
 
 func (r *Register) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Login struct {
@@ -137,7 +158,7 @@ type Login struct {
 }
 
 func (r *Login) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Code struct {
@@ -146,7 +167,7 @@ type Code struct {
 }
 
 func (r *Code) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Mail struct {
@@ -155,7 +176,7 @@ type Mail struct {
 }
 
 func (r *Mail) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type ConfirmPasswordReset struct {
@@ -165,5 +186,5 @@ type ConfirmPasswordReset struct {
 }
 
 func (r *ConfirmPasswordReset) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }

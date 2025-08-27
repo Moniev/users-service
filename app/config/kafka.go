@@ -198,10 +198,11 @@ func NewKafkaConsumer(
 		}
 	}()
 
-	return &handlers.ConsumerWrapper{
+	adapter := &handlers.KafkaConsumerAdapter{
 		Consumer: consumer,
 		Cancel:   cancel,
-	}, nil
+	}
+	return handlers.NewConsumerWrapper(adapter, cancel), nil
 }
 
 func NewKafkaProducer(logger zerolog.Logger, settings *Settings) (*kafka.Producer, error) {

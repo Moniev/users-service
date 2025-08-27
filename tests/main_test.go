@@ -13,6 +13,7 @@ import (
 	"users-service/tests/registry"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/docker/docker/client"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
@@ -66,6 +67,18 @@ func setupIntegrationEnvironment() {
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 	if level, err := zerolog.ParseLevel(testSettings.LogLevel); err == nil {
 		logger = logger.Level(level)
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithHost(testSettings.DockerSocket))
+	if err != nil {
+		log.Printf("Failed to connect to docker daemon %s. Skipping integration tests", err)
+		os.Exit(0)
+	}
+	defer cli.Close()
+
+	if _, err := cli.Ping(ctx); err != nil {
+		log.Printf("Docker daemon is turned off: %s. Skipping integration tests", err)
+		os.Exit(0)
 	}
 
 	log.Println("--- Setting up INTEGRATION/E2E environment... ---")

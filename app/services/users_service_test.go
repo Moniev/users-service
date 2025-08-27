@@ -126,7 +126,7 @@ func TestUsersService_UpdateDetails(t *testing.T) {
 		{
 			name: "Success",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByID", mock.Anything, userID).Return(userFromDB, nil).Once()
+				repo.On("GetUserFunctionalDetailsByID", mock.Anything, userID).Return(userFromDB, nil).Once()
 				repo.On("UpdateUsersDetails", mock.Anything, userFromDB, req).Return(&ent.User{Edges: ent.UserEdges{UserSettings: &ent.UserSettings{}}}, nil).Once()
 				notifier.On("CreateNotificationEvent", mock.Anything, mock.Anything).Return(nil).Once()
 			},
@@ -135,7 +135,7 @@ func TestUsersService_UpdateDetails(t *testing.T) {
 		{
 			name: "Failure - User Not Found",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByID", mock.Anything, userID).Return(nil, errors.New("not found")).Once()
+				repo.On("GetUserFunctionalDetailsByID", mock.Anything, userID).Return(nil, errors.New("not found")).Once()
 			},
 			expectErr: true,
 		},
@@ -174,7 +174,7 @@ func TestUsersService_UpdateSettings(t *testing.T) {
 		{
 			name: "Success",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByID", mock.Anything, userID).Return(userFromDB, nil).Once()
+				repo.On("GetUserFunctionalDetailsByID", mock.Anything, userID).Return(userFromDB, nil).Once()
 				repo.On("UpdateUsersSettings", mock.Anything, userFromDB, req).Return(&ent.User{Edges: ent.UserEdges{UserSettings: &ent.UserSettings{}}}, nil).Once()
 				notifier.On("CreateNotificationEvent", mock.Anything, mock.Anything).Return(nil).Once()
 			},
@@ -183,7 +183,7 @@ func TestUsersService_UpdateSettings(t *testing.T) {
 		{
 			name: "Failure - User Not Found",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByID", mock.Anything, userID).Return(nil, errors.New("not found")).Once()
+				repo.On("GetUserFunctionalDetailsByID", mock.Anything, userID).Return(nil, errors.New("not found")).Once()
 			},
 			expectErr: true,
 		},
@@ -219,7 +219,7 @@ func TestUsersService_RemoveAccount(t *testing.T) {
 		{
 			name: "Success",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByID", mock.Anything, userID).Return(userFromDB, nil).Once()
+				repo.On("GetUserFunctionalDetailsByID", mock.Anything, userID).Return(userFromDB, nil).Once()
 				repo.On("RemoveAccount", mock.Anything, userFromDB).Return(nil).Once()
 				notifier.On("CreateNotificationEvent", mock.Anything, mock.Anything).Return(nil).Once()
 			},
@@ -228,7 +228,7 @@ func TestUsersService_RemoveAccount(t *testing.T) {
 		{
 			name: "Failure - User Not Found",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByID", mock.Anything, userID).Return(nil, errors.New("not found")).Once()
+				repo.On("GetUserFunctionalDetailsByID", mock.Anything, userID).Return(nil, errors.New("not found")).Once()
 			},
 			expectErr: true,
 			errMsg:    "failed to fetch user",
@@ -236,8 +236,8 @@ func TestUsersService_RemoveAccount(t *testing.T) {
 		{
 			name: "Failure - Remove Fails in Repo",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByID", mock.Anything, userID).Return(userFromDB, nil).Once()
-				repo.On("RemoveAccount", mock.Anything, userFromDB).Return(errors.New("db error")).Once()
+				repo.On("GetUserFunctionalDetailsByID", mock.Anything, userID).Return(userFromDB, nil).Once()
+				repo.On("RemoveAccount", mock.Anything, userFromDB).Return(errors.New("failed to remove user")).Once()
 			},
 			expectErr: true,
 			errMsg:    "failed to remove user",

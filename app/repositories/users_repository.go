@@ -34,8 +34,8 @@ type UsersRepository struct {
 }
 
 type UsersRepositoryInterface interface {
-	AddRole(ctx context.Context, userID, roleID int) error
-	RevokeRole(ctx context.Context, userID, roleID int) error
+	AddRole(ctx context.Context, userID, roleID int) (*ent.User, error)
+	RevokeRole(ctx context.Context, userID, roleID int) (*ent.User, error)
 
 	CreateUser(ctx context.Context, req *requests.Register, hashedPassword string) (*ent.User, *ent.ActivationCode, error)
 	CreateResetCode(ctx context.Context, user *ent.User) (*ent.ResetCode, error)
@@ -505,6 +505,8 @@ func (r *UsersRepository) CreateUser(ctx context.Context, req *requests.Register
 			return err
 		}
 		r.Logger.Debug().Int("activation_code_id", activationCode.ID).Msg("Activation code created")
+
+		newUser, err = getUserWithCodes(ctx, tx, user.IDEQ(newUser.ID))
 
 		return nil
 	}); err != nil {
@@ -1190,7 +1192,7 @@ func (r *UsersRepository) GetUsersPublic(ctx context.Context, page, pageSize int
 	return foundUsers, nil
 }
 
-func (r *UsersRepository) AddRole(ctx context.Context, userID, roleID int) error {
+func (r *UsersRepository) AddRole(ctx context.Context, userID, roleID int) (*ent.User, error) {
 	r.Logger.Debug().Int("user_id", userID).Msg("Attempting to add role for user")
 	var updatedUser *ent.User
 	var err error
@@ -1204,19 +1206,21 @@ func (r *UsersRepository) AddRole(ctx context.Context, userID, roleID int) error
 			return errors.New("failed to add role for user")
 		}
 
+		updatedUser, _ = getUserWithRoles(ctx, tx, user.IDEQ(updatedUser.ID))
+
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", userID).Msg("Transaction failed for AddRole")
-		return errors.New("failed to remove user")
+		return nil, errors.New("failed to remove user")
 	}
 
 	InvalidateCache(ctx, updatedUser, r)
 
 	r.Logger.Debug().Int("user_id", userID).Msg("Successfully added role for user")
-	return nil
+	return updatedUser, nil
 }
 
-func (r *UsersRepository) RevokeRole(ctx context.Context, userID, roleID int) error {
+func (r *UsersRepository) RevokeRole(ctx context.Context, userID, roleID int) (*ent.User, error) {
 	r.Logger.Debug().Int("user_id", userID).Msg("Attempting to revoke role for user")
 	var updatedUser *ent.User
 	var err error
@@ -1230,16 +1234,18 @@ func (r *UsersRepository) RevokeRole(ctx context.Context, userID, roleID int) er
 			return errors.New("failed to revoke role for user")
 		}
 
+		updatedUser, _ = getUserWithRoles(ctx, tx, user.IDEQ(updatedUser.ID))
+
 		return nil
 	}); err != nil {
 		r.Logger.Error().Err(err).Int("user_id", userID).Msg("Transaction failed for AddRole")
-		return errors.New("failed to remove user")
+		return nil, errors.New("failed to remove user")
 	}
 
 	InvalidateCache(ctx, updatedUser, r)
 
 	r.Logger.Debug().Int("user_id", userID).Msg("Successfully added role for user")
-	return nil
+	return updatedUser, nil
 }
 
 func (r *UsersRepository) Ping() error {

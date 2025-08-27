@@ -165,7 +165,7 @@ func (c *UsersController) RemoveAccount(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
-// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Account removed successfully"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate,}  "OK - Account removed successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
 // @Router       /api/v1/users/details/entrepreneur [put]
@@ -187,7 +187,7 @@ func (c *UsersController) UpdateEntrepreneurDetails(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
-// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - location updated successfully"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - location updated successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - Update failed"
 // @Router       /api/v1/users/details/location [put]
@@ -231,7 +231,7 @@ func (c *UsersController) Show(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
-// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPublic}  "OK - User fetched successfully"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - User fetched successfully"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
 // @Router       /api/v1/users/me [get]
@@ -274,18 +274,18 @@ func (c *UsersController) Index(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
-// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Successfully added role for user"
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Successfully added role for user"
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
 // @Router       /api/v1/users/role [post]
 func (c *UsersController) AddRole(ctx *gin.Context) {
-	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (string, error) {
-		err := c.UsersService.AddRole(ctx, req.UserID, req.RoleID)
+	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (*responses.UserPrivate, error) {
+		user, err := c.UsersService.AddRole(ctx, req.UserID, req.RoleID)
 		if err != nil {
-			return "Failed to add role for user", err
+			return nil, err
 		}
 
-		return "Successfully added role for user", nil
+		return responses.FromUserPrivate(user), nil
 	})
 }
 
@@ -295,17 +295,17 @@ func (c *UsersController) AddRole(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization header    string            true  "Bearer token"
-// @Success      200       {object}  responses.SuccessResponse{data=string}  "OK - Successfully revoked role from user
+// @Success      200       {object}  responses.SuccessResponse{data=responses.UserPrivate}  "OK - Successfully revoked role from user
 // @Failure      401       {object}  responses.ErrorResponse "Unauthorized - Invalid or missing token"
 // @Failure      422       {object}  responses.ErrorResponse "Unprocessable Entity - fetch failed"
 // @Router       /api/v1/users/role [patch]
 func (c *UsersController) RevokeRole(ctx *gin.Context) {
-	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (string, error) {
-		err := c.UsersService.RevokeRole(ctx, req.UserID, req.RoleID)
+	handleAuthenticatedRequest(ctx, c, func(reqCtx context.Context, userID int, req *requests.Role) (*responses.UserPrivate, error) {
+		user, err := c.UsersService.RevokeRole(ctx, req.UserID, req.RoleID)
 		if err != nil {
-			return "Failed to revoke role from user", err
+			return nil, err
 		}
 
-		return "Successfully revoked role from user", nil
+		return responses.FromUserPrivate(user), nil
 	})
 }

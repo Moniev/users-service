@@ -65,6 +65,9 @@ type Settings struct {
 	KafkaTopics            string `mapstructure:"KAFKA_TOPICS"`
 	KafkaBrokerID          string `mapstructure:"KAFKA_BROKER_ID"`
 	KafkaNotifierTopic     string `mapstructure:"KAFKA_NOTIFIER_TOPIC"`
+
+	// Used only for test runner! don't be bothered
+	DockerSocket string `mapstructure:"DOCKER_SOCKET"`
 }
 
 func (s *Settings) DatabaseURI() string {

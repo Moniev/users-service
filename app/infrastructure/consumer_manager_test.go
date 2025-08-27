@@ -1,5 +1,3 @@
-//go:build unit
-
 package infrastructure
 
 import (
@@ -26,10 +24,14 @@ func newTestConsumerManager(t *testing.T) (*ConsumerManager, *mocks.MockConsumer
 }
 
 func TestConsumerManager_Register(t *testing.T) {
+	newWrappedMock := func() *handlers.ConsumerWrapper {
+		return handlers.NewConsumerWrapper(new(mocks.MockConsumerWrapper), func() {})
+	}
+
 	testCases := []struct {
 		name        string
 		topic       string
-		consumer    handlers.ConsumerInterface
+		consumer    *handlers.ConsumerWrapper
 		setupMock   func(m *mocks.MockConsumerWrapper)
 		expectErr   bool
 		errContains string
@@ -37,21 +39,21 @@ func TestConsumerManager_Register(t *testing.T) {
 		{
 			name:      "Success",
 			topic:     "test-topic",
-			consumer:  new(mocks.MockConsumerWrapper),
+			consumer:  newWrappedMock(),
 			setupMock: func(m *mocks.MockConsumerWrapper) {},
 			expectErr: false,
 		},
 		{
 			name:      "Overwrite Existing Consumer",
 			topic:     "test-topic",
-			consumer:  new(mocks.MockConsumerWrapper),
+			consumer:  newWrappedMock(),
 			setupMock: func(m *mocks.MockConsumerWrapper) {},
 			expectErr: false,
 		},
 		{
 			name:        "Validation Error - Empty Topic",
 			topic:       "",
-			consumer:    new(mocks.MockConsumerWrapper),
+			consumer:    newWrappedMock(),
 			setupMock:   func(m *mocks.MockConsumerWrapper) {},
 			expectErr:   true,
 			errContains: "topic cannot be empty",
@@ -68,12 +70,12 @@ func TestConsumerManager_Register(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			manager, mockConsumer := newTestConsumerManager(t)
+			manager, _ := newTestConsumerManager(t)
+
 			if tc.name == "Overwrite Existing Consumer" {
-				err := manager.Register(tc.topic, new(mocks.MockConsumerWrapper))
+				err := manager.Register(tc.topic, newWrappedMock())
 				require.NoError(t, err)
 			}
-			tc.setupMock(mockConsumer)
 
 			err := manager.Register(tc.topic, tc.consumer)
 
@@ -85,8 +87,6 @@ func TestConsumerManager_Register(t *testing.T) {
 				_, exists := manager.GetConsumer(tc.topic)
 				assert.True(t, exists, "consumer should be registered for topic %q", tc.topic)
 			}
-
-			mockConsumer.AssertExpectations(t)
 		})
 	}
 }
@@ -125,9 +125,8 @@ func TestConsumerManager_PingAll(t *testing.T) {
 			errContains: "consumer for topic 'test-topic' is unhealthy: broker not available",
 		},
 		{
-			name: "No Consumers",
-			setupMock: func(m *mocks.MockConsumerWrapper) {
-			},
+			name:      "No Consumers",
+			setupMock: func(m *mocks.MockConsumerWrapper) {},
 			expectErr: false,
 		},
 	}
@@ -136,7 +135,8 @@ func TestConsumerManager_PingAll(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			manager, mockConsumer := newTestConsumerManager(t)
 			if tc.name != "No Consumers" {
-				err := manager.Register("test-topic", mockConsumer)
+				wrappedConsumer := handlers.NewConsumerWrapper(mockConsumer, func() {})
+				err := manager.Register("test-topic", wrappedConsumer)
 				require.NoError(t, err)
 			}
 			tc.setupMock(mockConsumer)
@@ -165,7 +165,9 @@ func TestConsumerManager_ConcurrentAccess(t *testing.T) {
 		consumers[i] = new(mocks.MockConsumerWrapper)
 		consumers[i].On("GetMetadata", nilString, mock.Anything, mock.Anything).Return(&kafka.Metadata{}, nil).Times(numGoroutines)
 		topic := fmt.Sprintf("topic-%d", i)
-		err := manager.Register(topic, consumers[i])
+
+		wrappedConsumer := handlers.NewConsumerWrapper(consumers[i], func() {})
+		err := manager.Register(topic, wrappedConsumer)
 		require.NoError(t, err)
 	}
 

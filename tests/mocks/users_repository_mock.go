@@ -34,19 +34,15 @@ func (m *MockUsersRepository) CreateResetCode(ctx context.Context, user *ent.Use
 	return r0, args.Error(1)
 }
 
-func (m *MockUsersRepository) CreateSecondFactorCode(ctx context.Context, user *ent.User, device *ent.UserDevice) (*ent.User, *ent.SecondFactorCode, error) {
+func (m *MockUsersRepository) CreateSecondFactorCode(ctx context.Context, user *ent.User, device *ent.UserDevice) (*ent.SecondFactorCode, error) {
 	args := m.Called(ctx, user, device)
-	var r0 *ent.User
-	if args.Get(0) != nil {
-		r0 = args.Get(0).(*ent.User)
-	}
 
-	var r1 *ent.SecondFactorCode
+	var r0 *ent.SecondFactorCode
 	if args.Get(1) != nil {
-		r1 = args.Get(1).(*ent.SecondFactorCode)
+		r0 = args.Get(1).(*ent.SecondFactorCode)
 	}
 
-	return r0, r1, args.Error(2)
+	return r0, args.Error(2)
 }
 
 func (m *MockUsersRepository) GetUserByID(ctx context.Context, ID int) (*ent.User, error) {
@@ -251,4 +247,87 @@ func (m *MockUsersRepository) CreateUserAction(
 
 	args := m.Called(ctx, user, action, originDevice, details)
 	return args.Error(0)
+}
+
+func (m *MockUsersRepository) AddRole(
+	ctx context.Context,
+	userID, roleID int,
+) (*ent.User, error) {
+	args := m.Called(ctx, userID, roleID)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) RevokeRole(
+	ctx context.Context,
+	userID, roleID int,
+) (*ent.User, error) {
+	args := m.Called(ctx, userID, roleID)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) GetUserByMailWithCodes(ctx context.Context, mail string) (*ent.User, error) {
+	args := m.Called(ctx, mail)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) GetUserFunctionalByID(ctx context.Context, ID int) (*ent.User, error) {
+	args := m.Called(ctx, ID)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) GetUserFunctionalDetailsByID(ctx context.Context, ID int) (*ent.User, error) {
+	args := m.Called(ctx, ID)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) GetUsersPublic(ctx context.Context, page, pageSize int) ([]*ent.User, error) {
+	args := m.Called(ctx, page, pageSize)
+
+	var r0 []*ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).([]*ent.User)
+	}
+
+	return r0, args.Error(1)
+}
+
+func (m *MockUsersRepository) GetUserPublicByID(ctx context.Context, ID int) (*ent.User, error) {
+	args := m.Called(ctx, ID)
+
+	var r0 *ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*ent.User)
+	}
+
+	return r0, args.Error(1)
 }

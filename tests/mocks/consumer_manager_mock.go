@@ -10,7 +10,7 @@ type MockConsumerManager struct {
 	mock.Mock
 }
 
-func (m *MockConsumerManager) Register(topic string, consumer handlers.ConsumerInterface) error {
+func (m *MockConsumerManager) Register(topic string, consumer *handlers.ConsumerWrapper) error {
 	args := m.Called(topic, consumer)
 	return args.Error(0)
 }
@@ -20,7 +20,7 @@ func (m *MockConsumerManager) PingAll() error {
 	return args.Error(0)
 }
 
-func (m *MockConsumerManager) GetConsumer(topic string) (handlers.ConsumerInterface, bool) {
+func (m *MockConsumerManager) GetConsumer(topic string) (*handlers.ConsumerWrapper, bool) {
 	args := m.Called(topic)
-	return args.Get(0).(handlers.ConsumerInterface), args.Bool(1)
+	return args.Get(0).(*handlers.ConsumerWrapper), args.Bool(1)
 }

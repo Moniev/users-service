@@ -6,12 +6,14 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"users-service/app/models/ent"
 	"users-service/app/models/events"
 	"users-service/tests/mocks"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,6 +28,7 @@ func newTestUserEventHandler(t *testing.T) (*UserActionHandler, *mocks.MockUsers
 }
 
 func TestUserActionHandler_Handle(t *testing.T) {
+	userID := 1
 	ctx := context.Background()
 
 	validEvent := events.UserActionEvent{
@@ -34,9 +37,21 @@ func TestUserActionHandler_Handle(t *testing.T) {
 			EventType: "user.action.login",
 			UserID:    1,
 		},
-		Action: "user_logged_in",
+		Action:       "action",
+		OriginDevice: "original-TOKEN-123",
+		Details:      "Something has happend in GAZA",
 	}
 	validEventPayload, _ := json.Marshal(validEvent)
+	userFromDB := &ent.User{
+		ID:    userID,
+		Mail:  "old.email@example.com",
+		Phone: "+48123456789",
+		Edges: ent.UserEdges{
+			UserSettings:     &ent.UserSettings{},
+			VerificationCode: &ent.VerificationCode{},
+			ActivationCode:   &ent.ActivationCode{},
+		},
+	}
 
 	testCases := []struct {
 		name        string
@@ -56,6 +71,8 @@ func TestUserActionHandler_Handle(t *testing.T) {
 				},
 			},
 			setupMocks: func(repo *mocks.MockUsersRepository) {
+				repo.On("GetUserPublicByID", mock.Anything, userID).Return(userFromDB, nil).Once()
+				repo.On("CreateUserAction", mock.Anything, userFromDB, validEvent.Action, validEvent.OriginDevice, validEvent.Details).Return(nil).Once()
 			},
 			expectErr: false,
 		},
@@ -82,7 +99,9 @@ func TestUserActionHandler_Handle(t *testing.T) {
 			message: &kafka.Message{
 				Value: []byte(`{"event_type": "user.action.test", "user_id": 1}`),
 			},
-			setupMocks:  func(repo *mocks.MockUsersRepository) {},
+			setupMocks: func(repo *mocks.MockUsersRepository) {
+				repo.On("GetUserPublicByID", mock.Anything, userID).Return(userFromDB, nil).Once()
+			},
 			expectErr:   true,
 			errContains: "invalid user action event: missing action",
 		},

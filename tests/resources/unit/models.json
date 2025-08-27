@@ -12,14 +12,15 @@
             "model_type": "requests.Register",
             "data": {
               "name": "Test User",
-              "mail": "valid.user@example.com",
+              "mail": "valid_user@example.com",
               "password": "StrongPassword!233@",
               "device_token": "dev-001",
               "ip_address": "127.0.0.1",
               "os_name": "Debian",
               "os_version": "12",
               "browser_name": "Safari",
-              "browser_version": "12"
+              "browser_version": "12",
+              "user_agent": "Mozilla/5.0 (platform; rv:gecko-version) Gecko/gecko-trail Firefox/firefox-version"
             }
           },
           "store_result_as": "validRegisterRequest"
@@ -495,6 +496,8 @@
           "params": {
             "model_type": "requests.Details",
             "data": {
+              "first_name": "Robert",
+              "last_name": "Moń",
               "device_token": "dev-001",
               "ip_address": "127.0.0.1",
               "user_agent": "secret-agent",

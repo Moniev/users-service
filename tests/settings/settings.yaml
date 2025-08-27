@@ -51,3 +51,5 @@ GOOGLE_CLIENT_SECRET: ""
 TWILIO_ID: ""
 TWILIO_PASSWORD: ""
 STRIPE_API_KEY: ""
+
+DOCKER_SOCKET: "unix:///home/moniev/.docker/desktop/docker.sock"

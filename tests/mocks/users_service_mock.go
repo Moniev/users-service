@@ -89,3 +89,32 @@ func (m *MockUsersService) GetUserPrivate(
 
 	return args.Get(0).(*ent.User), args.Error(1)
 }
+
+func (m *MockUsersService) AddRole(ctx context.Context, userID, roleID int) (*ent.User, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*ent.User), args.Error(1)
+}
+
+func (m *MockUsersService) RevokeRole(ctx context.Context, userID, roleID int) (*ent.User, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*ent.User), args.Error(1)
+}
+
+func (m *MockUsersService) Index(ctx context.Context, page, pageSize int) ([]*ent.User, error) {
+	args := m.Called(ctx, page, pageSize)
+
+	var r0 []*ent.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).([]*ent.User)
+	}
+
+	return r0, args.Get(1).(error)
+}

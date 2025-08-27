@@ -1,5 +1,3 @@
-//go:build unit
-
 package services
 
 import (
@@ -71,7 +69,7 @@ func TestAuthService_Register(t *testing.T) {
 				repo.On("GetUserByMail", mock.Anything, req.Mail).Return(&ent.User{ID: 1}, nil).Once()
 			},
 			expectErr:     true,
-			expectedError: "this email is already registered",
+			expectedError: "this mail is already registered",
 		},
 		{
 			name: "Failure - Repository Error on CreateUser",
@@ -567,7 +565,7 @@ func TestAuthService_ResendActivationCode(t *testing.T) {
 		{
 			name: "Success",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByMail", mock.Anything, req.Mail).Return(userFromDB, nil).Once()
+				repo.On("GetUserByMailWithCodes", mock.Anything, req.Mail).Return(userFromDB, nil).Once()
 				notifier.On("CreateRegistrationEvent", mock.Anything, mock.Anything).Return(nil).Once()
 			},
 			expectErr: false,
@@ -575,7 +573,7 @@ func TestAuthService_ResendActivationCode(t *testing.T) {
 		{
 			name: "Failure - User Not Found",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByMail", mock.Anything, req.Mail).Return(nil, errors.New("not found")).Once()
+				repo.On("GetUserByMailWithCodes", mock.Anything, req.Mail).Return(nil, errors.New("not found")).Once()
 			},
 			expectErr: true,
 		},
@@ -616,7 +614,7 @@ func TestAuthService_ResendVerificationCode(t *testing.T) {
 		{
 			name: "Success",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByMail", mock.Anything, req.Mail).Return(userFromDB, nil).Once()
+				repo.On("GetUserByMailWithCodes", mock.Anything, req.Mail).Return(userFromDB, nil).Once()
 				notifier.On("CreateVerificationEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 			},
 			expectErr: false,
@@ -624,7 +622,7 @@ func TestAuthService_ResendVerificationCode(t *testing.T) {
 		{
 			name: "Failure - User Not Found",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByMail", mock.Anything, req.Mail).Return(nil, errors.New("not found")).Once()
+				repo.On("GetUserByMailWithCodes", mock.Anything, req.Mail).Return(nil, errors.New("not found")).Once()
 			},
 			expectErr: true,
 		},
@@ -659,7 +657,7 @@ func TestAuthService_ResendResetCode(t *testing.T) {
 		{
 			name: "Success",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByMail", mock.Anything, req.Mail).Return(userFromDB, nil).Once()
+				repo.On("GetUserByMailWithCodes", mock.Anything, req.Mail).Return(userFromDB, nil).Once()
 				repo.On("CreateResetCode", mock.Anything, userFromDB).Return(&ent.ResetCode{}, nil).Once()
 				notifier.On("CreateResetPasswordEvent", mock.Anything, mock.Anything).Return(nil).Once()
 			},
@@ -668,7 +666,7 @@ func TestAuthService_ResendResetCode(t *testing.T) {
 		{
 			name: "Failure - User Not Found",
 			setupMock: func(repo *mocks.MockUsersRepository, notifier *mocks.MockEventNotifier) {
-				repo.On("GetUserByMail", mock.Anything, req.Mail).Return(nil, errors.New("not found")).Once()
+				repo.On("GetUserByMailWithCodes", mock.Anything, req.Mail).Return(nil, errors.New("not found")).Once()
 			},
 			expectErr: true,
 		},

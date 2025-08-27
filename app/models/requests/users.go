@@ -5,7 +5,7 @@ type Empty struct {
 }
 
 func (r *Empty) Valid() error {
-	return r.Device.Valid()
+	return translateError(validate.Struct(r))
 }
 
 type Details struct {
@@ -15,7 +15,7 @@ type Details struct {
 }
 
 func (r *Details) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type User struct {
@@ -25,7 +25,7 @@ type User struct {
 }
 
 func (r *User) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type UserPublic struct {
@@ -34,7 +34,7 @@ type UserPublic struct {
 }
 
 func (r *UserPublic) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Settings struct {
@@ -46,7 +46,7 @@ type Settings struct {
 }
 
 func (r *Settings) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Password struct {
@@ -55,7 +55,7 @@ type Password struct {
 }
 
 func (r *Password) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type EntrepreneurDetails struct {
@@ -76,7 +76,7 @@ type EntrepreneurDetails struct {
 }
 
 func (r *EntrepreneurDetails) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Location struct {
@@ -91,7 +91,7 @@ type Location struct {
 }
 
 func (r *Location) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Index struct {
@@ -101,7 +101,7 @@ type Index struct {
 }
 
 func (r *Index) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }
 
 type Role struct {
@@ -111,5 +111,5 @@ type Role struct {
 }
 
 func (r *Role) Valid() error {
-	return validate.Struct(r)
+	return translateError(validate.Struct(r))
 }

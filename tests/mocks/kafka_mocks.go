@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"time"
+	"users-service/app/models/handlers"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/stretchr/testify/mock"
@@ -10,6 +11,8 @@ import (
 type MockConsumerWrapper struct {
 	mock.Mock
 }
+
+var _ handlers.ConsumerInterface = (*MockConsumerWrapper)(nil)
 
 func (m *MockConsumerWrapper) ReadMessage(timeout time.Duration) (*kafka.Message, error) {
 	args := m.Called(timeout)
@@ -36,4 +39,8 @@ func (m *MockConsumerWrapper) CommitMessage(msg *kafka.Message) ([]kafka.TopicPa
 		tps = args.Get(0).([]kafka.TopicPartition)
 	}
 	return tps, args.Error(1)
+}
+
+func (m *MockConsumerWrapper) Stop() {
+	m.Called()
 }

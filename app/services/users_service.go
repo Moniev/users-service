@@ -31,8 +31,8 @@ type UsersServiceInterface interface {
 	GetUserPublic(ctx context.Context, userID int) (*ent.User, error)
 	GetUserPrivate(ctx context.Context, userID int) (*ent.User, error)
 
-	AddRole(ctx context.Context, userID, roleID int) error
-	RevokeRole(ctx context.Context, userID, roleID int) error
+	AddRole(ctx context.Context, userID, roleID int) (*ent.User, error)
+	RevokeRole(ctx context.Context, userID, roleID int) (*ent.User, error)
 }
 
 var _ UsersServiceInterface = (*UsersService)(nil)
@@ -134,10 +134,10 @@ func (s *UsersService) GetUserPrivate(ctx context.Context, userID int) (*ent.Use
 	return s.UsersRepository.GetUserByID(ctx, userID)
 }
 
-func (s *UsersService) AddRole(ctx context.Context, userID, roleID int) error {
+func (s *UsersService) AddRole(ctx context.Context, userID, roleID int) (*ent.User, error) {
 	return s.UsersRepository.AddRole(ctx, userID, roleID)
 }
 
-func (s *UsersService) RevokeRole(ctx context.Context, userID, roleID int) error {
+func (s *UsersService) RevokeRole(ctx context.Context, userID, roleID int) (*ent.User, error) {
 	return s.UsersRepository.RevokeRole(ctx, userID, roleID)
 }
