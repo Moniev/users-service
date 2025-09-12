@@ -1,0 +1,55 @@
+API_VERSION: "v1"
+API_PORT: ":8000"
+ENVIRONMENT: "development"
+LOG_LEVEL: "debug"
+TEST_MODE: "true"
+
+ENCRYPTION_SECRET_KEY: "a-32-byte-long-test-secret-key!!" 
+HASHING_PEPPER: "a-secure-pepper-for-testing-auth"
+TOKEN_DURATION: "15m"
+
+JWT_PRIVATE_KEY_PATH: "tests/resources/certificates/jwt_private.pem"
+JWT_PUBLIC_KEY_PATH: "tests/resources/certificates/jwt_public.pem"
+JWT_PRIVATE_KEY_BASE64: "" 
+JWT_PUBLIC_KEY_BASE64: ""
+
+DB_USER: "testuser"
+DB_PASSWORD: "testpassword"
+DB_HOST: "localhost"
+DB_PORT: 5433 
+DB_NAME: "testdb"
+DB_SSL_CA_PATH: ""
+DB_SSL_CERT_PATH: ""
+DB_SSL_KEY_PATH: ""
+
+REDIS_HOST: "localhost"
+REDIS_PORT: 6380 
+REDIS_DB: 0
+REDIS_PASSWORD: ""
+REDIS_TLS_ENABLED: false
+REDIS_SSL_CA_PATH: ""
+REDIS_SSL_CERT_PATH: ""
+REDIS_SSL_KEY_PATH: ""
+
+KAFKA_BOOTSTRAP_SERVERS: "localhost:9093" 
+KAFKA_CLIENT_ID: "users-service-test"
+KAFKA_SECURITY_PROTOCOL: "PLAINTEXT"
+KAFKA_SASL_MECHANISM: ""
+KAFKA_SASL_USERNAME: ""
+KAFKA_SASL_PASSWORD: ""
+KAFKA_SSL_CA_PATH: ""
+KAFKA_SSL_CERT_PATH: ""
+KAFKA_SSL_KEY_PATH: ""
+KAFKA_CLIENT_KEY_PASSWORD: ""
+KAFKA_TOPICS: "test-events,test-audits"
+KAFKA_BROKER_ID: "1"
+KAFKA_NOTIFIER_TOPIC: "test-notifications"
+
+GOOGLE_APPLICATION_CREDENTIALS_PATH: ""
+GOOGLE_CLIENT_ID: ""
+GOOGLE_CLIENT_SECRET: ""
+TWILIO_ID: ""
+TWILIO_PASSWORD: ""
+STRIPE_API_KEY: ""
+
+DOCKER_SOCKET: "unix:///home/moniev/.docker/desktop/docker.sock"

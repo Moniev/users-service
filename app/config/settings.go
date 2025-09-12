@@ -108,7 +108,7 @@ func GetSettings() *Settings {
 		v.SetDefault("ENCRYPTION_SECRET_KEY", "")
 
 		v.SetDefault("DB_HOST", "postgres.postgres.svc.cluster.local")
-		v.SetDefault("DB_NAME", "user_db")
+		v.SetDefault("DB_NAME", "users_db")
 		v.SetDefault("DB_PORT", 5432)
 		v.SetDefault("DB_USER", "users_service")
 		v.SetDefault("DB_PASSWORD", "")

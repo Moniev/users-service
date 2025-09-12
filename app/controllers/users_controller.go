@@ -27,13 +27,15 @@ type UsersControllerInterface interface {
 	RemoveAccount(ctx *gin.Context)
 }
 
-var _ UsersControllerInterface = (*UsersController)(nil)
-var _ StandardController = (*UsersController)(nil)
+var (
+	_ UsersControllerInterface = (*UsersController)(nil)
+	_ StandardController       = (*UsersController)(nil)
+)
 
 func NewUsersController(
 	usersService services.UsersServiceInterface,
-	logger zerolog.Logger) *UsersController {
-
+	logger zerolog.Logger,
+) *UsersController {
 	return &UsersController{
 		UsersService: usersService,
 		Logger:       logger,

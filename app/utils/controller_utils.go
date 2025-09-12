@@ -126,7 +126,7 @@ func CheckEmailFormat(mail string) bool {
 		return false
 	}
 
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$`)
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+\@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$`)
 	if !emailRegex.MatchString(mail) {
 		return false
 	}
